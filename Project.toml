@@ -1,0 +1,13 @@
+name = "Seis"
+uuid = "858afec4-72e8-11e8-3d51-8de99d30ad15"
+authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
+version = "0.1.0"
+
+[deps]
+Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+Geodesics = "01284c2f-9504-512f-a785-ad8b54aa43ae"
+Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
+MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+Missings = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
+SAC = "794933ac-8133-11e8-2e2f-4b4fdeb038fc"
+TauPy = "1cbbf93b-676f-5451-842e-8e3fdda0c09a"
