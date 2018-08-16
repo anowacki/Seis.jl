@@ -9,8 +9,10 @@ the `event` and `station` individually.
 Optionally specify the `flattening` of the ellipsoid of rotation on which this
 is computed, which defaults to that of the WGS84 ellipsoid.
 """
-azimuth(e::Event, s::Station; flattening=Geodesics.F_WGS84) =
+function azimuth(e::Event, s::Station; flattening=Geodesics.F_WGS84)
+    _check_headers_geometry(e, s)
     Geodesics.azimuth(e.lon, e.lat, s.lon, s.lat, true, f=flattening)
+end
 azimuth(t::Trace, args...) = azimuth(t.evt, t.cha, args...)
 
 """
@@ -24,8 +26,10 @@ the `station` and `event` individually.
 Optionally specify the `flattening` of the ellipsoid of rotation on which this
 is computed, which defaults to that of the WGS84 ellipsoid.
 """
-backazimuth(s::Station, e::Event; flattening=Geodesics.F_WGS84) =
+function backazimuth(s::Station, e::Event; flattening=Geodesics.F_WGS84)
+    _check_headers_geometry(e, s)
     Geodesics.azimuth(s.lon, s.lat, e.lon, e.lat, true, f=flattening)
+end
 backazimuth(t::Trace, args...; kwargs...) = backazimuth(t.cha, t.evt, args...; kwargs...)
 
 """
@@ -39,8 +43,10 @@ For a `trace` or an `event`-`station` pair, return the epicentral angular distan
 Optionally specify the `flattening` of the ellipsoid of rotation on which this
 is computed, which defaults to that of the WGS84 ellipsoid.
 """
-distance_deg(e::Event, s::Station; flattening=Geodesics.F_WGS84) =
+function distance_deg(e::Event, s::Station; flattening=Geodesics.F_WGS84)
+    _check_headers_geometry(e, s)
     Geodesics.angular_distance(e.lon, e.lat, s.lon, s.lat, true, f=flattening)
+end
 distance_deg(s::Station, e::Event, args...; kwargs...) = distance_deg(e, c, args...; kwargs...)
 distance_deg(t::Trace, args...; kwargs...) = distance_deg(t.evt, t.sta, args...; kwargs...)
 
@@ -54,8 +60,23 @@ Optionally specify the semimajor radius `a` in km and `flattening` of the
 ellipsoid of rotation on which this is computed, which defaults to that of the
 WGS84 ellipsoid.
 """
-distance_km(e::Event, s::Station; a=Geodesics.EARTH_R_MAJOR_WGS84/1e3,
-              flattening=Geodesics.F_WGS84) =
+function distance_km(e::Event, s::Station; a=Geodesics.EARTH_R_MAJOR_WGS84/1e3,
+              flattening=Geodesics.F_WGS84)
+    _check_headers_geometry(e, s)
     Geodesics.surface_distance(e.lon, e.lat, s.lon, s.lat, a, true, f=flattening)
+end
 distance_km(s::Station, e::Event; kwargs...) = distance_km(e, s; kwargs...)
 distance_km(t::Trace; kwargs...) = distance_km(t.evt, t.sta; kwargs...)
+
+"""
+    _check_headers_geometry(evt, sta) -> nothing
+
+Check that an `evt`–`sta` pair have all the necessary information to compute
+the azimuth, backazimuth and epicentral distance.  If they do not, throw an
+`ArgumentError`.
+"""
+_check_headers_geometry(evt::Event, sta::Station) = any(ismissing,
+    (evt.lon, evt.lat, sta.lon, sta.lat)) &&
+    throw(ArgumentError("Insufficient information in trace to compute geometry." *
+                        " (Need: evt.lon, evt.lat, sta.lon, sta.lat)")) ||
+    nothing
