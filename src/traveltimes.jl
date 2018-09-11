@@ -5,7 +5,7 @@
 
 Add an arrival time pick to the Trace `t`.
 """
-add_pick!(t::AbstractTrace, time, name=missing) = push!(t.picks, (time, name))
+add_pick!(t::AbstractTrace, time, name=missing) = push!(t.picks, (time=time, name=name))
 
 """
     add_pick!(t, p::TauPy.Phase) -> (time, name)
@@ -68,8 +68,8 @@ picks(t::AbstractTrace) = t.picks
 Return a vector `p` of pairs of pick names and times associated with the `Trace` `t`
 which either are exactly `name` or match the regular expression `pattern`.
 """
-picks(t::AbstractTrace, name::AbstractString) = filter(x->x[2]==name, picks(t))
-picks(t::AbstractTrace, match::Regex) = filter(x->occursin(match, x[2]), picks(t))
+picks(t::AbstractTrace, name::AbstractString) = filter(x->coalesce(x[2], "")==name, picks(t))
+picks(t::AbstractTrace, match::Regex) = filter(x->occursin(match, coalesce(x[2], "")), picks(t))
 
 """
     travel_time(t, phase="all"; model="iasp91") -> phases::Vector{TauPy.Phase}
@@ -90,7 +90,7 @@ end
 Return the list of `TauPy.Phase`s associated with each travel time pick in `t`.
 """
 travel_time(t::AbstractTrace; model::AbstractString="iasp91") =
-    [travel_time(t, name; model=model) for (_, name) in picks(t)]
+    [travel_time(t, name; model=model) for (_, name) in picks(t) if name[1] in ("p", "s", "P", "S")]
 
 "Throw an error if a Trace doesn't contain the right headers to call TauPy.travel_time."
 _check_headers_taup(t::AbstractTrace) = any(ismissing,

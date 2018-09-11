@@ -147,6 +147,20 @@ Base.:(==)(s1::Station, s2::Station) =
     all(x -> isequal(x[1], x[2]), (getfield.((s1, s2), f) for f in STATION_FIELDS))
 
 """
+    Pick{T,S}
+
+`NamedTuple` defining a named arrival time which can be associated with a `Trace`.
+
+If `p` is a `Pick`, then `p.time` gives the arrival time, and `p.name` gives its
+description.
+
+Arrays of `Pick`s, which are stored in `Traces`, can be accessed using
+`getproperty` (`.`-access) and this returns arrays of times or names.
+"""
+const Pick{T,S} = NamedTuple{(:time, :name), Tuple{T,Union{Missing,S}}} where {T,S}
+Base.getproperty(p::AbstractVector{<:Pick}, field::Symbol) = getproperty.(p, field)
+
+"""
     AbstractTrace
 
 Abstract type from which you should subtype if creating new types of traces.
@@ -179,7 +193,7 @@ mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{T},S<:AbstractString} <:
     t::V
     evt::Event{T,S}
     sta::Station{T,S}
-    picks::Vector{Tuple{T,Union{S,Missing}}}
+    picks::Vector{Pick{T,S}}
     meta::SeisDict{Symbol,Any}
     function Trace{T,S,V}(b, delta, t, evt, sta, picks, meta) where {T,S,V}
         delta > 0 || throw(ArgumentError("delta cannot be <= 0"))
