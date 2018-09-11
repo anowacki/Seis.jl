@@ -201,6 +201,12 @@ mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{T},S<:AbstractString} <:
     end
 end
 
+"""
+    Trace(b, delta, t) -> trace
+
+Create a `Trace` with starting time `b` s, sampling interval `delta` s and
+an `AbstractVector` `t` of values for the trace.
+"""
 Trace{T,V,S}(b, delta, t) where {T,V,S} = Trace{T,V,S}(b, delta, t, Event{T,S}(),
                                                        Station{T,S}(), [], Dict())
 

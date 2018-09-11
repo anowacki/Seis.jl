@@ -24,6 +24,7 @@ export
     Trace,
     # 'Getters'
     dates,
+    endtime,
     nsamples,
     picks,
     times,
@@ -37,6 +38,9 @@ export
     backazimuth,
     distance_deg,
     distance_km,
+    # Operations
+    cut!,
+    cut,
     # Travel times
     travel_time,
     # IO
@@ -60,5 +64,6 @@ include("input_output.jl")
 include("geometry.jl")
 include("traveltimes.jl")
 include("util.jl")
+include("operations.jl")
 
 end # module

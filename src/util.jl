@@ -1,4 +1,11 @@
 """
+    endtime(t) -> time
+
+Return the end `time` of trace `t` in seconds.
+"""
+endtime(t::Trace) = t.b + (nsamples(t) - 1)*t.delta
+
+"""
     nsamples(t) -> n
 
 Return the number of samples `n` in a trace `t`.
