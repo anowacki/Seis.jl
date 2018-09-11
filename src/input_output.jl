@@ -119,7 +119,7 @@ write_sac(t::AbstractTrace, file) = SAC.write(SACtr(t), file)
 
 Construct a `SACtr` s from s `Seis.Trace`.
 """
-function SAC.SACtr(t::AbstractTrace)
+function SACtr(t::AbstractTrace)
     s = SACtr(trace(t), t.delta, t.b)
     for (sacfield, val) in (
                 :o => 0,

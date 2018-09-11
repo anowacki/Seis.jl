@@ -13,7 +13,7 @@ function azimuth(e::Event, s::Station; flattening=Geodesics.F_WGS84)
     _check_headers_geometry(e, s)
     Geodesics.azimuth(e.lon, e.lat, s.lon, s.lat, true, f=flattening)
 end
-azimuth(t::Trace, args...) = azimuth(t.evt, t.cha, args...)
+azimuth(t::Trace, args...) = azimuth(t.evt, t.sta, args...)
 
 """
     backazimuth(trace; flattening=$(Geodesics.F_WGS84)) -> baz
@@ -30,7 +30,7 @@ function backazimuth(s::Station, e::Event; flattening=Geodesics.F_WGS84)
     _check_headers_geometry(e, s)
     Geodesics.azimuth(s.lon, s.lat, e.lon, e.lat, true, f=flattening)
 end
-backazimuth(t::Trace, args...; kwargs...) = backazimuth(t.cha, t.evt, args...; kwargs...)
+backazimuth(t::Trace, args...; kwargs...) = backazimuth(t.sta, t.evt, args...; kwargs...)
 
 """
     distance_deg(trace; flattening=$(Geodesics.F_WGS84)) -> Δ
