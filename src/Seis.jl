@@ -49,12 +49,13 @@ import Missings: Missing, ismissing, missing
 using Compat.Dates
 import MacroTools: @capture
 
-using SAC
+import SAC
 import SAC: SACtr
 import Geodesics
 import TauPy
 
 include("types.jl")
+include("show.jl")
 include("input_output.jl")
 include("geometry.jl")
 include("traveltimes.jl")
