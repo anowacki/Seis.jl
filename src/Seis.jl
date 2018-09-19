@@ -41,6 +41,8 @@ export
     # Operations
     cut!,
     cut,
+    decimate,
+    decimate!,
     # Travel times
     travel_time,
     # IO

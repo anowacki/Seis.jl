@@ -65,3 +65,33 @@ origin.  You may also specify a `start_date` and `end_date`, or choose times
 times may also be specified relative to one `pick`.
 """
 cut(t::Trace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
+
+# TODO: Enable antialiasing
+"""
+    decimate!(t, n; antialias=true)
+    
+Decimate the trace `t` by removing all except every `n` points.  The sampling interval
+is increased `n` times.
+
+If `antialias` is `false`, then no antialiasing filtering is applied during decimation.
+This means the decimated trace may contain spurious signals.
+"""
+function decimate!(t, n::Integer; antialias=true)
+    antialias && error("Antialias filtering not implemented; use `antialias=false`")
+    1 <= n || throw(ArgumentError("n must be grater than 0 (supplied $n)"))
+    n == 1 && return t
+    t.t = t.t[1:n:end]
+    t.delta *= n
+    t
+end
+
+"""
+    decimate(t, n; antialias=true)
+
+Decimate the trace `t` by removing all except every `n` points.  The sampling interval
+is increased `n` times.
+
+If `antialias` is `false`, then no antialiasing filtering is applied during decimation.
+This means the decimated trace may contain spurious signals.
+"""
+decimate(t::Trace, n; antialias=true) = decimate!(deepcopy(t), n; antialias=antialias)
