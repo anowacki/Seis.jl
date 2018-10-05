@@ -31,6 +31,18 @@ import SAC
         end
     end
 
+    @testset "Decimate" begin
+        let n = rand(10:1000), t = Trace(1, 0.5, rand(n)), t′ = deepcopy(t)
+            # Without antialiasing
+            @test_throws ArgumentError decimate(t, 0, antialias=false)
+            @test decimate(t, 1, antialias=false) == t
+            @test nsamples(decimate(t, 5, antialias=false)) == length((1:n)[1:5:end])
+            @test decimate(t, 3, antialias=false).delta == t.delta*3
+            decimate!(t, 4, antialias=false)
+            @test t == decimate(t′, 4, antialias=false)
+        end
+    end
+
     @testset "Remove mean" begin
         let t = Trace(0, 0.01, [i%2 for i in 1:1000]), t′ = deepcopy(t)
             atol = eps(eltype(trace(t)))
