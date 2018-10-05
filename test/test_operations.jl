@@ -1,6 +1,7 @@
 # Trace operations
 using Test
 using Dates: Second, now
+using Statistics
 using Seis
 import SAC
 
@@ -21,11 +22,39 @@ import SAC
             @test t′ == cut(t, b, e)
             @test t′.b ≈ b atol=t.delta/2
             @test endtime(t′) ≈ e atol=t.delta/2
-            t.evt.time = now()
-            @test cut(t, now(), now() + Second(1)) == cut(t, 0, 1)
+            time_now = now()
+            t.evt.time = time_now
+            @test cut(t, time_now, time_now + Second(1)) == cut(t, 0, 1)
             add_pick!(t, 1, "Test pick")
             @test cut(t, "Test pick", 0, "Test pick", 0.5) == cut(t, 1, 1.5)
             @test cut(t, "Test pick", 0, 0.5) == cut(t, 1, 1.5)
+        end
+    end
+
+    @testset "Remove mean" begin
+        let t = Trace(0, 0.01, [i%2 for i in 1:1000]), t′ = deepcopy(t)
+            atol = eps(eltype(trace(t)))
+            @test mean(trace(remove_mean(t))) ≈ 0.0 atol=atol
+            remove_mean!(t)
+            @test t == remove_mean(t′)
+        end
+    end
+
+    @testset "Remove trend" begin
+        let t = Trace(0, 0.1, 1:100), t′ = deepcopy(t)
+            atol = 1000eps(eltype(trace(t)))
+            @test all(isapprox.(trace(remove_trend(t)), 0.0, atol=atol))
+            remove_trend!(t)
+            @test t == remove_trend(t′)
+        end
+    end
+
+    @testset "Normalisation" begin
+        let t = Trace(0, 1, rand(5)), val=rand(1:20), t′ = deepcopy(t)
+            @test maximum(abs, trace(normalise(t, val))) ≈ val
+            @test maximum(abs, trace(normalise(t))) ≈ 1
+            normalise!(t)
+            @test t == normalise(t′)
         end
     end
 end

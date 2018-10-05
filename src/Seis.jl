@@ -41,6 +41,12 @@ export
     # Operations
     cut!,
     cut,
+    normalise!,
+    normalise,
+    remove_mean!,
+    remove_mean,
+    remove_trend!,
+    remove_trend,
     # Travel times
     travel_time,
     # IO
@@ -48,9 +54,10 @@ export
     read_sac,
     write_sac
 
-import Missings
-import Missings: Missing, ismissing, missing
 using Dates
+using LinearAlgebra
+using Statistics: mean, covm, varm
+
 import MacroTools: @capture
 
 import SAC

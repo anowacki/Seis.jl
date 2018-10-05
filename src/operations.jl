@@ -65,3 +65,41 @@ origin.  You may also specify a `start_date` and `end_date`, or choose times
 times may also be specified relative to one `pick`.
 """
 cut(t::Trace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
+
+"""
+    normalise!(t::Trace, val=1) -> t
+
+Normalise the trace `t` so that its maximum absolute amplitude is `val`,
+and return the trace.
+"""
+function normalise!(t::AbstractTrace, val=1)
+    maxval = maximum(abs, trace(t))
+    t.t .*= val/maxval
+    t
+end
+normalise(t::AbstractTrace, args...; kwargs...) =
+    normalise!(deepcopy(t), args...; kwargs...)
+
+"""
+    remove_mean!(t::Trace) -> t
+
+Remove the mean of trace `t` in place and return the trace.
+"""
+function remove_mean!(t::AbstractTrace)
+    t.t .= t.t .- mean(t.t)
+    t
+end
+remove_mean(t::AbstractTrace, args...; kwargs...) = remove_mean!(deepcopy(t), args...; kwargs...)
+
+"""
+    remove_trend!(t::Trace) -> t
+
+Remove the trend from `t` in place and return the trace.
+"""
+function remove_trend!(t::AbstractTrace)
+    time = times(t)
+    x0, x1 = linear_regression(time, t.t)
+    t.t .= t.t .- (x0 .+ x1.*time)
+    t
+end
+remove_trend(t::AbstractTrace, args...; kwargs...) = remove_trend!(deepcopy(t), args...; kwargs...)
