@@ -1,4 +1,4 @@
-using Compat.Test
+using Test
 using Seis
 
 @testset "Seis" begin

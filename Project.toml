@@ -4,7 +4,7 @@ authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
 version = "0.1.0"
 
 [deps]
-Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Geodesics = "6aaf26a4-c633-11e8-35ae-8904cb805353"
 Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"

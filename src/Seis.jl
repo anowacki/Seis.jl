@@ -50,7 +50,7 @@ export
 
 import Missings
 import Missings: Missing, ismissing, missing
-using Compat.Dates
+using Dates
 import MacroTools: @capture
 
 import SAC

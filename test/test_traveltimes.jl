@@ -1,5 +1,4 @@
-using Compat.Test
-import Missings: missing
+using Test
 using Seis
 import TauPy
 
@@ -28,6 +27,6 @@ end
 
 @testset "Arrivals" begin
     let p = TauPy.travel_time(100, 100)
-        
+
     end
 end

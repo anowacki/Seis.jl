@@ -1,6 +1,6 @@
 # Trace operations
-using Compat.Test
-import Dates: Second, now
+using Test
+using Dates: Second, now
 using Seis
 import SAC
 
