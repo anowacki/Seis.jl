@@ -1,6 +1,5 @@
-using Compat.Test
-using Compat.Dates
-using Missings
+using Test
+using Dates
 using Seis
 
 @testset "Types" begin
