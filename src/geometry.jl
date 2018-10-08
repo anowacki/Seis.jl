@@ -16,7 +16,7 @@ function azimuth(e::Event, s::Station; sphere=false, flattening=Geodesics.F_WGS8
     _check_headers_geometry(e, s)
     Geodesics.azimuth(e.lon, e.lat, s.lon, s.lat, true, f=sphere ? 0.0 : flattening)
 end
-azimuth(t::Trace, args...; kwargs...) = azimuth(t.evt, t.sta, args...; kwargs...)
+azimuth(t::AbstractTrace, args...; kwargs...) = azimuth(t.evt, t.sta, args...; kwargs...)
 
 """
     backazimuth(trace; flattening=$(Geodesics.F_WGS84)) -> baz
@@ -34,7 +34,7 @@ function backazimuth(s::Station, e::Event; sphere=false, flattening=Geodesics.F_
     _check_headers_geometry(e, s)
     Geodesics.azimuth(s.lon, s.lat, e.lon, e.lat, true, f=(sphere ? 0.0 : flattening))
 end
-backazimuth(t::Trace, args...; kwargs...) = backazimuth(t.sta, t.evt, args...; kwargs...)
+backazimuth(t::AbstractTrace, args...; kwargs...) = backazimuth(t.sta, t.evt, args...; kwargs...)
 
 """
     distance_deg(trace; sphere=false, flattening=$(Geodesics.F_WGS84)) -> Δ
@@ -73,7 +73,7 @@ function distance_km(e::Event, s::Station; sphere=false, a=Geodesics.EARTH_R_MAJ
                                f=(sphere ? 0.0 : flattening))
 end
 distance_km(s::Station, e::Event; kwargs...) = distance_km(e, s; kwargs...)
-distance_km(t::Trace; kwargs...) = distance_km(t.evt, t.sta; kwargs...)
+distance_km(t::AbstractTrace; kwargs...) = distance_km(t.evt, t.sta; kwargs...)
 
 """
     _check_headers_geometry(evt, sta) -> nothing

@@ -9,7 +9,7 @@ Cut a `Trace` `t` in place between `start` and `end`.  An error is thrown if eit
 By default, a warning is shown if cut times lie outside the trace; set `warn` to `false`
 to turn this off.
 """
-function cut!(t::Trace, b, e; warn=true)
+function cut!(t::AbstractTrace, b, e; warn=true)
     (b === missing || e === missing) && throw(ArgumentError("Start or end cut time is `missing`"))
     e < b && throw(ArgumentError("End cut time ($e) is before start cut ($b)"))
     if b < t.b
@@ -35,7 +35,7 @@ end
 
 Cut a `Trace` `t` in place between dates `start_date` and `end_date`.
 """
-cut!(t::Trace, b::DateTime, e::DateTime; kwargs...) =
+cut!(t::AbstractTrace, b::DateTime, e::DateTime; kwargs...) =
     cut(t, Dates.value(Dates.Nanosecond(b - t.evt.time))/1e9,
         Dates.value(Dates.Nanosecond(e - t.evt.time))/1e9; kwargs...)
 
@@ -48,9 +48,9 @@ and `offset2` s after `pick2`.
 
 In the second form, both offsets are relative to `pick`
 """
-cut!(t::Trace, pick1, offset1, pick2, offset2; kwargs...) =
+cut!(t::AbstractTrace, pick1, offset1, pick2, offset2; kwargs...) =
     cut!(t, first(picks(t, pick1)).time + offset1, first(picks(t, pick2)).time + offset2; kwargs...)
-cut!(t::Trace, pick1, offset1, offset2; kwargs...) =
+cut!(t::AbstractTrace, pick1, offset1, offset2; kwargs...) =
     cut!(t, pick1, offset1, pick1, offset2; kwargs...)
 
 """
@@ -64,7 +64,7 @@ origin.  You may also specify a `start_date` and `end_date`, or choose times
 `offset1` and `offset2` s relative to `pick1` and `pick2` respectively.  Both offset
 times may also be specified relative to one `pick`.
 """
-cut(t::Trace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
+cut(t::AbstractTrace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
 
 # TODO: Enable antialiasing
 """
@@ -77,6 +77,7 @@ If `antialias` is `false`, then no antialiasing filtering is applied during deci
 This means the decimated trace may contain spurious signals.
 """
 function decimate!(t, n::Integer; antialias=true)
+function decimate!(t::AbstractTrace, n::Integer; antialias=true)
     antialias && error("Antialias filtering not implemented; use `antialias=false`")
     1 <= n || throw(ArgumentError("n must be grater than 0 (supplied $n)"))
     n == 1 && return t
@@ -95,6 +96,7 @@ If `antialias` is `false`, then no antialiasing filtering is applied during deci
 This means the decimated trace may contain spurious signals.
 """
 decimate(t::Trace, n; antialias=true) = decimate!(deepcopy(t), n; antialias=antialias)
+decimate(t::AbstractTrace, n; antialias=true) = decimate!(deepcopy(t), n; antialias=antialias)
 
 """
     normalise!(t::Trace, val=1) -> t

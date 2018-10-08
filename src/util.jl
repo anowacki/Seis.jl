@@ -3,7 +3,7 @@
 
 Return the end `time` of trace `t` in seconds.
 """
-endtime(t::Trace) = t.b + (nsamples(t) - 1)*t.delta
+endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
 """
     linear_regression(x, y)
@@ -25,7 +25,7 @@ end
 
 Return the number of samples `n` in a trace `t`.
 """
-nsamples(t::Trace)::Int = length(t.t)
+nsamples(t::AbstractTrace)::Int = length(t.t)
 
 """
     times(t) -> range
@@ -39,7 +39,7 @@ times(t::AbstractTrace) = t.b .+ (0:(nsamples(t) - 1)).*t.delta
 
 Return an array containing the values of the `Trace` `t`.
 """
-trace(t::Trace) = t.t
+trace(t::AbstractTrace) = t.t
 
 """
     @chain function f(t::Trace, args...; kwargs...) ... end
