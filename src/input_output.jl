@@ -6,7 +6,8 @@ Read a single evenly-sampled SAC file and return a Trace.
     read_sac(glob, dir) → ::Vector{Trace}
 
 Read SAC files which match the patern `glob` in directory `dir` and return
-a set of `Traces`.  Add the file names to `t.meta.file`.
+a set of `Traces`.  Add the file names to `t.meta.file`.  These are relative
+paths.
 
 When reading SAC files, the following conventions are observed:
 
