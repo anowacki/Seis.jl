@@ -44,4 +44,14 @@ import SAC
             end
         end
     end
+
+    @testset "Channel code" begin
+        let t = Trace(-10, 0.0001, [0,1])
+            t.sta.net = "AB"
+            t.sta.sta = "CDEF"
+            t.sta.loc = "GH"
+            t.sta.cha = "IJK"
+            @test Seis.channel_code(t) == "AB.CDEF.GH.IJK"
+        end
+    end
 end
