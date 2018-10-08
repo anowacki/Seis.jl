@@ -62,11 +62,19 @@ import SAC
     end
 
     @testset "Normalisation" begin
-        let t = Trace(0, 1, rand(5)), val=rand(1:20), t′ = deepcopy(t)
-            @test maximum(abs, trace(normalise(t, val))) ≈ val
-            @test maximum(abs, trace(normalise(t))) ≈ 1
+        for (f, f!) in zip((normalise, normalize), (normalise!, normalize!))
+            let t = Trace(0, 1, rand(5)), val=rand(1:20), t′ = deepcopy(t)
+                @test maximum(abs, trace(f(t, val))) ≈ val
+                @test maximum(abs, trace(f(t))) ≈ 1
+                f!(t)
+                @test t == f(t′)
+            end
+        end
+        let t = Trace(0, 1, rand(5)), t′ = deepcopy(t)
+            @test normalise(t) == normalize(t)
             normalise!(t)
-            @test t == normalise(t′)
+            normalize!(t′)
+            @test t == t′
         end
     end
 end

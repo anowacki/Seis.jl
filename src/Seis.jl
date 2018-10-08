@@ -45,6 +45,8 @@ export
     decimate!,
     normalise!,
     normalise,
+    normalize!,
+    normalize,
     remove_mean!,
     remove_mean,
     remove_trend!,

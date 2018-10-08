@@ -96,6 +96,8 @@ decimate(t::AbstractTrace, n; antialias=true) = decimate!(deepcopy(t), n; antial
 Normalise the trace `t` so that its maximum absolute amplitude is `val`.
 In the first form, update the trace in place and return the trace.
 In the second form, return an updated copy.
+
+This function can also be spelled `normalize[!]`.
 """
 function normalise!(t::AbstractTrace, val=1)
     maxval = maximum(abs, trace(t))
@@ -105,6 +107,13 @@ end
 normalise(t::AbstractTrace, args...; kwargs...) =
     normalise!(deepcopy(t), args...; kwargs...)
 @doc (@doc normalise!) normalise
+
+LinearAlgebra.normalize!(t::AbstractTrace, args...; kwargs...) =
+    normalise!(t, args..., kwargs...)
+@doc (@doc normalise!) normalize!
+LinearAlgebra.normalize(t::AbstractTrace, args...; kwargs...) =
+    normalise(t, args...; kwargs...)
+@doc (@doc normalise) = normalize
 
 """
     remove_mean!(t::Trace) -> t
