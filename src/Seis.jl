@@ -56,7 +56,9 @@ export
     # IO
     SACtr,
     read_sac,
-    write_sac
+    write_sac,
+    # Sample data
+    sample_data
 
 using Dates
 using LinearAlgebra
@@ -76,5 +78,6 @@ include("geometry.jl")
 include("traveltimes.jl")
 include("util.jl")
 include("operations.jl")
+include("sample_data.jl")
 
 end # module
