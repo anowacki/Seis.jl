@@ -68,15 +68,16 @@ cut(t::AbstractTrace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...
 
 # TODO: Enable antialiasing
 """
-    decimate!(t, n; antialias=true)
-    
+    decimate!(t, n; antialias=true) -> t
+    decimate(t, n; antialias=true) -> t′
+
 Decimate the trace `t` by removing all except every `n` points.  The sampling interval
-is increased `n` times.
+is increased `n` times.  In the first form, update the trace in place
+and return it.  In the second form, return an updated copy.
 
 If `antialias` is `false`, then no antialiasing filtering is applied during decimation.
 This means the decimated trace may contain spurious signals.
 """
-function decimate!(t, n::Integer; antialias=true)
 function decimate!(t::AbstractTrace, n::Integer; antialias=true)
     antialias && error("Antialias filtering not implemented; use `antialias=false`")
     1 <= n || throw(ArgumentError("n must be grater than 0 (supplied $n)"))
@@ -85,24 +86,16 @@ function decimate!(t::AbstractTrace, n::Integer; antialias=true)
     t.delta *= n
     t
 end
-
-"""
-    decimate(t, n; antialias=true)
-
-Decimate the trace `t` by removing all except every `n` points.  The sampling interval
-is increased `n` times.
-
-If `antialias` is `false`, then no antialiasing filtering is applied during decimation.
-This means the decimated trace may contain spurious signals.
-"""
-decimate(t::Trace, n; antialias=true) = decimate!(deepcopy(t), n; antialias=antialias)
 decimate(t::AbstractTrace, n; antialias=true) = decimate!(deepcopy(t), n; antialias=antialias)
+@doc (@doc decimate!) decimate
 
 """
     normalise!(t::Trace, val=1) -> t
+    normalise(t::Trace, val=1) -> t′
 
-Normalise the trace `t` so that its maximum absolute amplitude is `val`,
-and return the trace.
+Normalise the trace `t` so that its maximum absolute amplitude is `val`.
+In the first form, update the trace in place and return the trace.
+In the second form, return an updated copy.
 """
 function normalise!(t::AbstractTrace, val=1)
     maxval = maximum(abs, trace(t))
@@ -111,22 +104,28 @@ function normalise!(t::AbstractTrace, val=1)
 end
 normalise(t::AbstractTrace, args...; kwargs...) =
     normalise!(deepcopy(t), args...; kwargs...)
+@doc (@doc normalise!) normalise
 
 """
     remove_mean!(t::Trace) -> t
+    remove_mean(t::Trace) -> t′
 
-Remove the mean of trace `t` in place and return the trace.
+Remove the mean of trace `t`.  In the first form, update the trace in place
+and return it.  In the second form, return an updated copy.
 """
 function remove_mean!(t::AbstractTrace)
     t.t .= t.t .- mean(t.t)
     t
 end
 remove_mean(t::AbstractTrace, args...; kwargs...) = remove_mean!(deepcopy(t), args...; kwargs...)
+@doc (@doc remove_mean!) remove_mean
 
 """
     remove_trend!(t::Trace) -> t
+    remove_mean(t::Trace) -> t′
 
-Remove the trend from `t` in place and return the trace.
+Remove the trend from `t`.  In the first form, update the trace in place
+and return it.  In the second form, return an updated copy.
 """
 function remove_trend!(t::AbstractTrace)
     time = times(t)
@@ -135,3 +134,4 @@ function remove_trend!(t::AbstractTrace)
     t
 end
 remove_trend(t::AbstractTrace, args...; kwargs...) = remove_trend!(deepcopy(t), args...; kwargs...)
+@doc (@doc remove_trend!) remove_trend
