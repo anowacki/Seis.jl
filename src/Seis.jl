@@ -21,6 +21,7 @@ export
     # Types
     Station,
     Event,
+    AbstractTrace,
     Trace,
     # 'Getters'
     dates,
