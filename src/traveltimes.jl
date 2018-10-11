@@ -15,6 +15,13 @@ Add a travel time pick to the `Trace` `t` from a `TauPy.Phase` arrival.
 add_pick!(t::AbstractTrace, p::TauPy.Phase) = add_pick!(t, p.time, p.name)
 
 """
+    add_pick!(t, p::Pick) -> p
+
+Add a travel time pick to the `Trace` `t` from a `Seis.Pick`.
+"""
+add_pick!(t::AbstractTrace, p::Pick) = add_pick!(t, p.time, p.name)
+
+"""
     add_picks!(t, phase; model="iasp91", exact=false)
 
 Add travel time picks to the trace `t` for the 1D Earth `model`, for arrivals
