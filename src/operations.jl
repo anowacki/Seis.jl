@@ -144,3 +144,53 @@ function remove_trend!(t::AbstractTrace)
 end
 remove_trend(t::AbstractTrace, args...; kwargs...) = remove_trend!(deepcopy(t), args...; kwargs...)
 @doc (@doc remove_trend!) remove_trend
+
+"""
+    taper!(t::AbstractTrace, width=0.05, form=:hanning)
+
+Apply a symmetric taper to each end of the data in trace `t`.
+
+`form` may be one of `:hanning`, `:hamming` or `:cosine`.
+
+`width` represents the fraction (at both ends) of the trace tapered, up to 0.5.
+"""
+function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning)
+    form in (:hamming, :hanning, :cosine) ||
+        throw(ArgumentError("`form` must be one of `:hamming`, `:hanning` or `:cosine`"))
+    0 < width <= 0.5 || throw(ArgumentError("SAC.taper!: width must be between 0 and 0.5"))
+    n = max(2, floor(Int, (nsamples(t) + 1)*width))
+
+    T = eltype(trace(t))
+    npts = nsamples(t)
+
+    if form in (:hamming, :hanning)
+        omega = T(π/n)
+        if form == :hanning
+            f0 = f1 = T(0.50)
+        elseif form == :hamming
+            f0 = T(0.54)
+            f1 = T(0.46)
+        end
+
+        @inbounds for i in 0:n-1
+            amp = f0 - f1*cos(omega*T(i))
+            j = npts - i
+            t.t[i+1] *= amp
+            t.t[j] *= amp
+        end
+    end
+
+    if form == :cosine
+        omega = T(π/2n)
+        @inbounds for i in 0:n-1
+            amp = sin(omega*i)
+            j = npts - i
+            t.t[i+1] *= amp
+            t.t[j] *= amp
+        end
+    end
+
+    t
+end
+taper(t::AbstractTrace, args...; kwargs...) = taper!(deepcopy(t), args...; kwargs...)
+@doc (@doc taper!) taper

@@ -52,6 +52,8 @@ export
     remove_mean,
     remove_trend!,
     remove_trend,
+    taper!,
+    taper,
     # Travel times
     travel_time,
     # IO

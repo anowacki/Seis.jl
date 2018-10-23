@@ -40,6 +40,7 @@ import SAC
             @test decimate(t, 3, antialias=false).delta == t.delta*3
             decimate!(t, 4, antialias=false)
             @test t == decimate(t′, 4, antialias=false)
+            # TODO: Add antialiasing tests
         end
     end
 
@@ -75,6 +76,24 @@ import SAC
             normalise!(t)
             normalize!(t′)
             @test t == t′
+        end
+    end
+
+    @testset "Taper" begin
+        let t = Trace(rand(), rand(), rand(100)), t′ = deepcopy(t)
+            @test_throws ArgumentError taper(t, 0.6)
+            @test_throws ArgumentError taper(t, -0.1)
+            @test_throws ArgumentError taper(t, form=:random_symbol)
+            @test trace(taper(t))[1] == trace(taper(t))[end] == 0.0
+            for form in (:hamming, :hanning, :cosine)
+                @test trace(taper(t))[end÷2] == trace(t)[end÷2]
+            end
+            taper!(t, 0.3)
+            @test t == taper(t′, 0.3)
+        end
+        let t = Trace(0, 1, fill(1.0, 100))
+            @test all(isapprox.(trace(taper(t, 0.01, form=:hamming))[3:end-2], 1.0))
+            @test all(isapprox.(trace(taper(t, 0.30, form=:cosine))[31:end-30], 1.0))
         end
     end
 end
