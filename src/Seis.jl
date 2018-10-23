@@ -42,8 +42,10 @@ export
     # Operations
     cut!,
     cut,
-    decimate,
     decimate!,
+    decimate,
+    envelope!,
+    envelope,
     normalise!,
     normalise,
     normalize!,
@@ -67,6 +69,7 @@ using Dates
 using LinearAlgebra
 using Statistics: mean, covm, varm
 
+import DSP
 import MacroTools: @capture
 
 import SAC

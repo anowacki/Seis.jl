@@ -96,4 +96,15 @@ import SAC
             @test all(isapprox.(trace(taper(t, 0.30, form=:cosine))[31:end-30], 1.0))
         end
     end
+
+    @testset "Envelope" begin
+        let t = Trace(-rand(), rand(), fill(1.0f0, 1000)), t′ = deepcopy(t)
+            @test trace(envelope(t)) ≈ trace(t)
+            envelope!(t)
+            @test t == envelope(t′)
+        end
+        let t = Trace(-rand(), rand(), fill(-rand(), 100))
+            @test trace(envelope(t)) ≈ abs.(trace(t))
+        end
+    end
 end
