@@ -51,7 +51,6 @@ end
 SeisDict{K,V}(args...) where {K,V} = SeisDict{K,V}(Dict{K,V}(args...))
 SeisDict{K}(args...) where {K} = SeisDict{K,Any}(Dict{K,Any}(args...))
 SeisDict(args...) = SeisDict{Any,Any}(Dict{Any,Any}(args...))
-SeisDict(dict::Dict{K,V}) where {K,V} = SeisDict{K,V}(dict)
 
 # Have to use getfield here because we define getproperty as getindex
 Base.getindex(sd::SeisDict{K,V}, key) where {K,V} = get(getfield(sd, :dict), key, missing)
