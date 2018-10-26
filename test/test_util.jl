@@ -12,4 +12,14 @@ using Seis
         end
         @test g(t, 2) == (t |> g(2)) == b + 2
     end
+
+    @testset "Nearest sample" begin
+        let t = Trace(-2, 1, rand(10))
+            @test nearest_sample(t, 3.1) == 6
+            @test nearest_sample(t, -5) == 1
+        end
+        let t = Trace(0.01, 0.01, rand(100)), time = rand()
+            @test nearest_sample(t, time) == round(Int, 100*time)
+        end
+    end
 end

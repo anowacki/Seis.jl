@@ -21,6 +21,13 @@ function linear_regression(x::AbstractVector, y::AbstractVector)
 end
 
 """
+    nearest_sample(t::AbstractTrace, time) -> i
+    
+Return the index `i` of the nearest sample of the trace `t` to `time` seconds.
+"""
+nearest_sample(t::AbstractTrace, time) = argmin(abs.(times(t) .- time))
+
+"""
     nsamples(t) -> n
 
 Return the number of samples `n` in a trace `t`.

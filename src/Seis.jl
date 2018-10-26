@@ -26,6 +26,7 @@ export
     # 'Getters'
     dates,
     endtime,
+    nearest_sample,
     nsamples,
     picks,
     times,
