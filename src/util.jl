@@ -1,4 +1,21 @@
 """
+    dates(t) -> date_range
+
+Return a `date_range` which contains the dates for each sample of `t`, so long
+as `t.evt.time` is defined.  If not, an error is thrown.
+
+N.B.  This function assumes that the sampling interval `t.delta` is representable
+as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
+have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+"""
+function dates(t)
+    ismissing(t.evt.time) && error("trace does not have origin time set")
+    t.delta < 1e-3 && error("dates does not support sampling intervals < 1 ms")
+    delta = Millisecond(round(Int, t.delta*1e3))
+    t.evt.time:delta:(t.evt.time + (nsamples(t)-1)*delta)
+end
+
+"""
     endtime(t) -> time
 
 Return the end `time` of trace `t` in seconds.
@@ -36,6 +53,24 @@ function nearest_sample(t::AbstractTrace, time; inside=true)::Union{Int,Nothing}
     time <= t.b && return 1
     time >= endtime(t) && return nsamples(t)
     round(Int, (time - t.b)/t.delta + 1)
+end
+
+"""
+    nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
+
+Form of `nearest_sample` where `datetime` is given as absolute time.
+
+An error is thrown if no origin time is specified for `t.evt.time`.
+"""
+function nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
+    ismissing(t.evt.time) && error("trace does not have origin time set")
+    d = dates(t)
+    if inside
+        t.evt.time <= datetime <= d[end] || return nothing
+    end
+    datetime <= t.evt.time && return 1
+    datetime >= d[end] && return nsamples(t)
+    argmin(abs.(d .- datetime))
 end
 
 """
