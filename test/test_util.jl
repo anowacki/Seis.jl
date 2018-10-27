@@ -2,6 +2,15 @@ using Test, Dates
 using Seis
 
 @testset "Utility" begin
+    @testset "'Get/Setters'" begin
+        let b = rand(), delta = rand(), n = rand(1:1000), v = rand(n),
+                t = Trace(b, delta, v)
+            @test nsamples(t) == n
+            @test endtime(t) == b + (n-1)*delta
+            @test trace(t) == v
+        end
+    end
+
     @testset "Dates and times" begin
         # dates
         let b = rand(), delta = 0.001, n = 340, tr = rand(n), t = Trace(b, delta, tr)
