@@ -16,8 +16,8 @@ using Seis
     @testset "Nearest sample" begin
         let t = Trace(-2, 1, rand(10))
             @test nearest_sample(t, 3.1) == 6
-            @test nearest_sample(t, -5) == 1
-            @test nearest_sample(t, -5, inside=true) == nothing
+            @test nearest_sample(t, -5, inside=false) == 1
+            @test nearest_sample(t, -5) == nothing
         end
         let t = Trace(0.01, 0.01, rand(100)), time = rand()
             @test nearest_sample(t, time) == round(Int, 100*time)

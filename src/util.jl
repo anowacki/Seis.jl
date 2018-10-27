@@ -21,17 +21,21 @@ function linear_regression(x::AbstractVector, y::AbstractVector)
 end
 
 """
-    nearest_sample(t::AbstractTrace, time; inside=false) -> i
+    nearest_sample(t::AbstractTrace, time; inside=true) -> i
 
 Return the index `i` of the nearest sample of the trace `t` to `time` seconds.
 
-If `inside` is `true`, then return `nothing` in the case the `time` lies outside
-the trace.
+If `inside` is `true` (the default), return `nothing` when `time` lies outside
+the trace.  Set `inside` to `false` to instead return the first or last index
+when `time` is outside the trace.
 """
-function nearest_sample(t::AbstractTrace, time; inside=false)::Union{Int,Nothing}
-    isinside = t.b <= time <= endtime(t)
-    inside && !isinside && return nothing
-    argmin(abs.(times(t) .- time))
+function nearest_sample(t::AbstractTrace, time; inside=true)::Union{Int,Nothing}
+    if inside
+        t.b <= time <= endtime(t) || return nothing
+    end
+    time <= t.b && return 1
+    time >= endtime(t) && return nsamples(t)
+    round(Int, (time - t.b)/t.delta + 1)
 end
 
 """
