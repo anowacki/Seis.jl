@@ -186,7 +186,7 @@ The `meta` `Dict` holds any other information about the trace.
 
 If the event `time` is set, then the trace beginning time `b` is relative to this.
 """
-mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{T},S<:AbstractString} <: AbstractTrace
+mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{<:AbstractFloat},S<:AbstractString} <: AbstractTrace
     b::T
     delta::T
     t::V
@@ -201,19 +201,28 @@ mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{T},S<:AbstractString} <:
 end
 
 """
-    Trace(b, delta, t) -> trace
+    Trace(b, delta, t::AbstractVector) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},$DEFAULT_STRING}
 
 Create a `Trace` with starting time `b` s, sampling interval `delta` s and
-an `AbstractVector` `t` of values for the trace.
-"""
-Trace{T,V,S}(b, delta, t) where {T,V,S} = Trace{T,V,S}(b, delta, t, Event{T,S}(),
-                                                       Station{T,S}(), [], Dict())
+an `AbstractVector` `t` of values for the trace.  The default precision for
+the type is `Float64`, and the default string type is `String`.
 
-function Trace(b::T1, delta::T2, t::AbstractVector{T3}) where {T1,T2,T3}
-    T = float(promote_type(T1, T2, T3))
-    Trace{T,Vector{T},DEFAULT_STRING}(b, delta, t, Event{T,DEFAULT_STRING}(),
-                                      Station{T,DEFAULT_STRING}(), [], Dict())
-end
+    Trace(b, delta, n::Integer) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},$DEFAULT_STRING}
+
+Create a new `Trace` with uninitialised data of length `n` samples.
+
+    Trace{T,V,S}(args...) -> trace::Trace{T,V,S}
+    Trace{T}(args...) -> trace::Trace{T,Vector{T},$DEFAULT_STRING}
+
+Construct traces with non-default precision and string types.  In the second form,
+the string defaults to `String` and the vector type defaults to `Vector{T}`.
+"""
+Trace{T,V,S}(b, delta, t::AbstractVector) where {T,V,S} =
+    Trace{T,V,S}(b, delta, t, Event{T,S}(), Station{T,S}(), [], Dict())
+Trace{T,V,S}(b, delta, n::Integer) where {T,V,S} = Trace{T,V,S}(b, delta, Vector{T}(undef, n))
+Trace{T}(args...) where T = Trace{T,Vector{T},DEFAULT_STRING}(args...)
+Trace(args...) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},DEFAULT_STRING}(args...)
+
 
 const TRACE_FIELDS = fieldnames(Trace)
 

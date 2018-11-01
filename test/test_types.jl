@@ -90,6 +90,13 @@ using Seis
             @test_throws MethodError Trace(b, delta, b)
         end
 
+        let b = rand(), delta = rand(), n = rand(1:100), t = Trace(b, delta, n)
+            @test t.b == b
+            @test t.delta == delta
+            @test nsamples(t) == n
+            @test_throws ErrorException Trace(b, delta, -n)
+        end
+
         let b = 1, delta = 1, tr = rand(1:3, 100), t = Trace(b, delta, tr)
             @test t isa Trace
             @test typeof(t) <: Seis.AbstractTrace
@@ -100,6 +107,8 @@ using Seis
         let t = Trace{Float32,Vector{Float32},String}(rand(), rand(), rand(3))
             @test t isa Trace{Float32,Vector{Float32},String}
         end
+        @test Trace{Float32,Vector{Float16},SubString}(0, 1, 10) isa Trace{Float32,Vector{Float16},SubString}
+        @test Trace{Float32}(0, 1, 100) isa Trace{Float32,Vector{Float32},String}
 
         @test_throws TypeError Trace{Int,Vector{Int},String}(1, 1, rand(1:3, 3))
     end

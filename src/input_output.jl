@@ -51,7 +51,7 @@ function Trace(s::SACtr; file=nothing)
     sac_hdr = (sac_trace_hdr..., sac_evt_hdr..., sac_sta_hdr..., sac_cmp_hdr...,
         sac_date_hdr..., sac_time_hdr..., sac_picks_time_hdr..., sac_picks_time_hdr...,
         sac_derived_hdr...)
-    t = Trace(s[:b], s[:delta], s[:t])
+    t = Trace{Float32}(s[:b], s[:delta], s[:t])
     # Origin time
     file != nothing && (t.meta.file = file)
     if !any(SAC.isundefined, getfield.(s, sac_date_hdr))
