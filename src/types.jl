@@ -221,7 +221,7 @@ Trace{T,V,S}(b, delta, t::AbstractVector) where {T,V,S} =
     Trace{T,V,S}(b, delta, t, Event{T,S}(), Station{T,S}(), [], Dict())
 Trace{T,V,S}(b, delta, n::Integer) where {T,V,S} = Trace{T,V,S}(b, delta, Vector{T}(undef, n))
 Trace{T}(args...) where T = Trace{T,Vector{T},DEFAULT_STRING}(args...)
-Trace(args...) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},DEFAULT_STRING}(args...)
+Trace(b, delta, t_or_n) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},DEFAULT_STRING}(b, delta, t_or_n)
 
 
 const TRACE_FIELDS = fieldnames(Trace)

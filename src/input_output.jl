@@ -29,7 +29,11 @@ function read_sac(glob, dir; kwargs...)
     t
 end
 
-read_sac(file; kwargs...) = (t = Trace(SAC.read(file; kwargs...)); t.meta.file = file; t)
+function read_sac(file; kwargs...)
+    t = Trace(SAC.read(file; kwargs...))
+    t.meta.file = file
+    t
+end
 
 """
     Trace(s::SACtr) -> t
@@ -37,7 +41,7 @@ read_sac(file; kwargs...) = (t = Trace(SAC.read(file; kwargs...)); t.meta.file =
 Construct the `Trace` `t` from the `SACtr` `s`.  See [read_sac](@ref) for details
 of which headers are transferred to which fields in `t`.
 """
-function Trace(s::SACtr; file=nothing)
+function Trace(s::SAC.SACtr)
     sac_trace_hdr = (:b, :e, :o, :npts, :delta, :depmin, :depmax, :depmen, :nvhdr, :leven)
     sac_evt_hdr = (:evlo, :evla, :evdp, :kevnm)
     sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk)
@@ -53,7 +57,6 @@ function Trace(s::SACtr; file=nothing)
         sac_derived_hdr...)
     t = Trace{Float32}(s[:b], s[:delta], s[:t])
     # Origin time
-    file != nothing && (t.meta.file = file)
     if !any(SAC.isundefined, getfield.(s, sac_date_hdr))
         t.evt.time = Dates.DateTime(s[:nzyear], 1, 1, s[:nzhour], s[:nzmin],
             s[:nzsec], s[:nzmsec]) + Dates.Day(s[:nzjday] - 1)
