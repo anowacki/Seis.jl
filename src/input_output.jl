@@ -24,6 +24,7 @@ SAC headers which don't directly translate to `Trace` attributes are placed in t
 """
 function read_sac(glob, dir; kwargs...)
     s, f = SAC.read_wild(glob, dir; kwargs...)
+    length(s) == 0 && return Trace{Float32,Vector{Float32},String}[]
     t = Trace.(s)
     t.meta.file = f
     t
