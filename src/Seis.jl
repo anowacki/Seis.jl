@@ -87,4 +87,7 @@ include("util.jl")
 include("operations.jl")
 include("sample_data.jl")
 
+include("Synth.jl")
+import .Synth
+
 end # module
