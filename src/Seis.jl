@@ -57,6 +57,15 @@ export
     remove_trend,
     taper!,
     taper,
+    # Filtering
+    bandstop!,
+    bandstop,
+    bandpass!,
+    bandpass,
+    highpass!,
+    highpass,
+    lowpass!,
+    lowpass,
     # Travel times
     travel_time,
     # IO
@@ -85,6 +94,7 @@ include("geometry.jl")
 include("traveltimes.jl")
 include("util.jl")
 include("operations.jl")
+include("filtering.jl")
 include("sample_data.jl")
 
 include("Synth.jl")
