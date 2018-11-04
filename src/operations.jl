@@ -93,7 +93,7 @@ decimate(t::AbstractTrace, n; antialias=true) = decimate!(deepcopy(t), n; antial
     envelope!(t::Trace) -> t
     envelope(t::Trace) -> t′
 
-Replace the trace `t` with its envelope..
+Replace the trace `t` with its envelope.
 In the first form, update the trace in place and return the trace.
 In the second form, return an updated copy.
 """
@@ -101,7 +101,7 @@ function envelope!(t::AbstractTrace)
     trace(t) .= abs.(DSP.hilbert(trace(t)))
     t
 end
-envelope(t::AbstractTrace) = envelope!(t)
+envelope(t::AbstractTrace) = envelope!(deepcopy(t))
 @doc (@doc envelope!) envelope
 
 """
