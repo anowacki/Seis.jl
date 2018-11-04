@@ -90,6 +90,69 @@ decimate(t::AbstractTrace, n; antialias=true) = decimate!(deepcopy(t), n; antial
 @doc (@doc decimate!) decimate
 
 """
+    differentiate!(t::Trace; points=2) -> t
+    differentiate(t::Trace; points=2) -> t′
+
+Differentiate the trace `t` by performing `points`-point finite differencing.
+In the first form, update the trace in place and return it.  In the second form,
+return an updated copy.
+
+### Available algorithms
+
+- npoints == 2`: Two-point.  `dsdt.t[i] = (t.t[i+1] - t.t[i])/t.delta`.
+  Non-central difference, so `t.b` is increased by half `t.delta`.
+  The trace length is reduced by 1 samples.
+- `points == 3`: Three-point. `dsdt.t[i] = (t.t[i+1] - t.t[i-1])/(2 * t.delta)`.
+  Central difference.  `t.b` is increased by `t.delta`; the trace length is reduced
+  by 2 samples.
+- `points == 5`: Five-point. `dsdt.t[i] =
+  (2/3)*(t.t[i+1] - t.t[i-1])/t.delta - (1/12)*(t.t[i+2] - t.t[i-2])/t.delta`.
+  Central difference.  `t.b` is increased by `2t.delta`; `npts` reduced by 4.
+"""
+function differentiate!(t::AbstractTrace; points=2)
+    points in (2, 3, 5) ||
+        throw(ArgumentError("`points` must be one of (2, 3, 5)"))
+    npts = nsamples(t)
+    if points == 2
+        @inbounds for i in 1:(npts-1)
+            t.t[i] = (t.t[i+1] - t.t[i])/t.delta
+        end
+        pop!(t.t)
+        t.b += t.delta/2
+    elseif points == 3
+        @inbounds for i in 2:(npts-1)
+            t.t[i-1] = (t.t[i+1] - t.t[i-1])/(2*t.delta)
+        end
+        pop!(t.t); pop!(t.t)
+        t.b += t.delta
+    elseif points == 5
+        t1 = (t.t[3] - t.t[1])/(2*t.delta)
+        t2 = (t.t[end] - t.t[end-2])/(2*t.delta)
+        d1 = 2/(3*t.delta)
+        d2 = 1/(12*t.delta)
+        t_minus_2 = t.t[1]
+        t_minus_1 = t.t[2]
+        tt = t.t[3]
+        t_plus_1 = t.t[4]
+        @inbounds for i in 2:(npts-3)
+            t_plus_2 = t.t[i+3]
+            t.t[i] = d1*(t_plus_1 - t_minus_1) - d2*(t_plus_2 - t_minus_2)
+            t_minus_2 = t_minus_1
+            t_minus_1 = tt
+            tt = t_plus_1
+            t_plus_1 = t_plus_2
+        end
+        t.t[1] = t1
+        t.t[end-2] = t2
+        pop!(t.t); pop!(t.t)
+        t.b += t.delta
+    end
+    t
+end
+differentiate(t::AbstractTrace; kwargs...) = differentiate!(deepcopy(t); kwargs...)
+@doc (@doc differentiate!) differentiate
+
+"""
     envelope!(t::Trace) -> t
     envelope(t::Trace) -> t′
 
@@ -103,6 +166,43 @@ function envelope!(t::AbstractTrace)
 end
 envelope(t::AbstractTrace) = envelope!(deepcopy(t))
 @doc (@doc envelope!) envelope
+
+"""
+    integrate!(t::Trace, method=:trapezium) -> t
+    integrate(t::Trace, method=:trapezium) -> t′
+
+Replace `t` with its time-integral.  This is done by default using the trapezium rule.
+Use `method=:rectangle` to use the rectangle rule.
+
+In the first form, update the trace in place and return the trace.
+In the second form, return an updated copy.
+
+If `method==:trapezium` (the default), then the number of smples is reduced by one and
+the begin time is increased by half the sampling interval.
+"""
+function integrate!(t::AbstractTrace, method::Symbol=:trapezium)
+    npts = nsamples(t)
+    if method == :trapezium
+        total = zero(t.t[1])
+        h = t.delta/2
+        @inbounds for i in 1:(npts-1)
+            total += h*(t.t[i] + t.t[i+1])
+            t.t[i] = total
+        end
+        pop!(t.t)
+        t.b += t.delta/2
+    elseif method == :rectangle
+        h = t.delta
+        @inbounds for i in 2:npts
+            t.t[i] = h*t.t[i] + t.t[i-1]
+        end
+    else
+        throw(ArgumentError("`method` must by one of `:trapezium` or `:rectangle`"))
+    end
+    t
+end
+integrate(t::AbstractTrace, args...) = integrate!(deepcopy(t), args...)
+@doc (@doc integrate!) integrate
 
 """
     normalise!(t::Trace, val=1) -> t

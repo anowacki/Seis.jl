@@ -5,6 +5,13 @@ using Statistics
 using Seis
 import SAC
 
+"Test that two traces are the same after removing any filename"
+function compare_remove_filename!(t1, t2; rtol=√eps(eltype(t1.t)))
+    t1.meta.file = missing
+    t2.meta.file = missing
+    t1.b == t2.b && t1.delta == t2.delta && isapprox(t1.t, t2.t, rtol=rtol)
+end
+
 @testset "Operations" begin
     @testset "Cut" begin
         let t = Trace(0, 0.01, rand(200)), t′ = deepcopy(t), b = rand(), e = b+rand()
@@ -41,6 +48,39 @@ import SAC
             decimate!(t, 4, antialias=false)
             @test t == decimate(t′, 4, antialias=false)
             # TODO: Add antialiasing tests
+        end
+    end
+
+    @testset "Differentiation" begin
+        let t = sample_data(), t′ = deepcopy(t)
+            for i in (0, 1, 4, 6)
+                @test_throws ArgumentError differentiate(t, points=i)
+            end
+
+            for i in (2, 3, 5)
+                local file = joinpath(@__DIR__, "test_data", "operations",
+                    "seis_diff_points_$i.sac")
+                local reference_data = read_sac(file)
+                @test compare_remove_filename!(differentiate(t, points=i), reference_data)
+            end
+            differentiate!(t′)
+            @test t′ == differentiate(t)
+        end
+    end
+
+    @testset "Integration" begin
+        let t = sample_data(), t′ = deepcopy(t)
+            @test_throws ArgumentError integrate(t, :weird_method)
+
+            for method in (:trapezium, :rectangle)
+                local file = joinpath(@__DIR__, "test_data", "operations",
+                    "seis_int_$(method).sac")
+                local reference_data = read_sac(file)
+                @test compare_remove_filename!(integrate(remove_mean(t), method),
+                    reference_data)
+            end
+            integrate!(t′)
+            @test t′ == integrate(t)
         end
     end
 
