@@ -39,6 +39,7 @@ end
     end
 
     @testset "Decimate" begin
+        @test compare_copy_modify_func(decimate, decimate!, 2, antialias=false)
         let n = rand(10:1000), t = Trace(1, 0.5, rand(n)), t′ = deepcopy(t)
             # Without antialiasing
             @test_throws ArgumentError decimate(t, 0, antialias=false)
@@ -143,8 +144,9 @@ end
             envelope!(t)
             @test t == envelope(t′)
         end
-        let t = Trace(-rand(), rand(), fill(-rand(), 100))
+        let t = Trace(-rand(), rand(), fill(-rand(), 100)), t′ = deepcopy(t)
             @test trace(envelope(t)) ≈ abs.(trace(t))
         end
+        @test compare_copy_modify_func(envelope, envelope!)
     end
 end
