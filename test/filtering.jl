@@ -1,6 +1,5 @@
 # Filtering
 using Test
-import DSP, FFTW
 using Seis
 
 function compare_traces(test_file, f, args...; rtol=1e-4, kwargs...)
