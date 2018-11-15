@@ -48,7 +48,7 @@ function Base.show(io::IO, t::Trace)
 end
 
 # Printing to the REPL, for instance
-function Base.show(io::IO, ::MIME"text/plain", t::Trace)
+function Base.show(io::IO, ::MIME"text/plain", t::Trace{T,V,S}) where {T,V,S}
     hdr_string_len = maximum(length.(string.([TRACE_FIELDS...; STATION_FIELDS...;
                                               EVENT_FIELDS...]))) + 4
     indent = 4
@@ -56,7 +56,7 @@ function Base.show(io::IO, ::MIME"text/plain", t::Trace)
     padded_print = (name, val) ->
         print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
     # Header for whole output
-    print(io, "Seis.Trace:")
+    print(io, "Seis.Trace{$T,$V,$S}:")
     for field in (:b, :delta)
         padded_print(field, getfield(t, field))
     end
