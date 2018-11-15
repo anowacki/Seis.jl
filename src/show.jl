@@ -16,7 +16,7 @@ function Base.show(io::IO, e::Event{T,S}) where {T,S}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", e::Event{T,S}) where {T,S}
-    hdr_string_len = maximum(length(string.(EVENT_FIELDS))) + 4
+    hdr_string_len = maximum(length(string.(EVENT_FIELDS)))
     indent = 4
     padded_print = (name, val) ->
         print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
@@ -28,15 +28,34 @@ function Base.show(io::IO, ::MIME"text/plain", e::Event{T,S}) where {T,S}
     end
     # Meta fields
     padded_print("meta", "")
-    kindex = 0
-    for (k, v) in e.meta
-        kindex += 1
-        if kindex > 1
-            print(io, "\n", " "^(hdr_string_len+indent+2), k, " => ", v)
-        else
-            print(io, k, " => ", v)
+    show_dict(io, e.meta, hdr_string_len, indent)
+end
+
+## Station
+function Base.show(io::IO, s::Station{T,S}) where {T,S}
+    print(io, "Station: ", channel_code(s))
+    for f in fieldnames(Station)
+        f in (:net, :sta, :loc, :cha) && continue
+        if getfield(s, f) !== missing
+            print(io, ", $f: $(getfield(s, f))")
         end
     end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", s::Station{T,S}) where {T,S}
+    hdr_string_len = maximum(length(string.(STATION_FIELDS)))
+    indent = 4
+    padded_print = (name, val) ->
+        print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
+    print(io, "Seis.Station{$T,$S}:")
+    # Non-meta fields
+    for field in STATION_FIELDS
+        field == :meta && continue
+        padded_print(field, getfield(s, field))
+    end
+    # Meta fields
+    padded_print("meta", "")
+    show_dict(io, s.meta, hdr_string_len, indent)
 end
 
 ## Trace
@@ -89,13 +108,18 @@ function Base.show(io::IO, ::MIME"text/plain", t::Trace{T,V,S}) where {T,V,S}
     # Extra info for trace
     print(io, "\n Trace:")
     padded_print("meta", "")
+    show_dict(io, t.meta, hdr_string_len, indent)
+end
+
+function show_dict(io, dict, hdr_string_len, indent)
     kindex = 0
-    for (k, v) in t.meta
+    for (k, v) in dict
         kindex += 1
         if kindex > 1
-            print(io, "\n", " "^(hdr_string_len+indent+2), k, " => ", v)
+            print(io, "\n", " "^(hdr_string_len+indent+2), k, " => ")
         else
-            print(io, k, " => ", v)
+            print(io, k, " => ")
         end
+        show(io, v)
     end
 end
