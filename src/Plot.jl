@@ -219,7 +219,6 @@ section
     # Defaults
     linecolor --> :black
     linewidth --> 1
-    legend --> false
     framestyle --> :box
     grid --> false
     xlabel --> "Time / s"
@@ -255,6 +254,7 @@ section
 
     # Plot
     @series begin
+        label := "" # Won't show in legend when blank
         time, traces
     end
 
