@@ -14,6 +14,13 @@ In each case, the user is allowed to access some of the fields, because
 Operating on arrays of `Trace`s is the fundamental design of Seis and offers
 the greatest flexibility in dealing with seismic data, including using Julia's
 broadcasting on these types with the methods defined here.
+
+## Submodules
+
+Some of Seis's functionality is not by default exported and is encapsulated into
+separate modules.  To access these, do `using Seis.<submodule>`.  They are:
+
+- `Seis.Plot`: Plotting routines which are activated when you do `using Plots`.
 """
 module Seis
 
@@ -101,7 +108,11 @@ include("operations.jl")
 include("filtering.jl")
 include("sample_data.jl")
 
+# Submodules
 include("Synth.jl")
 import .Synth
+
+# Plotting functionality is only loaded when using Plots
+include("Plot.jl")
 
 end # module
