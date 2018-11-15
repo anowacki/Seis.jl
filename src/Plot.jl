@@ -68,7 +68,7 @@ plot
     # Trace ordering
     sort_indices = if sort isa Symbol
         if sort == :alpha
-            sortperm(Seis.channel_code.(t))
+            sortperm(channel_code.(t))
         elseif sort == :dist
             sortperm(distance_deg.(t))
         else
@@ -120,7 +120,7 @@ plot
     end
 
     # Labels
-    get!(plotattributes, :label, Seis.channel_code.(t))
+    get!(plotattributes, :label, channel_code.(t))
     annot_params = (9, :black, :top, :right)
     markerstrokealpha := 0.0
     markeralpha := 0.0

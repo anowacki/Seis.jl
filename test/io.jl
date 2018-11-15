@@ -51,7 +51,8 @@ import SAC
             t.sta.sta = "CDEF"
             t.sta.loc = "GH"
             t.sta.cha = "IJK"
-            @test Seis.channel_code(t) == "AB.CDEF.GH.IJK"
+            @test channel_code(t) == "AB.CDEF.GH.IJK"
+            @test channel_code(t.sta) == "AB.CDEF.GH.IJK"
         end
     end
 end

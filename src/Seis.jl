@@ -81,6 +81,7 @@ export
     travel_time,
     # IO
     SACtr,
+    channel_code,
     read_sac,
     write_sac,
     # Sample data

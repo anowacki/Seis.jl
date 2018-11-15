@@ -182,12 +182,13 @@ end
 
 """
     channel_code(t::Trace) -> code
+    channel_code(s::Station) -> code
 
-Return the channel code for trace `t`, in the form of
+Return the channel code for trace `t` or station `s`, in the form of
 "\$net.\$name.\$location.\$component".  Missing fields are left blank.
 """
-channel_code(t::Trace) = join(_blankmissing.((t.sta.net, t.sta.sta, t.sta.loc,
-                                              t.sta.cha)), ".")
+channel_code(sta::Station) = join(_blankmissing.((sta.net, sta.sta, sta.loc, sta.cha)), ".")
+channel_code(t::AbstractTrace) = channel_code(t.sta)
 
 _blankmissing(x) = string(ismissing(x) ? "" : x)
 
