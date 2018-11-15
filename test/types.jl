@@ -111,5 +111,8 @@ using Seis
         @test Trace{Float32}(0, 1, 100) isa Trace{Float32,Vector{Float32},String}
 
         @test_throws TypeError Trace{Int,Vector{Int},String}(1, 1, rand(1:3, 3))
+
+        # Broadcasting traces as scalars
+        @test nsamples.(Trace(0, 1, rand(2))) == 2
     end
 end

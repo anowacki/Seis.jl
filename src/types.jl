@@ -232,3 +232,6 @@ Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val) =
 Base.propertynames(t::AbstractArray{<:Trace}, private=false) = fieldnames(eltype(t))
 Base.:(==)(t1::Trace, t2::Trace) =
     all(x -> isequal(x[1], x[2]), (getfield.((t1, t2), f) for f in TRACE_FIELDS))
+
+# Treat single Traces as scalars in broadcasting
+Base.broadcastable(t::AbstractTrace) = Ref(t)
