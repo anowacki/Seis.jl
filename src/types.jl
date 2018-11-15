@@ -34,14 +34,14 @@ Dict{Any,Any} with 2 entries:
   :a => 1
   :b => 2
 
-julia> d2 = deepcopy(d1); d.a = 2;
+julia> d2 = deepcopy(d1); d2.a = 2;
 
 julia> d = [d1, d2];
 
 julia> d.a
 2-element Array{Int64,1}:
  1
- 1
+ 2
 ```
 """
 struct SeisDict{K,V} <: Base.AbstractDict{K,V}
