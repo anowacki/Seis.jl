@@ -16,8 +16,27 @@ function Base.show(io::IO, e::Event{T,S}) where {T,S}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", e::Event{T,S}) where {T,S}
-    hdr_string_len = maximum(length.(EVENT_FIILDS)) + 4
+    hdr_string_len = maximum(length(string.(EVENT_FIELDS))) + 4
     indent = 4
+    padded_print = (name, val) ->
+        print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
+    print(io, "Seis.Event{$T,$S}:")
+    # Non-meta fields
+    for field in EVENT_FIELDS
+        field == :meta && continue
+        padded_print(field, getfield(e, field))
+    end
+    # Meta fields
+    padded_print("meta", "")
+    kindex = 0
+    for (k, v) in e.meta
+        kindex += 1
+        if kindex > 1
+            print(io, "\n", " "^(hdr_string_len+indent+2), k, " => ", v)
+        else
+            print(io, k, " => ", v)
+        end
+    end
 end
 
 ## Trace
