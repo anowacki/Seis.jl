@@ -1,4 +1,19 @@
 """
+    angle_difference(α, β, degrees::Bool=true) -> Δ
+
+Return the angular difference `Δ` between two angles `α` and `β`, in the direction
+α → β (i.e., Δ = (β - α)).  This means that Δ is positive if the direction β is
+clockwise of α, and negative otherwise.
+
+Angles are assumed to be degreees unless `degrees` is `false`.
+"""
+function angle_difference(a::Real, b::Real, degrees::Bool=true)
+    whole_circ = degrees ? 360.0 : 2π
+    half_circ = whole_circ/2
+    mod(b - a + half_circ, whole_circ) - half_circ
+end
+
+"""
     dates(t) -> date_range
 
 Return a `date_range` which contains the dates for each sample of `t`, so long

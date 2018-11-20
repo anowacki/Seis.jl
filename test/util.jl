@@ -2,6 +2,15 @@ using Test, Dates
 using Seis
 
 @testset "Utility" begin
+    @testset "Angle difference" begin
+        @test abs(Seis.angle_difference(0, π, false)) ≈ π atol=eps(Float64)
+        @test Seis.angle_difference(0, 160, true) == 160
+        @test Seis.angle_difference(0, 10) == 10
+        @test Seis.angle_difference(10, 0) == -10
+        @test Seis.angle_difference(359, -1) == 0
+        @test Seis.angle_difference(359, 0) == 1
+    end
+
     @testset "'Get/Setters'" begin
         let b = rand(), delta = rand(), n = rand(1:1000), v = rand(n),
                 t = Trace(b, delta, v)
