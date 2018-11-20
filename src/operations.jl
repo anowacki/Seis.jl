@@ -261,13 +261,15 @@ remove_trend(t::AbstractTrace, args...; kwargs...) = remove_trend!(deepcopy(t), 
 @doc (@doc remove_trend!) remove_trend
 
 """
-    taper!(t::AbstractTrace, width=0.05, form=:hanning)
+    taper!(t::AbstractTrace, width=0.05, form=:hanning) -> t
+    taper(t::AbstractTrace, width=0.05, form=:hamming) -> t′
 
 Apply a symmetric taper to each end of the data in trace `t`.
-
 `form` may be one of `:hanning`, `:hamming` or `:cosine`.
-
 `width` represents the fraction (at both ends) of the trace tapered, up to 0.5.
+
+In the first form, update the trace in place and return it.  In the second form,
+return an updated copy.
 """
 function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning)
     form in (:hamming, :hanning, :cosine) ||
