@@ -264,7 +264,7 @@ section
         for (i, tt) in enumerate(t)
             ps = picks(tt)
             for (time, name) in ps
-                xlims[1] <= time <= xlims[end] || continue
+                xlims[1] <= time - shifts[i] <= xlims[end] || continue
                 push!(ptime, time - shifts[i])
                 push!(py, y_shifts[i])
                 push!(names, coalesce(name, ""))
