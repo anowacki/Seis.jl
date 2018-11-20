@@ -250,7 +250,7 @@ section
     maxval = maximum([maximum(abs.(tt)) for tt in trace.(t)])
     traces = [(trace(tt)./maxval .+ y)[1:ndecimate:end] for (tt, y) in zip(t, y_shifts)]
     # Time limits of plot
-    xlims = get!(plotattributes, :xlim, (minimum(first.(time)), maximum(last.(time))))
+    xlims = get!(plotattributes, :xlims, (minimum(first.(time)), maximum(last.(time))))
 
     # Plot
     @series begin
