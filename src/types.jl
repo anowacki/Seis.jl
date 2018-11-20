@@ -235,3 +235,6 @@ Base.:(==)(t1::Trace, t2::Trace) =
 
 # Treat single Traces as scalars in broadcasting
 Base.broadcastable(t::AbstractTrace) = Ref(t)
+
+# Element type of trace
+Base.eltype(::Trace{T,V,S}) where {T,V,S} = eltype(V)
