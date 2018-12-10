@@ -10,8 +10,14 @@ notifications:
   email: false
 
 matrix:
+  - PYTHON=""
+
+matrix:
   allow_failures:
     - julia: nightly
+
+before_install:
+  - julia -e 'ENV["PYTHON"] = ""; import Pkg; Pkg.pkg"add PyCall https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/TauPy.jl"; using TauPy'
 
 after_success:
   - julia -e 'VERSION >= v"0.7" && import Pkg; cd(Pkg.dir("Seis")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
