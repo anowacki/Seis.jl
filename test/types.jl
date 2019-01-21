@@ -45,6 +45,17 @@ using Seis
             @test e.meta == meta
             e.meta.key_name = dt
             @test e.meta.key_name == dt
+            # Arrays
+            es = [deepcopy(e) for _ in 1:3]
+            @test typeof(es) == Array{Event{Float64,String},1}
+            @test length(es.lon) == 3
+            @test es.lat == [lat, lat, lat]
+            es.id = ["1", "2", "3"]
+            @test es.id == ["1", "2", "3"]
+            es.id = "A"
+            @test es.id == ["A", "A", "A"]
+            es .= e
+            @test all(x->x===e, es)
         end
     end
 
@@ -72,6 +83,17 @@ using Seis
             @test s.meta.key_name == dt
             s.azi *= 2
             @test s.azi == azi*2
+            # Arrays
+            ss = [deepcopy(s) for _ in 1:3]
+            @test typeof(ss) == Array{Station{Float64,String},1}
+            @test length(ss.lon) == 3
+            @test ss.lat == [lat, lat, lat]
+            ss.loc = ["1", "2", "3"]
+            @test ss.loc == ["1", "2", "3"]
+            ss.loc = "A"
+            @test ss.loc == ["A", "A", "A"]
+            ss .= s
+            @test all(x->x===s, ss)
         end
     end
 
@@ -114,5 +136,29 @@ using Seis
 
         # Broadcasting traces as scalars
         @test nsamples.(Trace(0, 1, rand(2))) == 2
+
+        # Arrays
+        let b = rand(), t = Trace(b, rand(), rand(3))
+            ts = [deepcopy(t) for _ in 1:3]
+            @test ts isa Array{<:Trace,1}
+            @test length(ts.b) == 3
+            @test ts.b == [b, b, b]
+            ts.delta = [1, 2, 3]
+            @test ts.delta == [1, 2, 3]
+            ts.delta = 2
+            @test ts.delta == [2, 2, 2]
+            @test ts.evt isa Array{Event{Float64,String},1}
+            for tt in ts
+                tt.evt.id = "A"
+            end
+            @test ts.evt.id == ["A", "A", "A"]
+            ts′ = deepcopy(ts)
+            ts′.evt.id = "A"
+            @test ts == ts′
+            ts.evt = t.evt
+            @test all(x->x===t.evt, ts.evt)
+            ts .= t
+            @test all(x->x===t, ts)
+        end
     end
 end

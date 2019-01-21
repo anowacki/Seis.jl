@@ -233,8 +233,8 @@ Base.propertynames(t::AbstractArray{<:Trace}, private=false) = fieldnames(eltype
 Base.:(==)(t1::Trace, t2::Trace) =
     all(x -> isequal(x[1], x[2]), (getfield.((t1, t2), f) for f in TRACE_FIELDS))
 
-# Treat single Traces as scalars in broadcasting
-Base.broadcastable(t::AbstractTrace) = Ref(t)
+# Treat single ojbects as scalars in broadcasting
+Base.broadcastable(t::Union{AbstractTrace,Event,Station}) = Ref(t)
 
 # Element type of trace
 Base.eltype(::Trace{T,V,S}) where {T,V,S} = eltype(V)
