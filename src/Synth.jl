@@ -43,9 +43,9 @@ end
 
 Return a trace object with start time `b`, sampling interval `delta` and number of
 samples n, which has a synthetic signal consisting of `length(νs)` monochromatic
-sine waves with frequencies `νs` and amplitudes `amps`.
+sine waves with frequencies `νs` in Hz, amplitudes `amps` and phases `ϕs` in radians.
 
-No check is performed that any of the `ϕs` are below the Nyquist frequency determined
+No check is performed that any of the `νs` are below the Nyquist frequency determined
 by `delta`.
 """
 function sines(b, delta, n, νs, amps=ones(Float64, length(νs)),
