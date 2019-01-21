@@ -148,11 +148,11 @@ using Seis
             ts.delta = 2
             @test ts.delta == [2, 2, 2]
             @test ts.evt isa Array{Event{Float64,String},1}
+            ts′ = deepcopy(ts)
             for tt in ts
                 tt.evt.id = "A"
             end
             @test ts.evt.id == ["A", "A", "A"]
-            ts′ = deepcopy(ts)
             ts′.evt.id = "A"
             @test ts == ts′
             ts.evt = t.evt
