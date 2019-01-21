@@ -194,7 +194,7 @@ mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{<:AbstractFloat},S<:Abst
     sta::Station{T,S}
     picks::Vector{Pick{T,S}}
     meta::SeisDict{Symbol,Any}
-    function Trace{T,S,V}(b, delta, t, evt, sta, picks, meta) where {T,S,V}
+    function Trace{T,V,S}(b, delta, t, evt, sta, picks, meta) where {T,V,S}
         delta > 0 || throw(ArgumentError("delta cannot be <= 0"))
         new(b, delta, t, evt, sta, picks, meta)
     end
