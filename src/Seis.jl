@@ -58,6 +58,8 @@ export
     differentiate,
     envelope!,
     envelope,
+    flip!,
+    flip,
     integrate!,
     integrate,
     normalise!,

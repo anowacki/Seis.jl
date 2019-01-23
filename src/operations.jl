@@ -168,6 +168,27 @@ envelope(t::AbstractTrace) = envelope!(deepcopy(t))
 @doc (@doc envelope!) envelope
 
 """
+    flip!(t) -> t
+    flip(t) -> t′
+
+Reverse the direction of a trace so that it points the opposite way.
+
+In the first form, update the trace in place and return the trace.
+In the second form, return an updated copy.
+"""
+function flip!(t::AbstractTrace)
+    any(ismissing, (t.sta.azi, t.sta.inc)) &&
+        throw(ArgumentError("trace must have sta.azi and sta.inc defined"))
+    t.sta.azi = mod(t.sta.azi+ 180, 360)
+    t.sta.inc = 180 - t.sta.inc
+    t.sta.cha = string(round(t.sta.azi, digits=2, base=10))
+    trace(t)[:] .*= -1
+    t
+end
+flip(t::AbstractTrace) = flip!(deepcopy(t))
+@doc (@doc flip!) flip
+
+"""
     integrate!(t::Trace, method=:trapezium) -> t
     integrate(t::Trace, method=:trapezium) -> t′
 
