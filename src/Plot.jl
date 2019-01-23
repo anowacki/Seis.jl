@@ -26,6 +26,9 @@ Additional options provided:
 ### `section`
 This produces a record section of an array of traces.  See documentation
 for `section` for full details.
+
+### `hodogram`
+Particle motion for pairs of traces.
 """
 module Plot
 
@@ -110,11 +113,13 @@ plot
     end
     all_ylims = [get(plotattributes, :ylims, extrema(trace(tt))) for tt in t′]
 
+    # Ticks and xlabel only on bottom x-axis
+    xticks := hcat(repeat([nothing], 1, ntraces-1), :auto)
+
     # Plot traces
     for i in eachindex(t)
         @series begin
             subplot := i
-            xticks --> (i < ntraces ? nothing : :auto)
             times(t[i]), trace(t[i])
         end
     end
@@ -143,7 +148,6 @@ plot
         for i in eachindex(t)
             length(picks(t[i])) == 0 && continue
             @series begin
-                xticks --> (i < ntraces ? nothing : :auto)
                 guidefontcolor := :blue
                 subplot := i
                 [p.time for p in Seis.picks(t[i]) if xlims[1] <= p.time <= xlims[2]]
@@ -160,7 +164,6 @@ plot
         for i in eachindex(t)
             length(picks(t[i])) == 0 && continue
             @series begin
-                xticks --> (i < ntraces ? nothing : :auto)
                 subplot := i
                 # FIXME: Update to a better way of implementing this: Main.Plots may break
                 series_annotations := [Main.Plots.text.(coalesce(p.name, ""), annotation_params...)
@@ -285,9 +288,56 @@ section
 end
 
 """
-    decimation_value(t::AbstractArray{<:Trace}, shifts, t1, t2, max_samples) -> n
+    hodogram(t1::Trace, t2::Trace; baz=false, kwargs...) -> ::Plots.Plot
 
-Return the decimation value `n` which ensures that no more than `max_samples`
+Plot the particle motion for a pair of traces `t1` and `t2`.
+
+The two traces must have the same start time, length and sampling interval.
+
+Additional options for `hodogram`:
+
+- `backazimuth`: If `true`, plot the direction of the minor arc towards the event.
+  Requires event and station coordinates to be present in headers.
+"""
+hodogram
+
+@userplot Hodogram
+
+@recipe function f(hodogram::Hodogram; backazimuth=false)
+    length(hodogram.args) == 2 || throw(ArgumentError("two traces are required as arguments"))
+    all(isa.(hodogram.args, AbstractTrace)) ||
+        throw(ArgumentError("arguments to hodogram must be Seis.AbstractTraces"))
+    t1, t2 = hodogram.args
+    aspect_ratio := :equal
+    maxval = max(maximum(abs, trace(t1)), maximum(abs, trace(t2)))
+    xlims --> 1.01.*(-maxval, maxval)
+    ylims --> 1.01.*(-maxval, maxval)
+    framestyle --> :box
+    xlabel --> coalesce(t1.sta.cha, string(t1.sta.azi))
+    ylabel --> coalesce(t2.sta.cha, string(t2.sta.azi))
+    linecolor --> :black
+    linewidth --> 1
+    grid --> false
+    ticks --> 3
+    @series begin
+        label --> ""
+        trace(t1), trace(t2)
+    end
+    if backazimuth
+        @series begin
+            β = Seis.backazimuth(t1) - t2.sta.azi
+            xβ, yβ = (√2*maxval) .* sincos(deg2rad(β))
+            label --> "Backazimuth"
+            linecolor --> :red
+            [0, xβ], [0, yβ]
+        end
+    end
+end
+
+"""
+    decimation_value(t::AbstractArray{<:Trace}, shifts max_samples) -> n
+
+Return the decimation value `n` which ensures that no
 are contained within the time window `t1`-`t2` s relative to the values in `shifts`.
 """
 function decimation_value(t::AbstractArray{<:Trace}, shifts, t1, t2, max_samples)
@@ -309,7 +359,7 @@ num_points(t::Trace, t1, t2) = sum(t1 .<= times(t) .<= t2)
 
 """
     time_shifts(t, align) -> shifts
-    
+
 Return a vector `shifts` of time shifts in s which align the traces `t`.
 
 When `align` is nothing, traces are not shifted.  Otherwise, the shift may be given
