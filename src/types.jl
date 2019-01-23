@@ -96,7 +96,7 @@ Event(lon=missing, lat=missing, dep=missing, time=missing, kind=missing, meta=Di
 const EVENT_FIELDS = fieldnames(Event)
 Base.getproperty(e::AbstractArray{<:Event}, f::Symbol) = getfield.(e, f)
 Base.setproperty!(e::AbstractArray{<:Event}, f::Symbol, val) =
-    setfield!.(e, f, convert.(typeof.(getfield.(e, f)), val))
+    setfield!.(e, f, convert.(fieldtype.(typeof.(e), f), val))
 Base.propertynames(e::AbstractArray{<:Event}, private=false) = fieldnames(eltype(e))
 Base.:(==)(e1::Event, e2::Event) =
     all(x -> isequal(x[1], x[2]), (getfield.((e1, e2), f) for f in EVENT_FIELDS))
@@ -140,7 +140,7 @@ Station(net=missing, sta=missing, loc=missing, cha=missing, lon=missing, lat=mis
 const STATION_FIELDS = fieldnames(Station)
 Base.getproperty(s::AbstractArray{<:Station}, f::Symbol) = getfield.(s, f)
 Base.setproperty!(s::AbstractArray{<:Station}, f::Symbol, val) =
-    setfield!.(s, f, convert.(typeof.(getfield.(s, f)), val))
+    setfield!.(s, f, convert.(fieldtype.(typeof.(s), f), val))
 Base.propertynames(s::AbstractArray{<:Station}, private=false) = fieldnames(eltype(s))
 Base.:(==)(s1::Station, s2::Station) =
     all(x -> isequal(x[1], x[2]), (getfield.((s1, s2), f) for f in STATION_FIELDS))
@@ -228,7 +228,7 @@ const TRACE_FIELDS = fieldnames(Trace)
 
 Base.getproperty(t::AbstractArray{<:Trace}, f::Symbol) = getfield.(t, f)
 Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val) =
-    setfield!.(t, f, convert.(typeof.(getfield.(t, f)), val))
+    setfield!.(t, f, convert.(fieldtype.(typeof.(t), f), val))
 Base.propertynames(t::AbstractArray{<:Trace}, private=false) = fieldnames(eltype(t))
 Base.:(==)(t1::Trace, t2::Trace) =
     all(x -> isequal(x[1], x[2]), (getfield.((t1, t2), f) for f in TRACE_FIELDS))
