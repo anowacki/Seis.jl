@@ -13,10 +13,33 @@ using Seis
 
     @testset "'Get/Setters'" begin
         let b = rand(), delta = rand(), n = rand(1:1000), v = rand(n),
-                t = Trace(b, delta, v)
+                t = Trace(b, delta, v), t′ = deepcopy(t)
             @test nsamples(t) == n
             @test endtime(t) == b + (n-1)*delta
             @test trace(t) == v
+            @test times(t) == b:delta:(b+(n-1)*delta)
+            t.sta.inc = 0
+            @test is_vertical(t)
+            @test is_vertical(t.sta)
+            @test !is_horizontal(t)
+            @test !is_horizontal(t.sta)
+            t.sta.inc = 90
+            @test !is_vertical(t)
+            @test !is_vertical(t.sta)
+            @test is_horizontal(t)
+            @test is_horizontal(t.sta)
+            t.sta.inc = 91
+            @test !is_vertical(t)
+            @test !is_vertical(t.sta)
+            @test !is_horizontal(t)
+            @test !is_horizontal(t.sta)
+            t.sta.inc = t′.sta.inc = 90
+            t.sta.azi = 0
+            t′.sta.azi = 90
+            @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
+            t.sta.azi = 360rand()
+            t′.sta.azi = t.sta.azi - 90rand(1:100)
+            @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
         end
     end
 
@@ -37,15 +60,16 @@ using Seis
         end
     end
 
-    # @chain macro
-    let b = 0, delta = 1, t = Trace(b, delta, [0,1])
-        local f, g
-        Seis.@chain f(t::Trace) = t.b + 1
-        @test f(t) == (t |> f()) == b + 1
-        Seis.@chain function g(t::Trace, x)
-            t.b + x
+    @testset "@chain" begin
+        let b = 0, delta = 1, t = Trace(b, delta, [0,1])
+            local f, g
+            Seis.@chain f(t::Trace) = t.b + 1
+            @test f(t) == (t |> f()) == b + 1
+            Seis.@chain function g(t::Trace, x)
+                t.b + x
+            end
+            @test g(t, 2) == (t |> g(2)) == b + 2
         end
-        @test g(t, 2) == (t |> g(2)) == b + 2
     end
 
     @testset "Nearest sample" begin

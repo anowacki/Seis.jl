@@ -33,6 +33,8 @@ export
     # 'Getters'
     dates,
     endtime,
+    is_horizontal,
+    is_vertical,
     nearest_sample,
     nsamples,
     picks,
@@ -56,6 +58,8 @@ export
     differentiate,
     envelope!,
     envelope,
+    flip!,
+    flip,
     integrate!,
     integrate,
     normalise!,
@@ -85,7 +89,12 @@ export
     read_sac,
     write_sac,
     # Sample data
-    sample_data
+    sample_data,
+    # Rotation
+    rotate_through!,
+    rotate_through,
+    rotate_to_gcp!,
+    rotate_to_gcp
 
 using Dates
 using LinearAlgebra
@@ -106,6 +115,7 @@ include("geometry.jl")
 include("traveltimes.jl")
 include("util.jl")
 include("operations.jl")
+include("rotation.jl")
 include("filtering.jl")
 include("sample_data.jl")
 

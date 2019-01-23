@@ -69,6 +69,21 @@ end
         end
     end
 
+    @testset "Flip" begin
+        let t = Trace(0, 1, [0, 1, 0])
+            local t′
+            @test_throws ArgumentError flip(t)
+            t.sta.azi = 10
+            t.sta.inc = 80
+            t′ = deepcopy(t)
+            flip!(t′)
+            @test flip(t) == t′
+            @test t′.sta.azi == 190
+            @test t′.sta.inc == 100
+            @test trace(t′) == [0, -1, 0]
+        end
+    end
+
     @testset "Integration" begin
         let t = sample_data(), t′ = deepcopy(t)
             @test_throws ArgumentError integrate(t, :weird_method)
