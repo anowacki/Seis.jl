@@ -33,6 +33,8 @@ export
     # 'Getters'
     dates,
     endtime,
+    is_horizontal,
+    is_vertical,
     nearest_sample,
     nsamples,
     picks,

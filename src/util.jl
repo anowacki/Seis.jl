@@ -38,6 +38,26 @@ Return the end `time` of trace `t` in seconds.
 endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
 """
+    is_horizontal(s::Station{T}; tol=eps(T)) where T
+    is_horizontal(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+
+Return `true` if the trace `t` is horizontal (i.e., its inclination
+is 90° from the vertical), and `false` otherwise.
+"""
+is_horizontal(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 90, atol=tol)
+is_horizontal(t::Trace{T}; tol=eps(T)) where T = is_horizontal(t.sta, tol=tol)
+
+"""
+    is_vertical(s::Station{T}; tol=eps(T)) where T
+    is_vertical(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+
+Return `true` if the trace `t` is vertical (i.e., its inclination
+is 0°), and `false` otherwise.
+"""
+is_vertical(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 0, atol=tol)
+is_vertical(t::Trace{T}; tol=eps(T)) where T = is_vertical(t.sta, tol=tol)
+
+"""
     linear_regression(x, y)
 
 Perform simple linear regression using Ordinary Least Squares. Returns `a` and `b` such
@@ -108,6 +128,16 @@ times(t::AbstractTrace) = t.b .+ (0:(nsamples(t) - 1)).*t.delta
 Return an array containing the values of the `Trace` `t`.
 """
 trace(t::AbstractTrace) = t.t
+
+"""
+    traces_are_orthogonal(t1::Trace, t2::Trace; tol=eps()) -> ::Bool
+
+Return `true` if the two traces `t1` and `t2` have component azimuths
+90° apart.  Set the tolerance of the comparison with `tol`.
+"""
+traces_are_orthogonal(t1::AbstractTrace, t2::AbstractTrace;
+                      tol=max(eps(eltype(trace(t1))), eps(eltype(trace(t2))))) =
+    isapprox(abs(angle_difference(t1.sta.azi, t2.sta.azi)), 90, atol=tol)
 
 """
     @chain function f(t::Trace, args...; kwargs...) ... end
