@@ -38,7 +38,7 @@ using Seis
             t′.sta.azi = 90
             @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
             t.sta.azi = 360rand()
-            t′.sta.azi = t.sta.azi - 90rand(1:100)
+            t′.sta.azi = t.sta.azi - 90rand(1:2:100)
             @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
         end
     end
