@@ -1,3 +1,6 @@
+# TODO: Refactor all this so IO is its own module and formats are in separate
+#       files.  Only export the functionality needed
+
 """
     read_sac(file) → ::Trace
 
@@ -179,6 +182,63 @@ function SACtr(t::AbstractTrace)
     SAC.update_headers!(s)
     s
 end
+
+"""
+    parse_mseed([T=$(DEFAULT_FLOAT)[[, V=Vector{T},] S=$DEFAULT_STRING]], data) -> t::Vector{Trace{T,V,S}}
+
+Parse the contents of `data` (usually a `Vector{UInt8}`) as miniSEED-formatted
+seismic data, and return the traces `t`.
+
+Optionally specify the parameters of the `Trace{T,V,S}` returned with `T`, `V` and `S`.
+
+miniSEED-specific headers are stored in `t.meta` with names beginning `MSEED_`.
+"""
+parse_mseed(T, V, S, data) = (t=read_mseed(T, V, S, IOBuffer(data)); t.meta.file=missing; t)
+parse_mseed(T, S, data) = parse_mseed(T, Vector{T}, S, data)
+parse_mseed(T, data) = parse_mseed(T, Vector{T}, DEFAULT_STRING, data)
+parse_mseed(data) = parse_mseed(DEFAULT_FLOAT, Vector{DEFAULT_FLOAT}, String, data)
+
+"""
+    read_mseed([T=$DEFAULT_FLOAT[, V=Vector{T}, S=$DEFAULT_STRING]], file) -> t::Vector{Trace{T,V,S}}
+
+Read a single miniSEED-formatted `file` and return a set of `Trace`s `t` containing
+the contents.
+
+Optionally specify the parameters of the `Trace{T,V,S}` returned with `T`, `V` and `S`.
+
+miniSEED-specific headers are stored in `t.meta` with names beginning `MSEED_`.
+"""
+function read_mseed(T, V, S, file)
+    stream = ObsPy[:read](file)
+    t = Trace{T,V,S}[]
+    for (i, s) in enumerate(stream)
+        b = s[:times]()[1]
+        delta = s[:stats][:delta]
+        trace = convert(V, s[:data])
+        tt = Trace{T,V,S}(b, delta, trace)
+        tt.sta.net = s[:stats][:network]
+        tt.sta.sta = s[:stats][:station]
+        tt.sta.loc = s[:stats][:location]
+        tt.sta.cha = s[:stats][:channel]
+        # FIXME: Use UTCDateTime epoch of 1970-01-01T00:00:00.000000000
+        #        Not clear how to use public interface via PyCall
+        tt.evt.time = DateTime(1970) +
+            Dates.Nanosecond(s[:stats][:starttime][:_UTCDateTime__ns])
+        # Add miniSEED-specific flags
+        # FIXME: Is there a better way in Julia to get the keys in a Python dict?
+        for (k, v) in s[:stats][:mseed][:__dict__]
+            k′ = Symbol(string("MSEED_", k))
+            tt.meta[k′] = v
+        end
+        tt.meta.file = file
+        push!(t, tt)
+    end
+   t
+end
+
+read_mseed(T, S, file) = read_mseed(T, Vector{T}, S, file)
+read_mseed(T, file) = read_mseed(T, Vector{T}, DEFAULT_STRING, file)
+read_mseed(file) = read_mseed(DEFAULT_FLOAT, Vector{DEFAULT_FLOAT}, DEFAULT_STRING, file)
 
 """
     channel_code(t::Trace) -> code

@@ -180,10 +180,12 @@ the 'scalar' function (`channel_code`) to each trace in the array `t`.
 
 ## IO
 
-Currently, only SAC data are read or written, but may be either bigendian
+Currently, only SAC data are read or written natively, but may be either bigendian
 (SAC/BRIS convention) or little-endian (usual IRIS SAC convention).
 
 Use the `read_sac` and `write_sac` functions for SAC-formatted IO.
+
+miniSEED data is read via ObsPy with the `read_mseed` and `parse_mseed` functions.
 
 Future work will add support for reading many more formats and format
 auto-detection.

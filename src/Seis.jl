@@ -86,6 +86,8 @@ export
     # IO
     SACtr,
     channel_code,
+    parse_mseed,
+    read_mseed,
     read_sac,
     write_sac,
     # Sample data
@@ -102,11 +104,17 @@ using Statistics: mean, covm, varm
 
 import DSP
 import MacroTools: @capture
+import PyCall
 
 import SAC
 import SAC: SACtr
 import Geodesics
 import TauPy
+
+function __init__()
+    copy!(ObsPy, PyCall.pyimport("obspy"))
+end
+const ObsPy = PyCall.PyNULL()
 
 include("types.jl")
 include("show.jl")

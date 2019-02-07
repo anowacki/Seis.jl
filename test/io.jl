@@ -1,4 +1,5 @@
 using Test
+import Dates
 using Seis
 import SAC
 
@@ -42,6 +43,29 @@ import SAC
                 delete!(t′.meta, :file)
                 @test t == t′
             end
+        end
+    end
+
+    @testset "miniSEED" begin
+        let file = joinpath(@__DIR__(), "test_data", "test.mseed")
+            tt = read_mseed(file)
+            @test tt isa Vector{Trace{Seis.DEFAULT_FLOAT,Vector{Seis.DEFAULT_FLOAT},Seis.DEFAULT_STRING}}
+            @test length(tt) == 1
+            t = tt[1]
+            @test channel_code(t) == "NL.HGN.00.BHZ"
+            @test t.b == 0
+            @test t.delta == 0.025
+            @test t.evt.time == Dates.DateTime(2003, 05, 29, 02, 13, 22, 43)
+            @test nsamples(t) == 11947
+            @test t.meta.MSEED_encoding == "STEIM2"
+            @test t.meta.MSEED_dataquality == "R"
+            @test t.meta.MSEED_filesize == 8192
+            @test t.meta.MSEED_record_length == 4096
+            @test t.meta.MSEED_number_of_records == 2
+            @test t.meta.MSEED_byteorder == ">"
+            @test t.meta.file == file
+            t.meta.file = missing
+            @test tt == parse_mseed(read(file))
         end
     end
 
