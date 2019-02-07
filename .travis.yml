@@ -16,7 +16,9 @@ matrix:
   allow_failures:
     - julia: nightly
 
-coveralls: true
+# Coverage submission currently broken due to
+#     https://github.com/JuliaWeb/MbedTLS.jl/issues/193
+# coveralls: true
 
 before_install:
   - julia -e 'ENV["PYTHON"] = ""; import Pkg; Pkg.pkg"add PyCall https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/TauPy.jl"; using TauPy'
