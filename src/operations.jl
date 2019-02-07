@@ -49,7 +49,8 @@ and `offset2` s after `pick2`.
 In the second form, both offsets are relative to `pick`
 """
 cut!(t::AbstractTrace, pick1, offset1, pick2, offset2; kwargs...) =
-    cut!(t, first(picks(t, pick1)).time + offset1, first(picks(t, pick2)).time + offset2; kwargs...)
+    cut!(t, first(picks(t, pick1, sort=:time)).time + offset1,
+            first(picks(t, pick2, sort=:time)).time + offset2; kwargs...)
 cut!(t::AbstractTrace, pick1, offset1, offset2; kwargs...) =
     cut!(t, pick1, offset1, pick1, offset2; kwargs...)
 

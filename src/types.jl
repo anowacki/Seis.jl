@@ -57,6 +57,7 @@ Base.getindex(sd::SeisDict{K,V}, key) where {K,V} = get(getfield(sd, :dict), key
 Base.setindex!(sd::SeisDict{K,V}, ::Missing, key) where {K,V} = delete!(getfield(sd, :dict), key)
 Base.setindex!(sd::SeisDict{K,V}, v, i...) where {K,V} = setindex!(getfield(sd, :dict), v, i...)
 Base.Dict(sd::SeisDict) = getfield(sd, :dict)
+Base.empty!(sd::SeisDict) = empty!(getfield(sd, :dict))
 Base.summary(sd::SeisDict) = summary(getfield(sd, :dict))
 Base.iterate(sd::SeisDict, args...) = iterate(getfield(sd, :dict), args...)
 Base.length(sd::SeisDict) = length(getfield(sd, :dict))
@@ -64,7 +65,8 @@ Base.get(sd::SeisDict, args...) = get(getfield(sd, :dict), args...)
 Base.delete!(sd::SeisDict, args...) = (delete!(getfield(sd, :dict), args...); sd)
 
 Base.getproperty(sd::SeisDict, key::Symbol) = getindex(sd, key)
-Base.setproperty!(sd::SeisDict, key::Symbol, val) = setindex!(sd, val, key)
+Base.setproperty!(sd::SeisDict{K,V}, key::Symbol, val) where {K,V} = setindex!(sd, V(val), key)
+Base.setproperty!(sd::SeisDict{K,Any}, key::Symbol, val) where K = setindex!(sd, val, key)
 Base.propertynames(sd::SeisDict, private=false) = collect(keys(sd))
 
 Base.getproperty(sd::AbstractArray{<:SeisDict}, key::Symbol) = getindex.(sd, key)
@@ -158,6 +160,8 @@ Arrays of `Pick`s, which are stored in `Traces`, can be accessed using
 """
 const Pick{T,S} = NamedTuple{(:time, :name), Tuple{T,Union{Missing,S}}} where {T,S}
 Base.getproperty(p::AbstractVector{<:Pick}, field::Symbol) = getproperty.(p, field)
+# Allow conversion from a single time
+Pick{T,S}(time::Real) where {T,S} = Seis.Pick{T,S}((time=time, name=missing))
 
 """
     AbstractTrace
@@ -178,7 +182,7 @@ of what the event is.  For example, `evt.time` could be the origin time of an
 earthquake, or a picked arrival time.
 
 The trace then contains information about an associated `Event` in `evt` and the
-`Station` in `sta`.  `picks` holds a vector which contains pairs of pick times
+`Station` in `sta`.  `picks` holds a dictionary which contains pairs of pick times
 relative to the origin and names (which can be `missing`).  Access picks with the
 `picks` method, and add picks with `add_pick!`.
 
@@ -192,7 +196,7 @@ mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{<:AbstractFloat},S<:Abst
     t::V
     evt::Event{T,S}
     sta::Station{T,S}
-    picks::Vector{Pick{T,S}}
+    picks::SeisDict{Union{Symbol,Int},Pick{T,S}}
     meta::SeisDict{Symbol,Any}
     function Trace{T,V,S}(b, delta, t, evt, sta, picks, meta) where {T,V,S}
         delta > 0 || throw(ArgumentError("delta cannot be <= 0"))
@@ -218,7 +222,7 @@ Construct traces with non-default precision and string types.  In the second for
 the string defaults to `String` and the vector type defaults to `Vector{T}`.
 """
 Trace{T,V,S}(b, delta, t::AbstractVector) where {T,V,S} =
-    Trace{T,V,S}(b, delta, t, Event{T,S}(), Station{T,S}(), [], Dict())
+    Trace{T,V,S}(b, delta, t, Event{T,S}(), Station{T,S}(), Dict(), Dict())
 Trace{T,V,S}(b, delta, n::Integer) where {T,V,S} = Trace{T,V,S}(b, delta, Vector{T}(undef, n))
 Trace{T}(args...) where T = Trace{T,Vector{T},DEFAULT_STRING}(args...)
 Trace(b, delta, t_or_n) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},DEFAULT_STRING}(b, delta, t_or_n)
@@ -238,3 +242,5 @@ Base.broadcastable(t::Union{AbstractTrace,Event,Station}) = Ref(t)
 
 # Element type of trace
 Base.eltype(::Trace{T,V,S}) where {T,V,S} = eltype(V)
+# String type of trace
+stringtype(::Trace{T,V,S}) where {T,V,S} = S

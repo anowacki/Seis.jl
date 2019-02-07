@@ -58,6 +58,10 @@ function Base.show(io::IO, ::MIME"text/plain", s::Station{T,S}) where {T,S}
     show_dict(io, s.meta, hdr_string_len, indent)
 end
 
+## Pick
+Base.show(io::IO, p::Pick{T,S}) where {T,S} =
+    print(io, "Seis.Pick{$T,$S}((time=$(p.time), name=$(repr(p.name))))")
+
 ## Trace
 # List printing
 function Base.show(io::IO, t::Trace)
@@ -107,6 +111,8 @@ function Base.show(io::IO, ::MIME"text/plain", t::Trace{T,V,S}) where {T,V,S}
     end
     # Extra info for trace
     print(io, "\n Trace:")
+    padded_print("picks", "")
+    print(length(t.picks))
     padded_print("meta", "")
     show_dict(io, t.meta, hdr_string_len, indent)
 end
