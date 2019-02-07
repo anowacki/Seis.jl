@@ -21,7 +21,12 @@ import TauPy
         @test ismissing(t.picks[2])
         @test ismissing(t.picks.A)
 
+        # Removing picks
+        clear_picks!(t)
+        @test length(picks(t)) == 0
+
         # Picks ordered by time by default
+        add_pick!(t, pick_time, pick_name)
         p = picks(t)
         @test all(p .=== picks(t, sort=:time)) # all(.===) ∵ have missings
         @test p[1][1] == p[1].time == pick_time
@@ -32,13 +37,10 @@ import TauPy
         @test p[2].time == pick_time+1
         @test ismissing(p[2].name)
 
-        # Removing picks
-        clear_picks!(t)
-        @test length(picks(t)) == 0
-
         # Picks sorted by name
+        clear_picks!(t)
         add_pick!.(t, (1, 2), ("B", "A"))
-        add_pick!.(t, 3)
+        add_pick!(t, 3)
         @test all(picks(t, sort=:name).name .=== [missing, "A", "B"])
 
         clear_picks!(t)
