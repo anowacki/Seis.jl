@@ -1,5 +1,8 @@
 # Seis.jl
 
+[![Build Status](https://travis-ci.org/anowacki/Seis.jl.svg?branch=master)](https://travis-ci.org/anowacki/Seis.jl)
+
+
 Seis.jl is an open, fast and flexible framework for analysing seismic
 data in [Julia](https://julialang.org).
 

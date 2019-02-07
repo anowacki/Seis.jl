@@ -18,7 +18,6 @@ branches:
   only:
     - master
     - /release-.*/
-    - first-attempt
 
 notifications:
   - provider: Email
