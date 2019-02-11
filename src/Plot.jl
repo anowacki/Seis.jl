@@ -201,13 +201,14 @@ Additional options provided via keyword arguments:
            this off.
 - `pick`:  If `true`, add marks on the record section for each pick in the trace
            headers.
+- `zoom`: Set magnification scale for traces (default t).
 """
 section
 
 @userplot Section
 
 @recipe function f(sec::Section; align=nothing, decimate=DECIMATE[], max_samples=MAX_SAMPLES,
-        pick=false)
+        pick=false, zoom=1.0)
     # Arguments
     t = sec.args[1]
     y_values = if length(sec.args) >= 2
@@ -245,13 +246,15 @@ section
             throw(ArgumentError("Unrecognised y axis name '$y_values'"))
         end
     end
+    # Scale
+    scale = zoom*abs(maximum(y_shifts) - minimum(y_shifts))/10
     # Get decimation value
     t1, t2 = get(plotattributes, :xlims, (-Inf, Inf))
     ndecimate = decimate ? decimation_value(t, shifts, t1, t2, max_samples) : 1
     # Traces
     time = [times(tt)[1:ndecimate:end] .- shift for (tt,shift) in zip(t, shifts)]
     maxval = maximum([maximum(abs.(tt)) for tt in trace.(t)])
-    traces = [(trace(tt)./maxval .+ y)[1:ndecimate:end] for (tt, y) in zip(t, y_shifts)]
+    traces = [(scale.*trace(tt)./maxval .+ y)[1:ndecimate:end] for (tt, y) in zip(t, y_shifts)]
     # Time limits of plot
     xlims = get!(plotattributes, :xlims, (minimum(first.(time)), maximum(last.(time))))
 
