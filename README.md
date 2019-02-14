@@ -37,7 +37,7 @@ To install Seis, do:
 ```julia
 julia> ] # As soon as you press ']', you enter Pkg mode...
 
-(v1.0) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/TauPy.jl https://github.com/anowacki/Seis.jl
+(v1.0) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/TauPy.jl https://github.com/anowacki/Seis.jl
 ```
 
 ### Installation issues with Python
