@@ -17,7 +17,7 @@ using Seis
             @test nsamples(t) == n
             @test endtime(t) == b + (n-1)*delta
             @test trace(t) == v
-            @test times(t) == b:delta:(b+(n-1)*delta)
+            @test times(t) ≈ b:delta:(b+(n-1)*delta)
             t.sta.inc = 0
             @test is_vertical(t)
             @test is_vertical(t.sta)
