@@ -31,6 +31,13 @@ function dates(t)
 end
 
 """
+    starttime(t) -> time
+
+Return the start `time` of trace `t` in seconds.
+"""
+starttime(t::AbstractTrace) = t.b
+
+"""
     endtime(t) -> time
 
 Return the end `time` of trace `t` in seconds.

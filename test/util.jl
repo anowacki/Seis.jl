@@ -15,6 +15,7 @@ using Seis
         let b = rand(), delta = rand(), n = rand(1:1000), v = rand(n),
                 t = Trace(b, delta, v), t′ = deepcopy(t)
             @test nsamples(t) == n
+            @test starttime(t) == b
             @test endtime(t) == b + (n-1)*delta
             @test trace(t) == v
             @test times(t) ≈ b:delta:(b+(n-1)*delta)

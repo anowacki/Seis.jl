@@ -38,6 +38,7 @@ export
     nearest_sample,
     nsamples,
     picks,
+    starttime,
     times,
     trace,
     # 'Setters'
