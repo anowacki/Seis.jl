@@ -37,39 +37,8 @@ To install Seis, do:
 ```julia
 julia> ] # As soon as you press ']', you enter Pkg mode...
 
-(v1.1) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/TauPy.jl https://github.com/anowacki/Seis.jl
+(v1.1) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/Seis.jl
 ```
-
-### Dependencies
-
-Seis's seismic travel time and ray path handling is done
-by [`TauPy`](https://github.com/anowacki/TauPy.jl), which itself relies on
-Obspy.  Therefore, you need a working Obspy install.  There are two supported
-ways to do this:
-
-1. Install Obspy yourself, and tell PyCall to use your own Python setup:
-
-```julia
-julia> ENV["PYTHON"] = "/path/to/your/python"
-
-(v1.1)> add PyCall # If not added already
-
-(v1.1)> build PyCall
-```
-
-2. **(Recommended)**  Let PyCall manage Obspy via Conda:
-
-```julia
-julia> ENV["PYTHON"] = ""
-
-(v1.1)> add PyCall # If not added already
-
-(v1.1)> build PyCall
-```
-
-When using Seis the first time using option (2), the PyCall module will install
-Conda (a Python package manager) and Obspy.  This may take some time.
-
 
 ## Basic introduction
 

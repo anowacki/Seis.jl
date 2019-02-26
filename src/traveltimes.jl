@@ -66,42 +66,12 @@ function add_pick!(t::AbstractTrace, time, name::Union{Missing,AbstractString}=m
 end
 
 """
-    add_pick!(t, p::TauPy.Phase, name=p.name) -> (time, name)
-
-Add a travel time pick to the `Trace` `t` from a `TauPy.Phase` arrival.
-
-The pick name will be taken from the phase name by default.
-"""
-add_pick!(t::AbstractTrace, p::TauPy.Phase, name=p.name) = add_pick!(t, p.time, name)
-
-"""
     add_pick!(t, p::Pick, name=p.name) -> p
 
 Add a travel time pick to the `Trace` `t` from a `Seis.Pick`.  By default,
 the pick name is used.
 """
 add_pick!(t::AbstractTrace, p::Pick, name=p.name) = add_pick!(t, p.time, name)
-
-"""
-    add_picks!(t, phase; model="iasp91", exact=false)
-
-Add travel time picks to the trace `t` for the 1D Earth `model`, for arrivals
-with a name matching `phase`.
-
-If `exact` is `true`, only phases which are an exact match for `phase` will
-be added.
-
-Available models are: $(TauPy.available_models()).
-"""
-function add_picks!(t::AbstractTrace, phase::AbstractString="ttall"; model="iasp91", exact=false)
-    _check_headers_taup(t)
-    arrivals = travel_time(t, phase; model=model)
-    for arr in arrivals
-        exact && arr.name != phase && continue
-        add_pick!(t, arr.time, arr.name)
-    end
-    t.picks
-end
 
 """
     clear_picks!(t)
@@ -166,31 +136,3 @@ function _sortpicks(ps, sort)
     end
     ps[inds]
 end    
-
-"""
-    travel_time(t, phase="all"; model="iasp91") -> phases::Vector{TauPy.Phase}
-
-Return travel times for the geometry specified in the `Trace` `t` for the 1D
-Earth `model`, for arrivals with a name matching `phase`.
-
-Available models are: $(TauPy.available_models()).
-"""
-function travel_time(t::AbstractTrace, phase::AbstractString; model="iasp91", kwargs...)
-    _check_headers_taup(t)
-    TauPy.travel_time(t.evt.dep, distance_deg(t), phase; model=model, kwargs...)
-end
-
-"""
-    travel_time(t, model="iasp91") -> ::Vector{Vector{TauPy.Phase}}
-
-Return the list of `TauPy.Phase`s associated with each travel time pick in `t`.
-"""
-travel_time(t::AbstractTrace; model::AbstractString="iasp91") =
-    [travel_time(t, name; model=model) for (_, name) in picks(t) if name[1] in ("p", "s", "P", "S")]
-
-"Throw an error if a Trace doesn't contain the right headers to call TauPy.travel_time."
-_check_headers_taup(t::AbstractTrace) = any(ismissing,
-    (t.evt.lon, t.evt.lat, t.evt.dep, t.sta.lon, t.sta.lat)) &&
-    throw(ArgumentError("Insufficient information in trace to compute travel times." *
-                        "  (Need: evt.lon, evt.lat, evt.dep, sta.lon and sta.lat)")) ||
-    nothing

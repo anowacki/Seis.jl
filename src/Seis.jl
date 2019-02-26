@@ -107,7 +107,6 @@ import MacroTools: @capture
 import SAC
 import SAC: SACtr
 import Geodesics
-import TauPy
 
 include("types.jl")
 include("show.jl")
