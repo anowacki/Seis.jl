@@ -73,6 +73,9 @@ the pick name is used.
 """
 add_pick!(t::AbstractTrace, p::Pick, name=p.name) = add_pick!(t, p.time, name)
 
+# Stub to allow methods to be added using a travel time package (like SeisTau)
+function add_picks! end
+
 """
     clear_picks!(t)
 

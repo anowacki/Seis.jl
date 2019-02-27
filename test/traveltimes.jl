@@ -42,10 +42,9 @@ using Seis
         add_pick!(t, 3)
         @test all(picks(t, sort=:name).name .=== [missing, "A", "B"])
 
+        # Removing all picks
         clear_picks!(t)
-        # Can't add travel times without correct geometry
-        @test_throws ArgumentError add_picks!(t, "S")
-        t.evt.lon, t.evt.lat, t.evt.dep = 0, 0, 0
-        t.sta.lon, t.sta.lat = 10, 10
+        @test length(t.picks) == length(picks(t)) == 0
+        @test t.picks[pick_key] === missing
     end
 end
