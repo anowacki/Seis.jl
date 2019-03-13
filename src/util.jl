@@ -143,7 +143,7 @@ Return `true` if the two traces `t1` and `t2` have component azimuths
 90° apart.  Set the tolerance of the comparison with `tol`.
 """
 traces_are_orthogonal(t1::AbstractTrace, t2::AbstractTrace;
-                      tol=max(eps(eltype(trace(t1))), eps(eltype(trace(t2))))) =
+                      tol=max(√eps(eltype(trace(t1))), √eps(eltype(trace(t2))))) =
     isapprox(abs(angle_difference(t1.sta.azi, t2.sta.azi)), 90, atol=tol)
 
 """

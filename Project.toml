@@ -1,7 +1,7 @@
 name = "Seis"
 uuid = "dd80f4d8-c2f6-58bd-9bd3-4635f134261d"
 authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
-version = "0.1.2"
+version = "0.1.3"
 
 [deps]
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
