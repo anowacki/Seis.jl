@@ -10,6 +10,7 @@ This is a reference frame transformation (passive rotation) and hence particle m
 will appear to rotate anti-clockwise.
 """
 function rotate_through!(t1::AbstractTrace, t2::AbstractTrace, phi)
+    T = promote_type(eltype(trace(t1)), eltype(trace(t2)))
     if !traces_are_orthogonal(t1, t2)
         throw(ArgumentError("traces must be orthogonal"))
     elseif t1.sta.inc != t2.sta.inc != 90
@@ -19,7 +20,7 @@ function rotate_through!(t1::AbstractTrace, t2::AbstractTrace, phi)
     elseif t1.delta != t2.delta
         throw(ArgumentError("traces must have same delta"))
     end
-    sinp, cosp = sincos(deg2rad(phi))
+    sinp, cosp = sincos(deg2rad(T(phi)))
     @inbounds for i = 1:nsamples(t1)
         t1.t[i], t2.t[i] = cosp*t1.t[i] - sinp*t2.t[i], sinp*t1.t[i] + cosp*t2.t[i]
     end
