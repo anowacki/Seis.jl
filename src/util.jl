@@ -24,11 +24,48 @@ as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTim
 have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
 """
 function dates(t)
-    ismissing(t.evt.time) && error("trace does not have origin time set")
-    t.delta < 1e-3 && error("dates does not support sampling intervals < 1 ms")
-    delta = Millisecond(round(Int, t.delta*1e3))
-    b = Millisecond(round(Int, starttime(t)*1e3))
+    b, delta = _check_date_b_delta(t)
     (t.evt.time + b):delta:(t.evt.time + b + (nsamples(t)-1)*delta)
+end
+
+"""
+    startdate(t) -> date
+
+Return the `date` of the first sample of the trace `t`.
+
+N.B.  This function assumes that the sampling interval `t.delta` is representable
+as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
+have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+"""
+startdate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b)
+
+"""
+    enddate(t) -> date
+
+Return the `date` of the last sample of the trace `t`.
+
+N.B.  This function assumes that the sampling interval `t.delta` is representable
+as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
+have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+"""
+enddate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b + (nsamples(t)-1)*delta)
+
+"""
+    _check_date_b_delta(t) -> b::Millisecond, delta::Millisecond
+
+Throw an error if a trace either has no origin time set, or has a sampling interval
+less than 1 ms, and return the trace start time `b` and sampling interval `delta`
+as `Dates.Millisecond`s.
+"""
+function _check_date_b_delta(t::AbstractTrace)
+    ismissing(t.evt.time) && error("trace does not have origin time set")
+    t.delta < 1e-3 && error("date calculations do not support sampling intervals < 1 ms")
+    b = Millisecond(round(Int, starttime(t)*1000))
+    delta_in_ms = round(Int, 1000*t.delta)
+    delta_in_ms ≈ 1000t.delta || error("date calculations do not support sampling intervals " *
+                                       "which are not whole numbers of milliseconds")
+    delta = Millisecond(delta_in_ms)
+    b, delta
 end
 
 """

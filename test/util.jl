@@ -58,10 +58,14 @@ using Seis
             @test dates(t)[end] == DateTime(2000)
             t.delta = 0.25e-3
             @test_throws ErrorException dates(t) # delta < 1 ms
+            @test_throws ErrorException startdate(t)
+            @test_throws ErrorException enddate(t)
             t.delta = 1
             t.b = 1
             @test dates(t)[1] == t.evt.time + Dates.Second(1)
+            @test dates(t)[1] == startdate(t)
             @test dates(t)[end] == DateTime(2000, 1, 1, 0, 0, 1)
+            @test dates(t)[end] == enddate(t)
         end
     end
 
