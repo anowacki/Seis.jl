@@ -27,7 +27,8 @@ function dates(t)
     ismissing(t.evt.time) && error("trace does not have origin time set")
     t.delta < 1e-3 && error("dates does not support sampling intervals < 1 ms")
     delta = Millisecond(round(Int, t.delta*1e3))
-    t.evt.time:delta:(t.evt.time + (nsamples(t)-1)*delta)
+    b = Millisecond(round(Int, starttime(t)*1e3))
+    (t.evt.time + b):delta:(t.evt.time + b + (nsamples(t)-1)*delta)
 end
 
 """

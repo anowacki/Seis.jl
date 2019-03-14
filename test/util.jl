@@ -50,7 +50,7 @@ using Seis
             @test_throws ErrorException dates(t) # No origin time defined
             t.evt.time = DateTime(3004, 2, 29, 08, 47, 21, 400)
             @test length(dates(t)) == 340
-            @test dates(t)[1] == t.evt.time
+            @test dates(t)[1] == t.evt.time + Dates.Millisecond(round(Int, t.b*1e3))
             @test Dates.value(dates(t)[2] - dates(t)[1]) ≈ t.delta*1e3 # in ms
         end
         let b = 0, delta = 1, n = 61, t = Trace(b, delta, rand(n))
@@ -58,6 +58,10 @@ using Seis
             @test dates(t)[end] == DateTime(2000)
             t.delta = 0.25e-3
             @test_throws ErrorException dates(t) # delta < 1 ms
+            t.delta = 1
+            t.b = 1
+            @test dates(t)[1] == t.evt.time + Dates.Second(1)
+            @test dates(t)[end] == DateTime(2000, 1, 1, 0, 0, 1)
         end
     end
 
