@@ -192,6 +192,8 @@ to change this:
 
 Additional options provided via keyword arguments:
 
+- `absscale`: Set to a value to plot traces at some absolute scale.  This is
+              useful if one wants two or more sections to have the same scale.
 - `align`: Set to a `String` to align on the first pick with this name.
            Set to an array of values to align on the value for each trace.
 - `decimate`: If `false`, do not perform downsampling of traces for plotting.
@@ -208,7 +210,7 @@ section
 @userplot Section
 
 @recipe function f(sec::Section; align=nothing, decimate=DECIMATE[], max_samples=MAX_SAMPLES,
-        pick=false, zoom=1.0)
+        pick=false, zoom=1.0, absscale=nothing)
     # Arguments
     t = sec.args[1]
     y_values = if length(sec.args) >= 2
@@ -247,7 +249,8 @@ section
         end
     end
     # Scale
-    scale = zoom*abs(maximum(y_shifts) - minimum(y_shifts))/10
+    scale = isnothing(absscale) ? abs(maximum(y_shifts) - minimum(y_shifts))/10 : absscale
+    scale = zoom*scale
     # Get decimation value
     t1, t2 = get(plotattributes, :xlims, (-Inf, Inf))
     ndecimate = decimate ? decimation_value(t, shifts, t1, t2, max_samples) : 1
