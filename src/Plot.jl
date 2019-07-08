@@ -57,12 +57,13 @@ Additional options provided:
   - `:alpha`: Alphanumerically by channel code
   - `::AbstractVector`: According to the indices in a vector passed in, e.g. from
     a call to `sortperm`.
+- `decimate`: If `false`, do not decimate traces when plotting for speed.
 """
 plot
 
 # Recipe defining the above
 @recipe function f(t::Union{Seis.AbstractTrace,AbstractArray{<:Trace}};
-        pick=true, sort=nothing)
+        pick=true, sort=nothing, decimate=DECIMATE[], max_samples=MAX_SAMPLES)
 
     # Make single trace into a vector
     t isa AbstractArray || (t = [t])
@@ -116,11 +117,16 @@ plot
     # Ticks and xlabel only on bottom x-axis
     xticks := hcat(repeat([nothing], 1, ntraces-1), :auto)
 
+    # Decimate
+    ndecimate = decimate ? decimation_value(t′, zeros(ntraces), xlims[1], xlims[2], max_samples) : 1
+    traces = [trace(tt)[1:ndecimate:end] for tt in t′]
+    all_times = [times(tt)[1:ndecimate:end] for tt in t′]
+
     # Plot traces
     for i in eachindex(t)
         @series begin
             subplot := i
-            times(t[i]), trace(t[i])
+            all_times[i], traces[i]
         end
     end
 
@@ -256,7 +262,7 @@ section
     ndecimate = decimate ? decimation_value(t, shifts, t1, t2, max_samples) : 1
     # Traces
     time = [times(tt)[1:ndecimate:end] .- shift for (tt,shift) in zip(t, shifts)]
-    maxval = maximum([maximum(abs.(tt)) for tt in trace.(t)])
+    maxval = maximum([maximum(abs, trace(tt)) for tt in t])
     traces = [(scale.*trace(tt)./maxval .+ y)[1:ndecimate:end] for (tt, y) in zip(t, y_shifts)]
     # Time limits of plot
     xlims = get!(plotattributes, :xlims, (minimum(first.(time)), maximum(last.(time))))
