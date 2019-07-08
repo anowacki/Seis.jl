@@ -250,7 +250,7 @@ LinearAlgebra.normalize!(t::AbstractTrace, args...; kwargs...) =
 @doc (@doc normalise!) normalize!
 LinearAlgebra.normalize(t::AbstractTrace, args...; kwargs...) =
     normalise(t, args...; kwargs...)
-@doc (@doc normalise) = normalize
+@doc (@doc normalise) normalize
 
 """
     remove_mean!(t::Trace) -> t
@@ -263,12 +263,13 @@ function remove_mean!(t::AbstractTrace)
     t.t .= t.t .- mean(t.t)
     t
 end
+remove_mean!(T::Spec) = (T.t[firstindex(T.t)] = 0; T)
 remove_mean(t::AbstractTrace, args...; kwargs...) = remove_mean!(deepcopy(t), args...; kwargs...)
 @doc (@doc remove_mean!) remove_mean
 
 """
     remove_trend!(t::Trace) -> t
-    remove_mean(t::Trace) -> t′
+    remove_trend(t::Trace) -> t′
 
 Remove the trend from `t`.  In the first form, update the trace in place
 and return it.  In the second form, return an updated copy.
