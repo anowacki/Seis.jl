@@ -3,7 +3,9 @@
 
 This module contains the following exported functions for creating synthetic `Trace`s:
 
+- `gaussian1`: First-derivative Gaussian function.
 - `heaviside`: Step function.
+- `ricker`: Second-derivative Gaussian function.
 - `sines`: Sum of an arbitrary number of sine waves.
 - `spikes`: Single-sample spikes at arbitrary times in the trace.
 
@@ -14,12 +16,31 @@ module Synth
 
 using ..Seis
 
-export heaviside, sines, spikes
+export gaussian1, heaviside, ricker, sines, spikes
+
+"""
+    gaussian1(b, delta, n, ν, time=b+delta*n÷2; T=Float64, V=Vector{T}, S=String) -> t
+
+Return a `Trace` `t` with start time `b` s, sampling interval `delta` s and
+number of samples `n`, which has a synthetic signal consisting of a first-
+derivative Gaussian centred at time `time` s with an approximate dominant
+frequency `ν` Hz.
+
+The maximum amplitude is 1.
+"""
+function gaussian1(b, delta, n, ν, time=b+delta*n÷2; T=Float64, V=Vector{T}, S=String)
+    ω = 2π*ν
+    t = Trace{T,V,S}(b, delta, n)
+    dtimes = times(t) .- time
+    @. t.t = -ω * dtimes * exp(-ω^2*dtimes^2/2)
+    t.t ./= maximum(abs, t.t)
+    t
+end
 
 """
     heaviside(b, delta, n, time=b+delta*n÷2; reverse=false, T=Float64, V=Vector{T}, S=String) -> t::Trace{T,V,S}
 
-Return a Trace `t` with start time `b` s, sampling interval `delta` s and
+Return a `Trace` `t` with start time `b` s, sampling interval `delta` s and
 number of samples `n`, which has a synthetic signal consisting of a step
 from 0 before `time` s and 1 from `time` s onwards.
 
@@ -35,6 +56,24 @@ function heaviside(b, delta, n, time=b+delta*n÷2;
     else
         t.t[it:end] .= 1
     end
+    t
+end
+
+"""
+    ricker(b, delta, n, ν, time=b+delta*n÷2; T=Float64, V=Vector{T}, S=String) -> t
+
+Return a `Trace` `t` with start time `b` s, sampling interval `delta` s and
+number of samples `n`, which has a synthetic signal consisting of a Ricker wavelet
+centred at time `time` s with dominant frequency `ν` Hz.
+
+The maximum amplitude is 1.
+"""
+function ricker(b, delta, n, ν, time=b+delta*n÷2; T=Float64, V=Vector{T}, S=String)
+    ω = 2π*ν
+    t = Trace{T,V,S}(b, delta, n)
+    dtimes = times(t) .- time
+    @. t.t = (1 - ω^2*dtimes^2/2) * exp(-ω^2*dtimes^2/4)
+    t.t ./= maximum(abs, t.t)
     t
 end
 

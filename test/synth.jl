@@ -2,8 +2,23 @@
 using Test
 using Seis
 using Seis.Synth
+import DSP
 
 @testset "Synth" begin
+    @testset "Gaussian 1" begin
+        for T in (Float32, Float64) # FIXME: Doesn't work for Float16 (problem with DSP.periodogram(x; fs=Float16(1/delta)))
+            let b=-10, delta=0.01, n=2001, f=2, time=-1, t = gaussian1(b, delta, n, f, time, T=T)
+                @test eltype(t) == T
+                @test nsamples(t) == n
+                @test starttime(t) == T(b)
+                @test t.delta == T(delta)
+                @test maximum(abs, trace(t)) == T(1)
+                p = DSP.periodogram(trace(t), fs=1/t.delta)
+                @test p.freq[argmax(p.power)] ≈ f rtol=0.01
+            end
+        end
+    end
+
     @testset "Heaviside" begin
         @test_throws ArgumentError heaviside(0, 0.01, 100, -1)
         let t = heaviside(-10, 0.01, 1000)
@@ -19,6 +34,20 @@ using Seis.Synth
         @test heaviside(0, 1, 100, V=Vector{Float32}, S=GenericString) isa
             Trace{Float64,Vector{Float32},GenericString}
         @test eltype(heaviside(0, 1, 100, T=Float32) |> trace) == Float32
+    end
+
+    @testset "Ricker" begin
+        for T in (Float32, Float64) # FIXME: Doesn't work for Float16 (problem with DSP.periodogram(x; fs=Float16(1/delta)))
+            let b=-10, delta=0.01, n=2001, f=5, time=3, t=ricker(b, delta, n, f, time, T=T)
+                @test eltype(t) == T
+                @test nsamples(t) == n
+                @test starttime(t) == T(b)
+                @test t.delta == T(delta)
+                @test maximum(abs, trace(t)) == T(1)
+                p = DSP.periodogram(trace(t), fs=1/t.delta)
+                @test p.freq[argmax(p.power)] ≈ f rtol=0.01
+            end
+        end
     end
 
     @testset "Sines"  begin
