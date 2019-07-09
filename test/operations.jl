@@ -35,6 +35,13 @@ end
             add_pick!(t, 1, "Test pick")
             @test cut(t, "Test pick", 0, "Test pick", 0.5) == cut(t, 1, 1.5)
             @test cut(t, "Test pick", 0, 0.5) == cut(t, 1, 1.5)
+            # Empty traces
+            @test_throws ArgumentError cut(t, endtime(t)+1, endtime(t)+2)
+            @test_throws ArgumentError cut(t, starttime(t)-2, starttime(t)-1)
+            @test nsamples(cut(t, endtime(t)+1, endtime(t)+2, allowempty=true)) == 0
+            t′ = cut(t, -2, -1, allowempty=true)
+            @test starttime(t′) == -2
+            @test endtime(t′) == -2 - t.delta
         end
     end
 

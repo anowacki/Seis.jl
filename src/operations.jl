@@ -1,28 +1,40 @@
 # Trace operations
 
 """
-    cut!(t, start, end; warn=true) -> t
+    cut!(t, start, end; allowempty=false, warn=true) -> t
 
 Cut a `Trace` `t` in place between `start` and `end`.  An error is thrown if either
 `start` or `end` are `missing`.
 
+An error is thrown if the trace would be empty because either the end cut time is
+before the start of the trace, or the start cut is after the end, unless `allowempty`
+is `true`.
+
 By default, a warning is shown if cut times lie outside the trace; set `warn` to `false`
 to turn this off.
 """
-function cut!(t::AbstractTrace, b, e; warn=true)
+function cut!(t::AbstractTrace, b, e; allowempty=false, warn=true)
     (b === missing || e === missing) && throw(ArgumentError("Start or end cut time is `missing`"))
     e < b && throw(ArgumentError("End cut time ($e) is before start cut ($b)"))
+    if b > endtime(t) || e < starttime(t)
+        if !allowempty
+            b > endtime(t) &&
+                throw(ArgumentError("Beginning cut time $b is later than end of trace ($(endtime(t)))."))
+            e < starttime(t) &&
+                throw(ArgumentError("End cut time $e is earlier than start of trace (t.b)."))
+        end
+        empty!(t.t)
+        t.b = b
+        return t
+    end
     if b < t.b
         warn && @warn("Beginning cut time $b is before start of trace.  Setting to $(t.b).")
         b = t.b
     end
-    b > endtime(t) &&
-        throw(ArgumentError("Beginning cut time $b is later than end of trace ($(endtime(t)))."))
     if e > endtime(t)
         warn && @warn("End cut time $e is after end of trace.  Setting to $(endtime(t)).")
         e = endtime(t)
     end
-    e < t.b && throw(ArgumentError("End cut time $e is earlier than start of trace (t.b)."))
     ib = round(Int, (b - t.b)/t.delta) + 1
     ie = nsamples(t) - round(Int, (endtime(t) - e)/t.delta)
     t.t = t.t[ib:ie]
