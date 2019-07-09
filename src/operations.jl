@@ -275,7 +275,6 @@ function remove_mean!(t::AbstractTrace)
     t.t .= t.t .- mean(t.t)
     t
 end
-remove_mean!(T::Spec) = (T.t[firstindex(T.t)] = 0; T)
 remove_mean(t::AbstractTrace, args...; kwargs...) = remove_mean!(deepcopy(t), args...; kwargs...)
 @doc (@doc remove_mean!) remove_mean
 
