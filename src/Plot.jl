@@ -262,7 +262,7 @@ section
     ndecimate = decimate ? decimation_value(t, shifts, t1, t2, max_samples) : 1
     # Traces
     time = [times(tt)[1:ndecimate:end] .- shift for (tt,shift) in zip(t, shifts)]
-    maxval = maximum([maximum(abs, trace(tt)) for tt in t])
+    maxval = isnothing(absscale) ? maximum([maximum(abs, trace(tt)) for tt in t]) : 1
     traces = [(scale.*trace(tt)./maxval .+ y)[1:ndecimate:end] for (tt, y) in zip(t, y_shifts)]
     # Time limits of plot
     xlims = get!(plotattributes, :xlims, (minimum(first.(time)), maximum(last.(time))))
