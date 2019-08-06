@@ -79,7 +79,6 @@ times may also be specified relative to one `pick`.
 """
 cut(t::AbstractTrace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
 
-# TODO: Enable antialiasing
 """
     decimate!(t, n; antialias=true) -> t
     decimate(t, n; antialias=true) -> t′
@@ -88,14 +87,20 @@ Decimate the trace `t` by removing all except every `n` points.  The sampling in
 is increased `n` times.  In the first form, update the trace in place
 and return it.  In the second form, return an updated copy.
 
+By default, an antialiasing and decimation FIR filter is applied.  This may cause
+artifacts in the signal at the extremes of the trace.
+
 If `antialias` is `false`, then no antialiasing filtering is applied during decimation.
 This means the decimated trace may contain spurious signals.
 """
 function decimate!(t::AbstractTrace, n::Integer; antialias=true)
-    antialias && error("Antialias filtering not implemented; use `antialias=false`")
-    1 <= n || throw(ArgumentError("n must be grater than 0 (supplied $n)"))
+    1 <= n || throw(ArgumentError("n must be greater than 0 (supplied $n)"))
     n == 1 && return t
-    t.t = t.t[1:n:end]
+    if antialias
+        t.t = DSP.resample(t.t, 1//n)
+    else
+        t.t = t.t[1:n:end]
+    end
     t.delta *= n
     t
 end

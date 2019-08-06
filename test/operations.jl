@@ -46,16 +46,31 @@ end
     end
 
     @testset "Decimate" begin
+        @test compare_copy_modify_func(decimate, decimate!, 2)
         @test compare_copy_modify_func(decimate, decimate!, 2, antialias=false)
-        let n = rand(10:1000), t = Trace(1, 0.5, rand(n)), t′ = deepcopy(t)
+        let n = rand(10:1000), t = Trace(1, 0.5, rand(n))
+            # With antialiasing
+            @test_throws ArgumentError decimate(t, 0)
+            @test decimate(t, 5, antialias=true) == decimate(t, 5)
+            @test nsamples(decimate(t, 5)) == length((1:n)[1:5:end])
+            @test decimate(t, 3).delta == t.delta*3
+            t′ = deepcopy(t)
+            decimate!(t′, 4)
+            @test t′ == decimate(t, 4)
             # Without antialiasing
             @test_throws ArgumentError decimate(t, 0, antialias=false)
             @test decimate(t, 1, antialias=false) == t
             @test nsamples(decimate(t, 5, antialias=false)) == length((1:n)[1:5:end])
             @test decimate(t, 3, antialias=false).delta == t.delta*3
-            decimate!(t, 4, antialias=false)
-            @test t == decimate(t′, 4, antialias=false)
-            # TODO: Add antialiasing tests
+            t′ = deepcopy(t)
+            decimate!(t′, 4, antialias=false)
+            @test t′ == decimate(t, 4, antialias=false)
+        end
+        # Test antialiasing filter
+        let fs = 5, delta = 1/5, npts = round(Int, 1000/fs), t = Trace(0, delta, npts)
+            t.t = [sin(π*tt/2) + sin(3π*tt)/3 for tt in times(t)]
+            decimate!(t, 3)
+            @test t.t ≈ [sin(π*tt/2) for tt in times(t)] rtol=0.05
         end
     end
 
