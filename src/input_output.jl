@@ -54,7 +54,7 @@ function Trace(s::SAC.SACtr)
     sac_derived_hdr = (:az, :baz, :gcarc, :dist)
     # All the headers we incorporate
     sac_hdr = (sac_trace_hdr..., sac_evt_hdr..., sac_sta_hdr..., sac_cmp_hdr...,
-        sac_date_hdr..., sac_time_hdr..., sac_picks_time_hdr..., sac_picks_time_hdr...,
+        sac_date_hdr..., sac_time_hdr..., sac_picks_time_hdr..., sac_picks_name_hdr...,
         sac_derived_hdr...)
     t = Trace{Float32}(s[:b], s[:delta], s[:t])
     # Origin time
@@ -87,13 +87,10 @@ function Trace(s::SAC.SACtr)
     # Time picks
     for (time_field, name_field) in zip(sac_picks_time_hdr, sac_picks_name_hdr)
         if !SAC.isundefined(s, time_field)
-            name = if time_field in (:a, :f)
-                SAC.isundefined(s, name_field) ?
-                    uppercase(String(time_field)) : s[name_field]
-            else
-                _sacmissing(s, name_field)
-            end
-            add_pick!(t, s[time_field], name)
+            key = Symbol(uppercase(String(time_field)))
+            time = s[time_field]
+            name = _sacmissing(s, name_field)
+            t.picks[key] = Pick{Float32,String}((time, name))
         end
     end
 
@@ -113,9 +110,12 @@ end
 Write the `Trace` `t` to `file` in SAC big-endian format.
 
 Keys in the `t.meta` field which begin with "SAC_" have their values written to
-the corresponding SAC field (e.g., `t.meta[:SAC_kuser0]` is written to the KUSER0
+the corresponding SAC field (e.g., `t.meta.SAC_kuser0` is written to the KUSER0
 header).  The user is responsible for ensuring that the values corresponding to these
 keys can be converted to the correct header type.
+
+Time picks with keys corresponding to SAC picks headers (`A`, `F`, and `T0` to `T9`)
+are transferred, but other picks are not.
 """
 write_sac(t::AbstractTrace, file) = SAC.write(SACtr(t), file)
 
@@ -152,23 +152,19 @@ function SACtr(t::AbstractTrace)
         !ismissing(val) && val !== nothing && (s[sacfield] = val)
     end
     # Time picks
-    ipick = 0
-    for (time, name) in picks(t)
-        if occursin(r"^[AF]$"i, name)
-            sac_tfield = Symbol(lowercase(name))
+    for (key, (time, name)) in t.picks
+        keystring = string(key)
+        # A, F or Tn marker
+        if occursin(r"^([AF]|T[0-9])$"i, keystring)
+            sac_tfield = Symbol(lowercase(keystring))
             s[sac_tfield] = time
-        else
-            if ipick > 9
-                @warn("Only the first 10 picks added to the `SACtr`")
-                break
+            if !ismissing(name)
+                sac_kfield = Symbol("k", sac_tfield)
+                s[sac_kfield] = name
             end
-            sac_tfield = Symbol(:t, ipick)
-            sac_kfield = Symbol(:kt, ipick)
-            s[sac_tfield] = time
-            s[sac_kfield] = name
-            ipick += 1
         end
     end
+    # Remaining headers
     for (name, val) in t.meta
         name_string = String(name)
         if occursin(r"^SAC_.*", name_string)

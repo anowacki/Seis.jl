@@ -42,6 +42,29 @@ import SAC
                 delete!(t′.meta, :file)
                 @test t == t′
             end
+
+            # Writing and reading picks
+            mktempdir() do tempdir
+                tempfile = joinpath(tempdir, "file.sac")
+                t = Trace(0, 1, rand(10))
+                t.picks.A = (1, "Pick")
+                t.picks.f = 2
+                t.picks.T0 = 3
+                t.picks.T9 = (4, "pickname")
+                t.picks.pickone = (5, "xyz")
+                t.picks.picktwo = 6
+                write_sac(t, tempfile)
+                t′ = read_sac(tempfile)
+                @test t′.picks.A.time == 1
+                @test t′.picks.A.name == "Pick"
+                @test t′.picks.F.time == 2
+                @test ismissing(t′.picks.F.name)
+                @test t′.picks.T0.time == 3
+                @test t′.picks.T9 == Seis.Pick{Float32,String}((4, "pickname"))
+                @test ismissing(t′.picks.pickone)
+                @test ismissing(t′.picks.picktwo)
+            end
+
         end
     end
 
