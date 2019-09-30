@@ -388,6 +388,10 @@ function time_shifts(t::AbstractArray{<:AbstractTrace}, align)
                 error("Error finding pick '$align' for every trace.  (Error: $err)")
             end
             shifts
+        elseif align isa Symbol
+            time_picks = getproperty(t.picks, align)
+            any(x->x===missing, time_picks) && error("not every trace has a pick called '$align'")
+            time_picks.time
         elseif align isa AbstractVector
             length(align) == length(t) ||
                 throw(ArgumentError("`align` must have same length as number of traces"))

@@ -52,7 +52,7 @@ Each trace holds its sampling interval (the property `.delta`) and a start time
 (`.sta`) associated with this recording.  `Event`s and `Station`s are the
 corresponding types, which also contain useful properties.
 
-For more information, see the docstrings for `Type`, `Event` and `Station`.
+For more information, see the docstrings for `Trace`, `Event` and `Station`.
 This is easily done in the Julia REPL like so:
 
 ```julia
@@ -172,7 +172,14 @@ auto-detection.
 
 ## Plotting
 
-At present, some basic plotting is available when `using Plots`.  By default,
+At present, some basic plotting is available when `using Plots`.
+It makes use of [RecipesBase.jl](https://github.com/JuliaPlots/RecipesBase.jl)
+so that if you do not need plotting, the package does not introduce this
+dependency.  If you do want plots, simply install [Plots.jl](https://github.com/JuliaPlots/Plots.jl)
+by `import Pkg; Pkg.add("Plots")`.  You then need to do `using Plots` when you
+want to start using Seis.jl's plotting routines.
+
+By default,
 plotting functionality is not exported, so you must also do `using Seis.Plot`
 before the routines `plot` (plots traces) and `section` (plot record sections)
 are available.
