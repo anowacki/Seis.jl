@@ -72,6 +72,7 @@ import SAC
             t = sample_data()
             write_sac(t, file)
             data = read(file)
+            # Modify KSTNM
             data[441:448] .= [UInt8(c) for c in "CDV\0\0\0\0\0"]
             write(file, data)
             t = read_sac(file)
