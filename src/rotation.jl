@@ -46,7 +46,9 @@ from `t1`, so that the polarity is reversed.
 
 The component names of the radial and transverse traces are updated
 to be 'R', and either 'T' or '-T' respectively for normal and reverse
-polarity.
+polarity, unless the component code is a valid SEED identifier which
+seems rotatable and matches for the traces; then the correct component name is used.
+(E.g., `"BHE"` and `"BHN"` become `"BHR"` and `"BHT"`.)
 
 Traces must be orthogonal and horizontal.
 """
@@ -55,15 +57,28 @@ function rotate_to_gcp!(t1, t2; reverse::Bool=false)
         throw(ArgumentError("Traces must have sta.inc and sta.azi defined"))
     t2_is_clockwise_of_t1 = angle_difference(t1.sta.azi, t2.sta.azi) > 0
     t2_is_clockwise_of_t1 || ((t1, t2) = (t2, t1))
+    # Keep band and instrument codes only if the channel name is a valid SEED identifier and seems rotatable,
+    # and we aren't reversing the transverse
+    code = first(t1.sta.cha, 2)
+    keep_code = _is_rotatable_seed_channel_name(t1.sta.cha) &&
+        _is_rotatable_seed_channel_name(t2.sta.cha) && !reverse && code == first(t2.sta.cha, 2)
     β = backazimuth(t1)
     β ≈ backazimuth(t2) ||
         throw(ArgumentError("Backazimuth is not the same for both traces"))
     ϕ = mod(β + 180 - t1.sta.azi, 360)
     rotate_through!(t2, t1, ϕ)
-    reverse && flip_component!(t2)
-    t1.sta.cha = "R"
     @assert t1.sta.azi ≈ mod(β + 180, 360)
-    t2.sta.cha = reverse ? "-T" : "T"
+    reverse && flip!(t2)
+    # Channel code
+    rcha = "R"
+    tcha = reverse ? "-T" : "T"
+    if keep_code
+        t1.sta.cha = code * rcha
+        t2.sta.cha = code * tcha
+    else
+        t1.sta.cha = rcha
+        t2.sta.cha = tcha
+    end
     t1, t2
 end
 
@@ -80,7 +95,7 @@ function rotate_to_gcp!(t::AbstractArray{T}; kwargs...) where T<:AbstractTrace
         i1 = 2i - 1
         i2 = 2i
         rotate_to_gcp!(t[i1], t[i2]; kwargs...)
-        if t[i1].sta.cha == "T"
+        if last(t[i1].sta.cha) == 'T'
             # FIXME: This shouldn't be necessary, but is probably due to swapping
             # of the components in rotate_to_gcp!(t1, t2) above.
             t[i1], t[i2] = t[i2], t[i1]
@@ -98,3 +113,14 @@ transverse `T` traces in the first form, or pairs of radial and
 transverse traces in the modified array `t′`
 """
 rotate_to_gcp(args...; kwargs...) = rotate_to_gcp!(deepcopy.(args)...; kwargs...)
+
+"""
+    _is_rotatable_seed_channel_name(s) -> ::Bool
+
+Return `true` if `s` is a string conforming to SEED channel naming conventions which
+describes a channel for which it makes sense to rotate a matching pair of these channels.
+
+#### References
+- https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
+"""
+_is_rotatable_seed_channel_name(s) = occursin(r"^[FGDCESHBMLVURPTQAO][HLGMNAFJPSXYZ][ZNEABCTR123UVW]$", s)

@@ -31,7 +31,6 @@ using Seis
         s[1].t[imax], s[2].t[imax] = ne ? (cosd(az-az1), sind(az-az1)) :
                                           (sind(az-az1), cosd(az-az1))
 
-
         # Create all possible combinations of rotations
         local (r, t) = rotate_to_gcp(s[1], s[2])
         local (r′, t′) = rotate_to_gcp(s[2], s[1])
@@ -60,5 +59,19 @@ using Seis
         for t1 in list_of_transverses, t2 in list_of_transverses
             @test t1 == t2
         end
+
+        # Renaming of channels
+        s[1].sta.cha = "LXN"
+        s[2].sta.cha = "LXE"
+        r, t = rotate_to_gcp(s[1], s[2])
+        @test r.sta.cha == "LXR"
+        @test t.sta.cha == "LXT"
+        s[1].sta.cha, s[2].sta.cha = "WeirdA", "WeirdB"
+        r, t = rotate_to_gcp(s[1], s[2])
+        @test r.sta.cha == "R"
+        @test t.sta.cha == "T"
+        r, t = rotate_to_gcp(s[1], s[2], reverse=true)
+        @test r.sta.cha == "R"
+        @test t.sta.cha == "-T"
     end
 end
