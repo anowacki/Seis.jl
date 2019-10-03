@@ -117,7 +117,7 @@ return an updated copy.
 
 ### Available algorithms
 
-- npoints == 2`: Two-point.  `dsdt.t[i] = (t.t[i+1] - t.t[i])/t.delta`.
+- `points == 2`: Two-point.  `dsdt.t[i] = (t.t[i+1] - t.t[i])/t.delta`.
   Non-central difference, so `t.b` is increased by half `t.delta`.
   The trace length is reduced by 1 samples.
 - `points == 3`: Three-point. `dsdt.t[i] = (t.t[i+1] - t.t[i-1])/(2 * t.delta)`.
