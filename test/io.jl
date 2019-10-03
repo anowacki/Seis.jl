@@ -64,7 +64,18 @@ import SAC
                 @test ismissing(t′.picks.pickone)
                 @test ismissing(t′.picks.picktwo)
             end
+        end
 
+        # Removing null bytes from strings on read
+        mktempdir() do dir
+            file = joinpath(dir, "file.sac")
+            t = sample_data()
+            write_sac(t, file)
+            data = read(file)
+            data[441:448] .= [UInt8(c) for c in "CDV\0\0\0\0\0"]
+            write(file, data)
+            t = read_sac(file)
+            @test t.sta.sta == "CDV"
         end
     end
 

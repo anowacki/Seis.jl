@@ -189,4 +189,5 @@ channel_code(t::AbstractTrace) = channel_code(t.sta)
 _blankmissing(x) = string(ismissing(x) ? "" : x)
 
 _sacmissing(x) = SAC.isundefined(x) ? missing : x
+_sacmissing(x::String) = (x = replace(x, "\0"=>""); SAC.isundefined(x) ? missing : x)
 _sacmissing(s::SACtr, x) = _sacmissing(s[x])
