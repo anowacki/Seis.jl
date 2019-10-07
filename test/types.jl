@@ -116,7 +116,7 @@ using Seis
             @test t.b == b
             @test t.delta == delta
             @test nsamples(t) == n
-            @test_throws ErrorException Trace(b, delta, -n)
+            @test_throws Exception Trace(b, delta, -n)
         end
 
         let b = 1, delta = 1, tr = rand(1:3, 100), t = Trace(b, delta, tr)
