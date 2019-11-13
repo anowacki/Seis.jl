@@ -1,4 +1,4 @@
-using Seis, DSP
+using Seis, Seis.Plot, DSP, Plots
 using PyCall
 
 obspy = pyimport("obspy")
