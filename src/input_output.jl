@@ -45,7 +45,7 @@ of which headers are transferred to which fields in `t`.
 function Trace(s::SAC.SACtr)
     sac_trace_hdr = (:b, :e, :o, :npts, :delta, :depmin, :depmax, :depmen, :nvhdr, :leven)
     sac_evt_hdr = (:evlo, :evla, :evdp, :kevnm)
-    sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk)
+    sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk, :khole)
     sac_cmp_hdr = (:kcmpnm, :cmpaz, :cmpinc)
     sac_date_hdr = (:nzyear, :nzjday, :nzhour, :nzmin, :nzsec, :nzmsec)
     sac_time_hdr = (:a, :f, :b, :e, :t0, :t1, :t2, :t3, :t4, :t5, :t6, :t7, :t8, :t9)
