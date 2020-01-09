@@ -78,6 +78,18 @@ import SAC
             t = read_sac(file)
             @test t.sta.sta == "CDV"
         end
+
+        # Endianness
+        mktempdir() do dir
+            file = joinpath(dir, "file.sac")
+            t = sample_data()
+            # Write bigendian by default
+            write_sac(t, file)
+            @test SAC.machine_is_little_endian != SAC.file_is_native_endian(file)
+            # Write littleendian
+            write_sac(t, file, littleendian=true)
+            @test SAC.machine_is_little_endian == SAC.file_is_native_endian(file)
+        end
     end
 
     @testset "Channel code" begin
