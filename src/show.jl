@@ -15,14 +15,14 @@ function Base.show(io::IO, e::Event{T,S}) where {T,S}
     end
 end
 
-function Base.show(io::IO, ::MIME"text/plain", e::Event{T,S}) where {T,S}
-    hdr_string_len = maximum(length(string.(EVENT_FIELDS)))
+function Base.show(io::IO, ::MIME"text/plain", e::Event{T,S,P}) where {T,S,P}
+    hdr_string_len = maximum(length(string.(fieldnames(typeof(e)))))
     indent = 4
     padded_print = (name, val) ->
         print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
     print(io, "Seis.Event{$T,$S}:")
     # Non-meta fields
-    for field in EVENT_FIELDS
+    for field in fieldnames(typeof(e))
         field == :meta && continue
         padded_print(field, getfield(e, field))
     end
@@ -42,14 +42,14 @@ function Base.show(io::IO, s::Station{T,S}) where {T,S}
     end
 end
 
-function Base.show(io::IO, ::MIME"text/plain", s::Station{T,S}) where {T,S}
-    hdr_string_len = maximum(length(string.(STATION_FIELDS)))
+function Base.show(io::IO, ::MIME"text/plain", s::Station{T,S,P}) where {T,S,P}
+    hdr_string_len = maximum(length(string.(fieldnames(typeof(s)))))
     indent = 4
     padded_print = (name, val) ->
         print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
     print(io, "Seis.Station{$T,$S}:")
     # Non-meta fields
-    for field in STATION_FIELDS
+    for field in fieldnames(typeof(s))
         field == :meta && continue
         padded_print(field, getfield(s, field))
     end

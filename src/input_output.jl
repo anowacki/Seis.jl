@@ -74,14 +74,17 @@ function Trace(s::SAC.SACtr)
 
     # Event
     for (sacfield, tfield) in (:evlo=>:lon, :evla=>:lat, :evdp=>:dep, :kevnm=>:id)
-        setfield!(t.evt, tfield, _sacmissing(s[sacfield]))
+        setproperty!(t.evt, tfield, _sacmissing(s[sacfield]))
     end
 
     # Station and component
-    for (sacfield, tfield) in (:stlo=>:lon, :stla=>:lat, :stel=>:elev,
-                               :kstnm=>:sta, :knetwk=>:net, :khole=>:loc,
+    for (sacfield, tfield) in (:stlo=>:lon, :stla=>:lat)
+        setproperty!(t.sta, tfield, _sacmissing(s[sacfield]))
+    end
+    s[:stel] !== missing && (t.sta.pos.dep = -s[:stel]/1000)
+    for (sacfield, tfield) in (:kstnm=>:sta, :knetwk=>:net, :khole=>:loc,
                                :kcmpnm=>:cha, :cmpaz=>:azi, :cmpinc=>:inc)
-        setfield!(t.sta, tfield, _sacmissing(s[sacfield]))
+        setproperty!(t.sta, tfield, _sacmissing(s[sacfield]))
     end
 
     # Time picks

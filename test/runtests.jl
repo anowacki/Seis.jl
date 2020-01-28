@@ -12,6 +12,7 @@ end
     include("filtering.jl")
     include("io.jl")
     include("operations.jl")
+    include("geometry.jl")
     include("rotation.jl")
     include("sample_data.jl")
     include("synth.jl")

@@ -27,9 +27,12 @@ module Seis
 export
     # Types
     Station,
+    CartStation,
     Event,
+    CartEvent,
     AbstractTrace,
     Trace,
+    CartTrace,
     # 'Getters'
     dates,
     enddate,
@@ -52,6 +55,7 @@ export
     backazimuth,
     distance_deg,
     distance_km,
+    incidence,
     # Operations
     cut!,
     cut,

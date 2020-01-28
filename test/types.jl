@@ -28,15 +28,57 @@ using Seis
         end
     end
 
+    @testset "Position" begin
+        let lon = rand(), lat = rand(), dep = rand(), (x, y, z) = rand(3)
+            local g, c
+            # Geographic
+            g = Seis.Geographic(lon, lat, dep)
+            @test g isa Seis.Geographic{Float64}
+            @test typeof(g) <: Seis.Position
+            @test typeof(g) <: Seis.Position{Float64}
+            @test g == Seis.Geographic{Float64}(lon, lat, dep)
+            @test g.lon == lon
+            @test g.lat == lat
+            @test g.dep == dep
+            @test Seis.Geographic() == Seis.Geographic{Float64}(missing, missing, missing)
+            @test Seis.Geographic(lon=lon, lat=lat, dep=dep) == Seis.Geographic{Float64}(lon, lat, dep)
+            @test Seis.Geographic(lon=lon, lat=lat).dep === missing
+            # Cartesian
+            c = Seis.Cartesian(x, y, z)
+            @test c isa Seis.Cartesian{Float64}
+            @test typeof(c) <: Seis.Position
+            @test typeof(c) <: Seis.Position{Float64}
+            @test c == Seis.Cartesian{Float64}(x, y, z)
+            @test c.x == x
+            @test c.y == y
+            @test c.z == z
+            @test Seis.Cartesian() == Seis.Cartesian{Float64}(missing, missing, missing)
+            @test Seis.Cartesian(x=x, y=y, z=z) == Seis.Cartesian{Float64}(x, y, z)
+            @test Seis.Cartesian(x=x, y=y).z === missing
+            # Arrays
+            @test [g, g, g].lon == [lon, lon, lon]
+            @test [c, c, c].x == [x, x, x]
+            # Integer indexing
+            @test g[1] == lon
+            @test g[2] == lat
+            @test g[3] == dep
+            @test c[1] == x
+            @test c[2] == y
+            @test c[3] == z
+        end
+    end
+
     @testset "Event" begin
+        # Geographic events
         let dt = now(), lon = rand(), lat = rand(), dep = rand(), id = "id",
-                dt = now(), meta = Dict()
-            local e
+                meta = Dict()
+            local e, es
             @test (e = Event()) isa Event{Float64,String}
             @test all(ismissing, (e.lon, e.lat, e.dep, e.time))
             @test_throws MethodError Event("x")
-            @test_throws TypeError Event{Int,String}()
-            e = Event(lon, lat, dep, dt, id, meta)
+            @test_throws TypeError Event{Int,String,Seis.Geographic{Int}}()
+            e = Event(lon=lon, lat=lat, dep=dep, time=dt, id=id, meta=meta)
+            @test e.pos == Seis.Geographic(lon, lat, dep)
             @test e.lon == lon
             @test e.lat == lat
             @test e.dep == dep
@@ -47,9 +89,41 @@ using Seis
             @test e.meta.key_name == dt
             # Arrays
             es = [deepcopy(e) for _ in 1:3]
-            @test typeof(es) == Array{Event{Float64,String},1}
+            @test typeof(es) == Vector{Event{Float64, String, Seis.Geographic{Float64}}}
             @test length(es.lon) == 3
             @test es.lat == [lat, lat, lat]
+            es.id = ["1", "2", "3"]
+            @test es.id == ["1", "2", "3"]
+            es.id = "A"
+            @test es.id == ["A", "A", "A"]
+            es .= e
+            @test all(x->x==e, es)
+        end
+
+        # Cartesian events
+        let dt = now(), x = rand(), y = rand(), z = rand(), id = "id",
+                meta = Dict()
+            local e, es
+            @test CartEvent() isa Event{Float64, String, Seis.Cartesian{Float64}}
+            @test CartEvent{Float32}() isa Event{Float32, String, Seis.Cartesian{Float32}}
+            @test CartEvent{Float32,SubString{String}}() isa Event{Float32, SubString{String}, Seis.Cartesian{Float32}}
+            e = CartEvent()
+            @test all(ismissing, (e.x, e.y, e.z, e.time, e.id))
+            e = CartEvent(x=x, y=y, z=z, time=dt, id=id, meta=meta)
+            @test e.pos == Seis.Cartesian(x, y, z)
+            @test e.x == x
+            @test e.y == y
+            @test e.z == z
+            @test e.time == dt
+            @test e.id == id
+            @test e.meta == meta
+            e.meta.key_name = dt
+            @test e.meta.key_name == dt
+            # Arrays
+            es = [deepcopy(e) for _ in 1:3]
+            @test typeof(es) == Vector{Event{Float64, String, Seis.Cartesian{Float64}}}
+            @test length(es.x) == 3
+            @test es.y == [y, y, y]
             es.id = ["1", "2", "3"]
             @test es.id == ["1", "2", "3"]
             es.id = "A"
@@ -60,14 +134,17 @@ using Seis
     end
 
     @testset "Station" begin
+        # Geographic events
         let lon = rand(), lat = rand(), elev = rand(), net = "A", sta = "B",
                 cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
                 meta = Dict(), dt = now()
             local s
-            @test (s = Station()) isa Station{Float64,String}
-            @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.dep, s.elev, s.azi, s.inc))
+            @test (s = Station()) isa Station{Float64,String,Seis.Geographic{Float64}}
+            @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.lon, s.lat,
+                                  s.dep, s.elev, s.azi, s.inc))
             @test_throws MethodError Station(1)
-            s = Station(net, sta, loc, cha, lon, lat, dep, elev, azi, inc, meta)
+            s = Station(; net=net, sta=sta, loc=loc, cha=cha, lon=lon, lat=lat,
+                dep=dep, elev=elev, azi=azi, inc=inc, meta=meta)
             @test s.net == net
             @test s.sta == sta
             @test s.loc == loc
@@ -75,6 +152,7 @@ using Seis
             @test s.lon == lon
             @test s.lat == lat
             @test s.dep == dep
+            @test s.pos == Seis.Geographic(lon, lat, dep)
             @test s.elev == elev
             @test s.azi == azi
             @test s.inc == inc
@@ -85,9 +163,54 @@ using Seis
             @test s.azi == azi*2
             # Arrays
             ss = [deepcopy(s) for _ in 1:3]
-            @test typeof(ss) == Array{Station{Float64,String},1}
+            @test typeof(ss) == Vector{Station{Float64,String,Seis.Geographic{Float64}}}
             @test length(ss.lon) == 3
             @test ss.lat == [lat, lat, lat]
+            ss.loc = ["1", "2", "3"]
+            @test ss.loc == ["1", "2", "3"]
+            ss.loc = "A"
+            @test ss.loc == ["A", "A", "A"]
+            ss .= s
+            @test all(x->x===s, ss)
+        end
+
+        # Cartesian stations
+        let x = rand(), y = rand(), z = rand(), elev = rand(), net = "A", sta = "B",
+                cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
+                meta = Dict(), dt = now()
+            local s
+            @test (s = CartStation()) isa
+                Station{Float64,String,Seis.Cartesian{Float64}}
+            @test CartStation{Float32}() isa
+                Station{Float32,String,Seis.Cartesian{Float32}}
+            @test CartStation{Float16, SubString{String}}() isa
+                Station{Float16,SubString{String},Seis.Cartesian{Float16}}
+            @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.x, s.y, s.z,
+                                  s.elev, s.azi, s.inc))
+            @test_throws MethodError CartStation(1)
+            s = CartStation(; net=net, sta=sta, loc=loc, cha=cha, x=x, y=y, z=z,
+                elev=elev, azi=azi, inc=inc, meta=meta)
+            @test s.net == net
+            @test s.sta == sta
+            @test s.loc == loc
+            @test s.cha == cha
+            @test s.x == x
+            @test s.y == y
+            @test s.z == z
+            @test s.pos == Seis.Cartesian(x, y, z)
+            @test s.elev == elev
+            @test s.azi == azi
+            @test s.inc == inc
+            @test s.meta == meta
+            s.meta.key_name = dt
+            @test s.meta.key_name == dt
+            s.azi *= 2
+            @test s.azi == azi*2
+            # Arrays
+            ss = [deepcopy(s) for _ in 1:3]
+            @test typeof(ss) == Vector{Station{Float64,String,Seis.Cartesian{Float64}}}
+            @test length(ss.x) == 3
+            @test ss.x == [x, x, x]
             ss.loc = ["1", "2", "3"]
             @test ss.loc == ["1", "2", "3"]
             ss.loc = "A"
@@ -123,13 +246,13 @@ using Seis
             @test t isa Trace
             @test typeof(t) <: Seis.AbstractTrace
             @test typeof(t) <: Trace
-            @test typeof(t) == Trace{Float64,Vector{Float64},String}
+            @test typeof(t) == Trace{Float64,Vector{Float64},String,Seis.Geographic{Float64}}
         end
 
         let t = Trace{Float32,Vector{Float32},String}(rand(), rand(), rand(3))
             @test t isa Trace{Float32,Vector{Float32},String}
         end
-        @test Trace{Float32,Vector{Float16},SubString}(0, 1, 10) isa Trace{Float32,Vector{Float16},SubString}
+        @test Trace{Float32,Vector{Float16},SubString{String}}(0, 1, 10) isa Trace{Float32,Vector{Float16},SubString{String}}
         @test Trace{Float32}(0, 1, 100) isa Trace{Float32,Vector{Float32},String}
 
         @test_throws TypeError Trace{Int,Vector{Int},String}(1, 1, rand(1:3, 3))
@@ -147,7 +270,7 @@ using Seis
             @test ts.delta == [1, 2, 3]
             ts.delta = 2
             @test ts.delta == [2, 2, 2]
-            @test ts.evt isa Array{Event{Float64,String},1}
+            @test ts.evt isa Vector{Event{Float64,String,Seis.Geographic{Float64}}}
             ts′ = deepcopy(ts)
             for tt in ts
                 tt.evt.id = "A"
