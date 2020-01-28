@@ -45,7 +45,7 @@ of which headers are transferred to which fields in `t`.
 function Trace(s::SAC.SACtr)
     sac_trace_hdr = (:b, :e, :o, :npts, :delta, :depmin, :depmax, :depmen, :nvhdr, :leven)
     sac_evt_hdr = (:evlo, :evla, :evdp, :kevnm)
-    sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk)
+    sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk, :khole)
     sac_cmp_hdr = (:kcmpnm, :cmpaz, :cmpinc)
     sac_date_hdr = (:nzyear, :nzjday, :nzhour, :nzmin, :nzsec, :nzmsec)
     sac_time_hdr = (:a, :f, :b, :e, :t0, :t1, :t2, :t3, :t4, :t5, :t6, :t7, :t8, :t9)
@@ -105,19 +105,26 @@ function Trace(s::SAC.SACtr)
 end
 
 """
-    write_sac(t, file)
+    write_sac(t, file; littleendian=false)
 
-Write the `Trace` `t` to `file` in SAC big-endian format.
+Write the `Trace` `t` to `file` in SAC format.
 
-Keys in the `t.meta` field which begin with "SAC_" have their values written to
-the corresponding SAC field (e.g., `t.meta.SAC_kuser0` is written to the KUSER0
+Keys in the `t.meta` field which begin with `SAC_` have their values written to
+the corresponding SAC field (e.g., `t.meta.SAC_kuser0` is written to the `KUSER0`
 header).  The user is responsible for ensuring that the values corresponding to these
-keys can be converted to the correct header type.
+keys can be converted to the correct header type.  Note also that `SAC_` `meta` fields
+override the equivalent `Trace` headers (e.g., `t.sta.sta` is equivalent to `SAC_kstnm`)
+and so one way to override the values in `Trace` headers is to set the `SAC_` fields.
 
 Time picks with keys corresponding to SAC picks headers (`A`, `F`, and `T0` to `T9`)
 are transferred, but other picks are not.
+
+By default, files are written to disk in bigendian format (MacSAC or SAC/BRIS
+convention).  Use `littleendian=true` to write in littleendian byte order
+(SAC/IRIS or SAC2000 convention).
 """
-write_sac(t::AbstractTrace, file) = SAC.write(SACtr(t), file)
+write_sac(t::AbstractTrace, file; littleendian=false) =
+    SAC.write(SACtr(t), file; byteswap=!littleendian)
 
 """
     SACtr(t::Trace) -> s

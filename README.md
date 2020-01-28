@@ -1,6 +1,7 @@
 # Seis.jl
 
 [![Build Status](https://travis-ci.org/anowacki/Seis.jl.svg?branch=master)](https://travis-ci.org/anowacki/Seis.jl)
+[![Coverage Status](https://coveralls.io/repos/github/anowacki/Seis.jl/badge.svg?branch=master)](https://coveralls.io/github/anowacki/Seis.jl?branch=master)
 
 
 Seis.jl is an open, fast and flexible framework for analysing seismic
@@ -37,7 +38,7 @@ To install Seis, do:
 ```julia
 julia> ] # As soon as you press ']', you enter Pkg mode...
 
-(v1.1) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/Seis.jl
+(v1.3) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/Seis.jl
 ```
 
 ## Basic introduction
