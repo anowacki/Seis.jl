@@ -81,7 +81,7 @@ function Trace(s::SAC.SACtr)
     for (sacfield, tfield) in (:stlo=>:lon, :stla=>:lat)
         setproperty!(t.sta, tfield, _sacmissing(s[sacfield]))
     end
-    s[:stel] !== missing && (t.sta.pos.dep = -s[:stel]/1000)
+    !SAC.isundefined(s, :stel) && (t.sta.pos.dep = -s[:stel]/1000)
     for (sacfield, tfield) in (:kstnm=>:sta, :knetwk=>:net, :khole=>:loc,
                                :kcmpnm=>:cha, :cmpaz=>:azi, :cmpinc=>:inc)
         setproperty!(t.sta, tfield, _sacmissing(s[sacfield]))
@@ -93,7 +93,7 @@ function Trace(s::SAC.SACtr)
             key = Symbol(uppercase(String(time_field)))
             time = s[time_field]
             name = _sacmissing(s, name_field)
-            t.picks[key] = Pick{Float32,String}((time, name))
+            t.picks[key] = Pick{Float32}((time, name))
         end
     end
 
