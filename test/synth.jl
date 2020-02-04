@@ -30,9 +30,9 @@ import DSP
             @test all(t.t[100:end] .== 0.0)
             @test all(t.t[1:99] .== 1.0)
         end
-        @test heaviside(0, 1, 100, T=Float16) isa Trace{Float16,Vector{Float16},String}
-        @test heaviside(0, 1, 100, V=Vector{Float32}, S=GenericString) isa
-            Trace{Float64,Vector{Float32},GenericString}
+        @test heaviside(0, 1, 100, T=Float16) isa Trace{Float16,Vector{Float16},Seis.Geographic{Float16}}
+        @test heaviside(0, 1, 100, V=Vector{Float32}) isa
+            Trace{Float64,Vector{Float32},Seis.Geographic{Float64}}
         @test eltype(heaviside(0, 1, 100, T=Float32) |> trace) == Float32
     end
 
@@ -57,7 +57,7 @@ import DSP
         end
         let t = sines(-10, 0.01, 1000, [0.1, 0.2], [1, 1])
         end
-        @test sines(0, 1, 100, 0.1, T=Float16) isa Trace{Float16,Vector{Float16},String}
+        @test sines(0, 1, 100, 0.1, T=Float16) isa Trace{Float16,Vector{Float16}}
     end
 
     @testset "Spikes" begin
@@ -68,7 +68,7 @@ import DSP
             @test all(trace(t)[5:end] .== 0)
             @test trace(t)[2] == 3.0
             @test trace(t)[4] == 4.0
-            @test t isa Trace{Float64,Vector{Float64},String}
+            @test t isa Trace{Float64,Vector{Float64}}
         end
         let b = 10, delta = 0.01, n = rand(200:2000), time = 10.1, amp = rand()
             @test spikes(b, delta, n, time, amp) == spikes(b, delta, n, [time], [amp])

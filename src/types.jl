@@ -2,8 +2,6 @@
 
 "Default floating point type used for traces if none specified as type parameters"
 const DEFAULT_FLOAT = Float64
-"Default string type used for traces if none specified as type parameters"
-const DEFAULT_STRING = String
 
 """
     SeisDict
@@ -155,10 +153,10 @@ is a string holding the event identifier.
 
 Missing information is allowed and stored as `missing`.
 """
-mutable struct Event{T<:AbstractFloat, S<:AbstractString, P<:Position}
+mutable struct Event{T<:AbstractFloat, P<:Position}
     pos::P
     time::Union{DateTime,Missing}
-    id::Union{S,Missing}
+    id::Union{String,Missing}
     meta::SeisDict{Symbol,Any}
 end
 
@@ -180,38 +178,35 @@ By default, the following may be passed:
 - `dep`: event depth in km
 
 ---
-    Event{T,S,P}(; kwargs...)
-    Event{T,S}(; kwargs...)
+    Event{T,P}(; kwargs...)
     Event{T}(; kwargs...)
 
-Construct an `Event` with specific floating point type `T`, string type `S` and
-`Position` type `P`.  If not given, `T` defaults to `$DEFAULT_FLOAT`, `S`
-defaults to `$DEFAULT_STRING` and `P` defaults to `Seis.Geographic{$DEFAULT_FLOAT}`.
+Construct an `Event` with specific floating point type `T` and
+`Position` type `P`.  If not given, `T` defaults to `$DEFAULT_FLOAT`
+and `P` defaults to `Seis.Geographic{$DEFAULT_FLOAT}`.
 
 See also [`CartEvent`](@ref).
 """
-Event{T,S,P}(; lon=missing, lat=missing, dep=missing, time=missing,
-        id=missing, meta=SeisDict{Symbol,Any}()) where {T,S,P<:Geographic} =
-    Event{T,S,P}(P(lon, lat, dep), time, id, meta)
+Event{T,P}(; lon=missing, lat=missing, dep=missing, time=missing,
+        id=missing, meta=SeisDict{Symbol,Any}()) where {T, P<:Geographic} =
+    Event{T,P}(P(lon, lat, dep), time, id, meta)
 
-Event{T,S,P}(; x=missing, y=missing, z=missing, time=missing,
-        id=missing, meta=SeisDict{Symbol,Any}()) where {T,S,P<:Cartesian} =
-    Event{T,S,P}(P(x, y, z), time, id, meta)
+Event{T,P}(; x=missing, y=missing, z=missing, time=missing,
+        id=missing, meta=SeisDict{Symbol,Any}()) where {T, P<:Cartesian} =
+    Event{T,P}(P(x, y, z), time, id, meta)
 
-Event{T,S}(; kwargs...) where {T,S} = Event{T,S,Geographic{T}}(; kwargs...)
-Event{T}(; kwargs...) where T = Event{T,DEFAULT_STRING,Geographic{T}}(; kwargs...)
-Event(; kwargs...) = Event{DEFAULT_FLOAT,DEFAULT_STRING,Geographic{DEFAULT_FLOAT}}(; kwargs...)
+Event{T}(; kwargs...) where T = Event{T ,Geographic{T}}(; kwargs...)
+Event(; kwargs...) = Event{DEFAULT_FLOAT, Geographic{DEFAULT_FLOAT}}(; kwargs...)
 
 """
-    CartEvent{T,S}
+    CartEvent{T}
 
-Alias for `Event{T,S,Cartesian{T}} where {T,S}`, representing an event in
+Alias for `Event{T,Cartesian{T}} where T`, representing an event in
 Cartesian coordinates.
 """
-const CartEvent{T,S} = Event{T,S,Cartesian{T}}
+const CartEvent{T} = Event{T,Cartesian{T}}
 
 """
-    CartEvent{T,S}(; kwargs...)
     CartEvent{T}(; kwargs...)
     CartEvent(; kwargs...)
 
@@ -219,11 +214,10 @@ Construct a `CartEvent`.  See [`Station`](@ref) for details on keyword
 arguments, noting that position must be given via a combination of the
 keyword arguments `x`, `y` and `z` (not `lon`, `lat` or `dep`).
 """
-CartEvent{T}(; kwargs...) where T = Event{T,DEFAULT_STRING,Cartesian{T}}(; kwargs...)
-CartEvent(; kwargs...) = Event{DEFAULT_FLOAT,DEFAULT_STRING,Cartesian{DEFAULT_FLOAT}}(; kwargs...)
+CartEvent(; kwargs...) = Event{DEFAULT_FLOAT, Cartesian{DEFAULT_FLOAT}}(; kwargs...)
 
 "Alias for more concise dispatch"
-const GeogEvent{T, S} = Event{T, S, Geographic{T}}
+const GeogEvent{T} = Event{T, Geographic{T}}
 
 const EVENT_FIELDS = fieldnames(Event)
 
@@ -249,11 +243,11 @@ information about the station or channel.
 
 Missing information is allowed and stored as `missing`.
 """
-mutable struct Station{T<:AbstractFloat, S<:AbstractString, P<:Position{T}}
-    net::Union{S,Missing}
-    sta::Union{S,Missing}
-    loc::Union{S,Missing}
-    cha::Union{S,Missing}
+mutable struct Station{T<:AbstractFloat, P<:Position{T}}
+    net::Union{String,Missing}
+    sta::Union{String,Missing}
+    loc::Union{String,Missing}
+    cha::Union{String,Missing}
     pos::P
     elev::Union{T,Missing}
     azi::Union{T,Missing}
@@ -289,35 +283,33 @@ If `P <: Seis.Cartesian` (see [`Station{T,S,P}`](@ref) or
 - `z`: Z coordinate in m
 
 ---
-    Station{T,S,P}(; kwargs...)
-    Station{T,S}(; kwargs...)
+    Station{T,P}(; kwargs...)
     Station{T}(; kwargs...)
 
-Construct a `Station` with specific floating point type `T`, string type `S` and
-`Position` type `P`.  If not given, `T` defaults to `$DEFAULT_FLOAT`, `S`
-defaults to `$DEFAULT_STRING` and `P` defaults to `Seis.Geographic{$DEFAULT_FLOAT}`.
+Construct a `Station` with specific floating point type `T` and
+`Position` type `P`.  If not given, `T` defaults to `$DEFAULT_FLOAT`
+and `P` defaults to `Seis.Geographic{$DEFAULT_FLOAT}`.
 """
-Station{T,S,P}(; net=missing, sta=missing, loc=missing,
+Station{T,P}(; net=missing, sta=missing, loc=missing,
         cha=missing, lon=missing, lat=missing, dep=missing, elev=missing,
-        azi=missing, inc=missing, meta=Dict()) where {T,S,P<:Geographic} =
-    Station{T,S,P}(net, sta, loc, cha, P(lon, lat, dep), elev, azi, inc, meta)
+        azi=missing, inc=missing, meta=Dict()) where {T, P<:Geographic} =
+    Station{T, P}(net, sta, loc, cha, P(lon, lat, dep), elev, azi, inc, meta)
 
-Station{T,S,P}(; net=missing, sta=missing, loc=missing,
+Station{T,P}(; net=missing, sta=missing, loc=missing,
         cha=missing, x=missing, y=missing, z=missing, elev=missing,
-        azi=missing, inc=missing, meta=Dict()) where {T,S,P<:Cartesian} =
-    Station{T,S,P}(net, sta, loc, cha, P(x, y, z), elev, azi, inc, meta)
+        azi=missing, inc=missing, meta=Dict()) where {T, P<:Cartesian} =
+    Station{T,P}(net, sta, loc, cha, P(x, y, z), elev, azi, inc, meta)
 
-Station{T,S}(; kwargs...) where {T,S} = Station{T,S,Geographic{T}}(; kwargs...)
-Station{T}(; kwargs...) where T = Station{T,DEFAULT_STRING,Geographic{T}}(; kwargs...)
-Station(; kwargs...) = Station{DEFAULT_FLOAT,DEFAULT_STRING,Geographic{DEFAULT_FLOAT}}(; kwargs...)
+Station{T}(; kwargs...) where T = Station{T, Geographic{T}}(; kwargs...)
+Station(; kwargs...) = Station{DEFAULT_FLOAT, Geographic{DEFAULT_FLOAT}}(; kwargs...)
 
 """
     CartStation
 
-Alias for `Station{T, S, Cartesian{T}} where {T, S}`, representing a
+Alias for `Station{T, Cartesian{T}} where T`, representing a
 `Station` with Cartesian coordinates.
 """
-const CartStation{T, S} = Station{T, S, Cartesian{T}}
+const CartStation{T} = Station{T, Cartesian{T}}
 
 """
     CartStation{T,S}(; kwargs...)
@@ -328,15 +320,13 @@ Construct a `CartStation`.  See [`Station`](@ref) for details on keyword
 arguments, noting that position must be given via a combination of the
 keyword arguments `x`, `y` and `z` (not `lon`, `lat` or `dep`).
 """
-CartStation{T}(; kwargs...) where T = CartStation{T,DEFAULT_STRING}(; kwargs...)
-CartStation(; kwargs...) =
-    CartStation{DEFAULT_FLOAT,DEFAULT_STRING}(; kwargs...)
+CartStation(; kwargs...) = CartStation{DEFAULT_FLOAT}(; kwargs...)
 
-Base.propertynames(e::Union{Event{T,S,P}, Station{T,S,P}}) where {T,S,P} =
-    (fieldnames(typeof(e))..., fieldnames(P)...)
+Base.propertynames(e::Union{Event{T,P}, Station{T,P}}) where {T,P} =
+    (fieldnames(P)..., fieldnames(typeof(e))...)
 
 "Alias for more concise dispatch"
-const GeogStation{T, S} = Station{T, S, Geographic{T}}
+const GeogStation{T} = Station{T, Geographic{T}}
 
 const STATION_FIELDS = fieldnames(Station)
 function Base.getproperty(e::Union{Station,Event}, p::Symbol)
@@ -364,7 +354,7 @@ Base.:(==)(s1::Station, s2::Station) =
     all(x -> isequal(x[1], x[2]), (getfield.((s1, s2), f) for f in STATION_FIELDS))
 
 """
-    Pick{T,S}
+    Pick{T}
 
 `NamedTuple` defining a named arrival time which can be associated with a `Trace`.
 
@@ -374,10 +364,10 @@ description.
 Arrays of `Pick`s, which are stored in `Traces`, can be accessed using
 `getproperty` (`.`-access) and this returns arrays of times or names.
 """
-const Pick{T,S} = NamedTuple{(:time, :name), Tuple{T,Union{Missing,S}}} where {T,S}
+const Pick{T} = NamedTuple{(:time, :name), Tuple{T,Union{Missing,String}}} where T
 Base.getproperty(p::AbstractVector{<:Pick}, field::Symbol) = getproperty.(p, field)
 # Allow conversion from a single time
-Pick{T,S}(time::Real) where {T,S} = Seis.Pick{T,S}((time=time, name=missing))
+Pick{T}(time::Real) where T = Seis.Pick{T}((time=time, name=missing))
 
 """
     AbstractTrace
@@ -407,45 +397,46 @@ The `meta` `Dict` holds any other information about the trace.
 
 If the event `time` is set, then the trace beginning time `b` is relative to this.
 """
-mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{<:AbstractFloat},S<:AbstractString,P<:Position{T}} <: AbstractTrace
+mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{<:AbstractFloat},P<:Position{T}} <: AbstractTrace
     b::T
     delta::T
     t::V
-    evt::Event{T,S,P}
-    sta::Station{T,S,P}
-    picks::SeisDict{Union{Symbol,Int},Pick{T,S}}
+    evt::Event{T,P}
+    sta::Station{T,P}
+    picks::SeisDict{Union{Symbol,Int},Pick{T}}
     meta::SeisDict{Symbol,Any}
-    function Trace{T,V,S,P}(b, delta, t, evt, sta, picks, meta) where {T,V,S,P}
+    function Trace{T,V,P}(b, delta, t, evt, sta, picks, meta) where {T,V,P}
         delta > 0 || throw(ArgumentError("delta cannot be <= 0"))
         new(b, delta, t, evt, sta, picks, meta)
     end
 end
 
 """
-    Trace(b, delta, t::AbstractVector) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},$DEFAULT_STRING}
+    Trace(b, delta, t::AbstractVector) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},Seis.Geographic{$DEFAULT_FLOAT}}
 
 Create a `Trace` with starting time `b` s, sampling interval `delta` s and
 an `AbstractVector` `t` of values for the trace.  The default precision for
-the type is `$DEFAULT_FLOAT`, and the default string type is `$DEFAULT_STRING`.
+the type is `$DEFAULT_FLOAT`.  By default, the trace's event and station
+are in geographic coordinates.
 
-    Trace(b, delta, n::Integer) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},$DEFAULT_STRING}
+    Trace(b, delta, n::Integer) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},Seis.Geographic{$DEFAULT_FLOAT}}
 
 Create a new `Trace` with uninitialised data of length `n` samples.
 
-    Trace{T,V,S}(args...) -> trace::Trace{T,V,S}
-    Trace{T,V}(args...) -> trace::Trace{T,V,$DEFAULT_STRING}
-    Trace{T}(args...) -> trace::Trace{T,Vector{T},$DEFAULT_STRING}
+    Trace{T,V,P}(args...) -> trace::Trace{T,V,P}
+    Trace{T,V}(args...) -> trace::Trace{T,V,Seis.Geographic{T}}
+    Trace{T}(args...) -> trace::Trace{T,Vector{T},Seis.Geographic{T}}
 
-Construct traces with non-default precision and string types.  In the second form,
-the string defaults to `$DEFAULT_STRING`. In the third form,
-the vector type defaults to `Vector{$DEFAULT_FLOAT}` as well.
+Construct traces with non-default precision and string types.  In the third
+form, the vector type defaults to `Vector{$DEFAULT_FLOAT}`, whilst in
+both the second and third forms, `P` defaults to `Seis.Geographic{T}`.
 """
-Trace{T,V,S,P}(b, delta, t::AbstractVector) where {T,V,S,P} =
-    Trace{T,V,S,P}(b, delta, t, Event{T,S,P}(), Station{T,S,P}(), Dict(), Dict())
-Trace{T,V,S,P}(b, delta, n::Integer) where {T,V,S,P} = Trace{T,V,S,P}(b, delta, Vector{T}(undef, n))
-Trace{T,V,S}(args...) where {T,V,S} = Trace{T,V,S,Geographic{T}}(args...)
-Trace{T}(args...) where T = Trace{T,Vector{T},DEFAULT_STRING,Geographic{T}}(args...)
-Trace(b, delta, t_or_n) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},DEFAULT_STRING,Geographic{DEFAULT_FLOAT}}(b, delta, t_or_n)
+Trace{T,V,P}(b, delta, t::AbstractVector) where {T,V,P} =
+    Trace{T,V,P}(b, delta, t, Event{T,P}(), Station{T,P}(), Dict(), Dict())
+Trace{T,V,P}(b, delta, n::Integer) where {T,V,P} = Trace{T,V,P}(b, delta, Vector{T}(undef, n))
+Trace{T,V}(args...) where {T,V} = Trace{T,V,Geographic{T}}(args...)
+Trace{T}(args...) where T = Trace{T,Vector{T},Geographic{T}}(args...)
+Trace(b, delta, t_or_n) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},Geographic{DEFAULT_FLOAT}}(b, delta, t_or_n)
 
 """
     CartTrace
@@ -453,7 +444,7 @@ Trace(b, delta, t_or_n) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},DEFAULT_STRI
 Alias for `Trace` where `Event` and `Station` coordinates are
 `Seis.Cartesian` rather than `Seis.Geographic`
 """
-const CartTrace{T,V,S} = Trace{T, V, S, Cartesian{T}}
+const CartTrace{T,V} = Trace{T, V, Cartesian{T}}
 
 """
     CartTrace
@@ -463,20 +454,15 @@ Create a new `Trace` whose `Event` and `Station` are in Cartesian coordinates.
 See [`Trace`](@ref) for more details of the different construction methods.
 
 ---
-    CartTrace{T,V,S}(b, delta, t::AbstractVector) -> trace
-    CartTrace{T,V}(args...)
+    CartTrace{T,V}(b, delta, t::AbstractVector) -> trace
     CartTrace{T}(args...)
 
 Construct a `Trace` with Cartesian coordinates for the `Event` and `Station`
-with non-default precision and string types.  See [`Trace{T,V,S}`](@ref)
+with non-default precision and string types.  See [`Trace{T,V}`](@ref)
 for details.
 """
-CartTrace{T,V}(args...) where {T,V} =
-    Trace{T, V, DEFAULT_STRING, Cartesian{T}}(args...)
-CartTrace{T}(args...) where T =
-    Trace{T, Vector{T}, DEFAULT_STRING, Cartesian{T}}(args...)
-CartTrace(args...) =
-    Trace{DEFAULT_FLOAT, Vector{DEFAULT_FLOAT}, DEFAULT_STRING,
+CartTrace{T}(args...) where T = Trace{T, Vector{T}, Cartesian{T}}(args...)
+CartTrace(args...) = Trace{DEFAULT_FLOAT, Vector{DEFAULT_FLOAT},
           Cartesian{DEFAULT_FLOAT}}(args...)
 
 const TRACE_FIELDS = fieldnames(Trace)
@@ -498,6 +484,4 @@ Base.:(==)(t1::Trace, t2::Trace) =
 Base.broadcastable(t::Union{AbstractTrace,Event,Station,Position}) = Ref(t)
 
 # Element type of trace
-Base.eltype(::Trace{T,V,S,P}) where {T,V,S,P} = eltype(V)
-# String type of trace
-stringtype(::Trace{T,V,S,P}) where {T,V,S,P} = S
+Base.eltype(::Trace{T,V,P}) where {T,V,P} = eltype(V)

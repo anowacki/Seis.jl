@@ -24,23 +24,23 @@ julia> add_pick!.(t, [1, 2], ["A", missing]);
 
 julia> t.picks
 Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}}} with 2 entries:
-  :A => Seis.Pick{Float64,String}((time=1.0, name="A"))
-  1  => Seis.Pick{Float64,String}((time=2.0, name=missing))
+  :A => Seis.Pick{Float64}((time=1.0, name="A"))
+  1  => Seis.Pick{Float64}((time=2.0, name=missing))
 
 julia> add_pick!(t, 4)
-Seis.Pick{Float64,String}((time=4.0, name=missing))
+Seis.Pick{Float64}((time=4.0, name=missing))
 
 julia> t.picks
 Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}}} with 3 entries:
-  :A => Seis.Pick{Float64,String}((time=1.0, name="A"))
-  2  => Seis.Pick{Float64,String}((time=4.0, name=missing))
-  1  => Seis.Pick{Float64,String}((time=2.0, name=missing))
+  :A => Seis.Pick{Float64}((time=1.0, name="A"))
+  2  => Seis.Pick{Float64}((time=4.0, name=missing))
+  1  => Seis.Pick{Float64}((time=2.0, name=missing))
 
 julia> t.picks.A
-Seis.Pick{Float64,String}((time=1.0, name="A"))
+Seis.Pick{Float64}((time=1.0, name="A"))
 
 julia> t.picks[1]
-Seis.Pick{Float64,String}((time=2.0, name=missing))
+Seis.Pick{Float64}((time=2.0, name=missing))
 ```
 """
 function add_pick!(t::AbstractTrace, time, name::Union{Missing,AbstractString}=missing)
@@ -116,9 +116,9 @@ which either are exactly `name` or match the regular expression `pattern`.
 By default, picks are returned in order of increasing time.  Use `sort=:name`
 to sort alphanumerically by name (where unnamed picks appear first).
 """
-function picks(t::AbstractTrace, name_or_match; sort=:time) where {T,V,S}
+function picks(t::AbstractTrace, name_or_match; sort=:time)
     ps = _picks(t, name_or_match)
-    _sortpicks(ps, sort)::Vector{Pick{eltype(t),stringtype(t)}}
+    _sortpicks(ps, sort)::Vector{Pick{eltype(t)}}
 end
 
 _picks(t::AbstractTrace, name::AbstractString) = filter(x->coalesce(x[2], "")==name, picks(t))

@@ -60,7 +60,7 @@ import SAC
                 @test t′.picks.F.time == 2
                 @test ismissing(t′.picks.F.name)
                 @test t′.picks.T0.time == 3
-                @test t′.picks.T9 == Seis.Pick{Float32,String}((4, "pickname"))
+                @test t′.picks.T9 == Seis.Pick{Float32}((4, "pickname"))
                 @test ismissing(t′.picks.pickone)
                 @test ismissing(t′.picks.picktwo)
             end
