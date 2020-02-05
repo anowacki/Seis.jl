@@ -1,6 +1,6 @@
 using Test
 using Seis
-import SAC
+import Seis.SAC
 
 @testset "IO" begin
     @testset "SAC" begin
@@ -23,6 +23,9 @@ import SAC
             @test t.meta.SAC_lovrok   == true
             @test t.meta.SAC_norid    == 0
             @test t.meta.SAC_ievtyp   == 42
+            # Origin time shifting
+            @test t.b ≈ s.b - s.o
+            @test t.picks.A.time ≈ s.a - s.o
 
             # Reading with globbing pattern
             t = read_sac(file, dir, echo=false)
@@ -85,10 +88,10 @@ import SAC
             t = sample_data()
             # Write bigendian by default
             write_sac(t, file)
-            @test SAC.machine_is_little_endian != SAC.file_is_native_endian(file)
+            @test SAC.MACHINE_IS_LITTLE_ENDIAN != SAC.file_is_native_endian(file)
             # Write littleendian
             write_sac(t, file, littleendian=true)
-            @test SAC.machine_is_little_endian == SAC.file_is_native_endian(file)
+            @test SAC.MACHINE_IS_LITTLE_ENDIAN == SAC.file_is_native_endian(file)
         end
     end
 

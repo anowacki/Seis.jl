@@ -3,7 +3,7 @@ using Test
 using Dates: Second, now
 using Statistics
 using Seis
-import SAC
+import Seis.SAC
 
 "Test that two traces are the same after removing any filename"
 function compare_remove_filename!(t1, t2; rtol=√eps(eltype(t1.t)))

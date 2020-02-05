@@ -11,7 +11,6 @@ Glob = "c27321d9-0574-5035-807b-f59d2c89b15c"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-SAC = "03de775e-c638-11e8-38ea-6915ef5cdf5f"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [extras]

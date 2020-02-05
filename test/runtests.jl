@@ -19,4 +19,8 @@ end
     include("traveltimes.jl")
     include("types.jl")
     include("util.jl")
+
+    @testset "IO" begin
+        include("io/sac.jl")
+    end
 end

@@ -110,9 +110,11 @@ using Statistics: mean, covm, varm
 import DSP
 import MacroTools: @capture
 
-import SAC
-import SAC: SACtr
 import Geodesics
+
+# File formats submodules
+include("io/SAC/SAC.jl")
+using .SAC
 
 include("types.jl")
 include("show.jl")
@@ -125,7 +127,7 @@ include("rotation.jl")
 include("filtering.jl")
 include("sample_data.jl")
 
-# Submodules
+# Functionality submodules
 include("Synth.jl")
 import .Synth
 

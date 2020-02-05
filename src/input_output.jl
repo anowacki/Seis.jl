@@ -37,12 +37,12 @@ function read_sac(file; kwargs...)
 end
 
 """
-    Trace(s::SACtr) -> t
+    Trace(s::SAC.SACTrace) -> t
 
 Construct the `Trace` `t` from the `SACtr` `s`.  See [read_sac](@ref) for details
 of which headers are transferred to which fields in `t`.
 """
-function Trace(s::SAC.SACtr)
+function Trace(s::SAC.SACTrace)
     sac_trace_hdr = (:b, :e, :o, :npts, :delta, :depmin, :depmax, :depmen, :nvhdr, :leven)
     sac_evt_hdr = (:evlo, :evla, :evdp, :kevnm)
     sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk, :khole)
@@ -98,7 +98,7 @@ function Trace(s::SAC.SACtr)
     end
 
     # Other headers
-    for sacfield in SAC.sac_all_hdr
+    for sacfield in SAC.SAC_ALL_HDR
         sacfield in sac_hdr && continue
         SAC.isundefined(s, sacfield) && continue
         metafield = Symbol("SAC_" * String(sacfield))
@@ -127,15 +127,15 @@ convention).  Use `littleendian=true` to write in littleendian byte order
 (SAC/IRIS or SAC2000 convention).
 """
 write_sac(t::AbstractTrace, file; littleendian=false) =
-    SAC.write(SACtr(t), file; byteswap=!littleendian)
+    SAC.write(SAC.SACTrace(t), file; byteswap=!littleendian)
 
 """
-    SACtr(t::Trace) -> s
+    SACTrace(t::Trace) -> s
 
 Construct a `SACtr` s from s `Seis.Trace`.
 """
-function SACtr(t::AbstractTrace)
-    s = SACtr(trace(t), t.delta, t.b)
+function SAC.SACTrace(t::AbstractTrace)
+    s = SAC.SACTrace(trace(t), t.delta, t.b)
     for (sacfield, val) in (
                 :o => 0,
                 :stlo => t.sta.lon,
@@ -200,4 +200,4 @@ _blankmissing(x) = string(ismissing(x) ? "" : x)
 
 _sacmissing(x) = SAC.isundefined(x) ? missing : x
 _sacmissing(x::String) = (x = replace(x, "\0"=>""); SAC.isundefined(x) ? missing : x)
-_sacmissing(s::SACtr, x) = _sacmissing(s[x])
+_sacmissing(s::SAC.SACTrace, x) = _sacmissing(s[x])
