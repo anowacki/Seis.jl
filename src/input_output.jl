@@ -157,7 +157,8 @@ function SAC.SACTrace(t::AbstractTrace)
                 :kevnm => t.evt.id,
                 :khole => t.sta.loc,
                 :kcmpnm => t.sta.cha,
-                :knetwk => t.sta.net
+                :knetwk => t.sta.net,
+                :iftype => SAC.SAC_ITIME
             )
         !ismissing(val) && val !== nothing && (s[sacfield] = val)
     end

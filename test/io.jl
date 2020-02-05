@@ -46,6 +46,14 @@ import Seis.SAC
                 @test t == t′
             end
 
+            # Setting file type on write
+            mktemp() do file, io
+                t = Trace(0, 1, rand(2))
+                write_sac(t, file)
+                t′ = read_sac(file)
+                @test t′.meta.SAC_iftype == SAC.SAC_ITIME
+            end
+
             # Writing and reading picks
             mktempdir() do tempdir
                 tempfile = joinpath(tempdir, "file.sac")

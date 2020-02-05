@@ -71,3 +71,15 @@ const SAC_NVHDR_POS = length(SAC_FLOAT_HDR) + findfirst(SAC_INT_HDR .== :nvhdr) 
 # Length in bytes of total SAC header, accounting for double-length kevnm
 const SAC_HEADER_LEN = SAC_BYTE_LEN*(length(SAC_FLOAT_HDR) + length(SAC_INT_HDR) +
     length(SAC_BOOL_HDR)) + SACCHARLEN*(length(SAC_CHAR_HDR) + 1)
+
+# Some of the enumerated header values (see https://ds.iris.edu/files/sac-manual/manual/file_format.html)
+"Time series file"
+const SAC_ITIME = 1
+"Spectral file---real and imaginary"
+const SAC_IRLIM = 2
+"Spectral file---amplitude and phase"
+const SAC_IAMPH = 3
+"General x versus y data"
+const SAC_IXY = 4
+"Unknown"
+const SAC_IUNKN = 5

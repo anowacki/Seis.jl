@@ -115,6 +115,10 @@ function SACTrace(data::Vector{UInt8}, file=""; swap::Bool=true, terse::Bool=fal
         off += clen
     end
 
+    # Check file type
+    (trace.iftype in (SAC_ITIME, SAC_IXY) && trace.leven) ||
+        error("only evenly-spaced time-series SAC files are supported")
+
     # Check length
     @assert off == SAC_HEADER_LEN
     check_npts && npts_in_file < trace.npts &&

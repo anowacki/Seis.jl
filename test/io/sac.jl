@@ -127,6 +127,14 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
                 local s2 = SAC.read_cut(tempfile, 54, 55)
                 @test s1 == s2
             end
+
+            # Non-time-series file types are not supported
+            let
+                t = Trace{Float32}(0, 1, rand(10))
+                t.meta.SAC_iftype = SAC.SAC_IAMPH
+                write_sac(t, tempfile)
+                @test_throws ErrorException SAC.read(tempfile)
+            end
         end
     end
 end
