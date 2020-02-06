@@ -20,7 +20,9 @@ using Seis
 
         # Make azimuth more accurate as using great circle calculation
         az = mod(backazimuth(s[1]) + 180, 360)
-        s.t .= zeros.((npts,npts))
+        for ss in s
+            ss.t .= zeros(npts)
+        end
         # Randomly swap the order of the components, which are in random orientations
         local ne = rand(Bool)
         local az1 = rand(0:359)
