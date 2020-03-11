@@ -300,16 +300,14 @@ section
 end
 
 """
-    hodogram(t1::Trace, t2::Trace; baz=false, kwargs...) -> ::Plots.Plot
+    hodogram(t1::Trace, t2::Trace; backazimuth=false) -> ::Plots.Plot
 
 Plot the particle motion for a pair of traces `t1` and `t2`.
 
 The two traces must have the same start time, length and sampling interval.
 
-Additional options for `hodogram`:
-
-- `backazimuth`: If `true`, plot the direction of the minor arc towards the event.
-  Requires event and station coordinates to be present in headers.
+If `backazimuth` is `true`, plot the direction of the minor arc towards the event.
+Requires event and station coordinates to be present in headers.
 """
 hodogram
 
@@ -347,9 +345,9 @@ hodogram
 end
 
 """
-    decimation_value(t::AbstractArray{<:Trace}, shifts max_samples) -> n
+    decimation_value(t::AbstractArray{<:Trace}, shifts, t1, t2, max_samples) -> n
 
-Return the decimation value `n` which ensures that no
+Return the decimation value `n` which ensures that `max_samples` samples
 are contained within the time window `t1`-`t2` s relative to the values in `shifts`.
 """
 function decimation_value(t::AbstractArray{<:Trace}, shifts, t1, t2, max_samples)

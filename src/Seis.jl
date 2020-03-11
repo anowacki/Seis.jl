@@ -20,7 +20,8 @@ broadcasting on these types with the methods defined here.
 Some of Seis's functionality is not by default exported and is encapsulated into
 separate modules.  To access these, do `using Seis.<submodule>`.  They are:
 
-- `Seis.Plot`: Plotting routines which are activated when you do `using Plots`.
+- `Seis.Plot`: Plotting routines.
+- `Seis.Synth`: Routines to create simple wavelets.
 """
 module Seis
 
