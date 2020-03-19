@@ -38,7 +38,7 @@ To install Seis, do:
 ```julia
 julia> ] # As soon as you press ']', you enter Pkg mode...
 
-(v1.3) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/SAC.jl https://github.com/anowacki/Seis.jl
+(v1.3) pkg> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/Seis.jl
 ```
 
 ## Basic introduction
