@@ -113,11 +113,15 @@ import MacroTools: @capture
 
 import Geodesics
 
+# All basic types
+include("types.jl")
+
 # File formats submodules
+include("io/SeisIOIO.jl")
+using .SeisIOIO
 include("io/SAC/SAC.jl")
 using .SAC
 
-include("types.jl")
 include("show.jl")
 include("input_output.jl")
 include("geometry.jl")
