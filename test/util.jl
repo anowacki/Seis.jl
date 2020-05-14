@@ -87,8 +87,8 @@ using Seis
             @test nearest_sample(t, -5, inside=false) == 1
             @test nearest_sample(t, -5) == nothing
         end
-        let t = Trace(0.01, 0.01, rand(100)), time = rand()
-            @test nearest_sample(t, time) == round(Int, 100*time)
+        let t = Trace(0, 0.01, rand(101)), time = rand()
+            @test nearest_sample(t, time) == round(Int, 100*time) + 1
         end
         let t = Trace(0, 1, rand(61))
             t.evt.time = DateTime(2000, 1, 1)

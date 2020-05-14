@@ -21,6 +21,8 @@ end
     include("util.jl")
 
     @testset "IO" begin
+        include("io/seisioio.jl")
         include("io/sac.jl")
+        include("io/miniseed.jl")
     end
 end

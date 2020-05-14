@@ -9,6 +9,7 @@ import Seis.SAC
                 t = read_sac(filepath),
                 s = SAC.read(filepath)
             # Reading single file
+            @test t isa Trace{Float32, Vector{Float32}, Seis.Geographic{Float32}}
             @test t.t == s.t
             @test t.evt.id == "K8108838"
             @test t.sta.sta == "CDV"
@@ -34,6 +35,9 @@ import Seis.SAC
             @test length(t′) == 1
             @test t[1].t == t′[1].t
             @test t.meta.file == fmatch
+            t = read_sac("pattern which should match nothing", dir)
+            @test isempty(t)
+            @test eltype(t) == Trace{Float32, Vector{Float32}, Seis.Geographic{Float32}}
 
             # Writing
             mktempdir() do tempdir

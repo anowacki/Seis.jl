@@ -1,3 +1,7 @@
+#
+# SAC
+#
+
 """
     read_sac(file) → ::Trace
 
@@ -24,7 +28,7 @@ SAC headers which don't directly translate to `Trace` attributes are placed in t
 """
 function read_sac(glob, dir; kwargs...)
     s, f = SAC.read_wild(glob, dir; kwargs...)
-    length(s) == 0 && return Trace{Float32,Vector{Float32},String}[]
+    length(s) == 0 && return Trace{Float32, Vector{Float32}, Geographic{Float32}}[]
     t = Trace.(s)
     t.meta.file = f
     t
@@ -186,6 +190,94 @@ function SAC.SACTrace(t::AbstractTrace)
     SAC.update_headers!(s)
     s
 end
+
+#
+# Miniseed
+#
+
+"""
+    read_mseed(file; kwargs...) -> traces
+    read_mseed(T, file; kwargs...) -> traces::Vector{T}
+
+Read a single miniseed file from disk and return a set of `Trace`s.
+
+The `meta.mseed_file` field of each trace contains the file name. 
+
+Optionally specify the type of trace `T <: AbstractTrace` to read.  By default,
+`T` is `Trace{Float32, Vector{Float32}, Geographic{Float32}}`, since almost all
+seismic data stored in Miniseed format is single-precision.
+
+# Example
+Read a single file:
+```
+julia> read_mseed("data.mseed")
+```
+
+!!! note
+    Using a float type of `Float64` for `T`  (e.g.,
+    `Trace{Float64, Vector{Float64}, Seis.Geographic{Float32}}}`)
+    will not increase the precision of data read, since the current implementation
+    of Miniseed reading converts 64-bit data into 32-bit data.
+
+
+# Handling gapped/overlapped data
+
+When channels containing gaps or overlaps are encountered, they are
+split into multiple `Trace`s as each `Trace` must be continuous and evenly
+sampled.  However, data quite often contain single-sample offsets which
+are later corrected, and so these are ignored by default.
+
+Use the keyword arguments `maximum_gap` and `maximum_offset` to control
+whether or not gaps cause new traces to be created.  See below for more details.
+
+
+# Keyword arguments
+
+The following keyword arguments can be passed to `read_mseed`:
+- `maximum_gap`: The maximum absolute gap length in s beyond which gaps are
+  no longer tolerated in a single trace.  By default this is the sampling
+  interval of the trace being read.
+
+  !!! note
+  Set `maximum_gap` to 0 to always split
+  miniseed files into separate traces at all gaps.
+
+- `maximum_offset`: The maximum sum of all gaps beyond which gaps are no
+  longer tolerated in a single trace.  This is calculated by simply adding
+  all the gaps together.  By deftault this is the sampling interval.
+"""
+read_mseed(T::Type, file; kwargs...) = Miniseed.read(T, file; kwargs...)
+read_mseed(file; kwargs...) = Miniseed.read(file; kwargs...)
+
+"""
+    read_mseed(pattern, dir) -> ::Vector{<:Trace}
+    read_mseed(T, pattern, dir) -> Vector{T}
+
+Read all files matching `pattern` in directory `dir`.
+
+See `Glob.glob` for details of pattern matching.
+
+Optionally specify the type of trace `T <: AbstractTrace` to read.  By default,
+`T` is `Trace{Float32, Vector{Float32}, Geographic{Float32}}`, since almost all
+seismic data stored in Miniseed format is single-precision.
+
+# Example
+Read all files matching `"TA.*.BHZ.mseed"` in all directories within
+`DATA` which themselves match `"Event_??"`:
+```
+julia> read_mseed("Event_??/TA.*.BHZ.mseed", "DATA")
+```
+"""
+function read_mseed(T::Type, pattern, dir; kwargs...)
+    files = Glob.glob(pattern, dir)
+    if isempty(files)
+        T[]
+    else
+        reduce(vcat, [read_mseed(T, file; kwargs...) for file in files])
+    end
+end
+read_mseed(pattern, dir; kwargs...) =
+    read_mseed(Miniseed.DEFAULT_TRACE, pattern, dir; kwargs...)
 
 """
     channel_code(t::Trace) -> code
