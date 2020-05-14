@@ -94,6 +94,7 @@ export
     # IO
     SACtr,
     channel_code,
+    read_mseed,
     read_sac,
     write_sac,
     # Sample data
@@ -108,6 +109,7 @@ using Dates
 using LinearAlgebra
 using Statistics: mean, covm, varm
 
+import Glob
 import DSP
 import MacroTools: @capture
 
@@ -121,6 +123,8 @@ include("io/SeisIOIO.jl")
 using .SeisIOIO
 include("io/SAC/SAC.jl")
 using .SAC
+include("io/Miniseed/Miniseed.jl")
+using .Miniseed
 
 include("show.jl")
 include("input_output.jl")
