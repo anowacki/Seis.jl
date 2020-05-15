@@ -1,8 +1,8 @@
 # Seis.jl
 
 [![Build Status](https://travis-ci.org/anowacki/Seis.jl.svg?branch=master)](https://travis-ci.org/anowacki/Seis.jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/hke9896kt8shr0ch?svg=true)](https://ci.appveyor.com/project/AndyNowacki/seis-jl)
 [![Coverage Status](https://coveralls.io/repos/github/anowacki/Seis.jl/badge.svg?branch=master)](https://coveralls.io/github/anowacki/Seis.jl?branch=master)
-[![Build status](https://ci.appveyor.com/api/projects/status/hke9896kt8shr0ch?svg=true)](https://ci.appveyor.com/project/AndyNowacki/seis-jl
 
 Seis.jl is an open, fast and flexible framework for analysing seismic
 data in [Julia](https://julialang.org).
