@@ -2,30 +2,10 @@
 
 [![Build Status](https://travis-ci.org/anowacki/Seis.jl.svg?branch=master)](https://travis-ci.org/anowacki/Seis.jl)
 [![Coverage Status](https://coveralls.io/repos/github/anowacki/Seis.jl/badge.svg?branch=master)](https://coveralls.io/github/anowacki/Seis.jl?branch=master)
-
+[![Build status](https://ci.appveyor.com/api/projects/status/hke9896kt8shr0ch?svg=true)](https://ci.appveyor.com/project/AndyNowacki/seis-jl
 
 Seis.jl is an open, fast and flexible framework for analysing seismic
 data in [Julia](https://julialang.org).
-
-## Current state of Seis.jl
-
-Right now we are asking the passive seismic community what they want in a
-package; see the [draft specification document](https://github.com/anowacki/Seis.jl/blob/master/Seis.jl.md) for
-more detail.
-
-Whilst this is happening, this package is being developed and is a
-trial implementation of the core
-functionality which we think is needed.  Although the package is extensively
-tested, please note that in this phase the public interface is subject to
-change at any time.
-
-Because things may change, documentation is also extremely limited.  All
-public functions have extensive docstrings, however, and PRs to clarify
-any problems with these are always welcome.
-
-One way to explore the package until  documentation is ready is via
-the REPL.  After `using Seis`, type `Seis.` and hit tab a couple of
-times to see what Seis defines.
 
 ## Installation
 
@@ -163,18 +143,20 @@ the 'scalar' function (`channel_code`) to each trace in the array `t`.
 
 ## IO
 
-Currently, only SAC data are read or written, but may be either bigendian
-(SAC/BRIS convention) or little-endian (usual IRIS SAC convention).
+Currently, SAC data are read or written (and may be either bigendian
+(SAC/BRIS convention) or little-endian (usual IRIS SAC convention)), and
+miniSEED files are read.
 
-Use the `read_sac` and `write_sac` functions for SAC-formatted IO.
+Use the `read_sac` and `write_sac` functions for SAC-formatted IO,
+and `read_mseed` function for miniSEED reading.
 
 Future work will add support for reading many more formats and format
 auto-detection.
 
 ## Plotting
 
-At present, some basic plotting is available when `using Plots`.
-It makes use of [RecipesBase.jl](https://github.com/JuliaPlots/RecipesBase.jl)
+Plotting is available when `using Plots`.  Seis.jl
+makes use of [RecipesBase.jl](https://github.com/JuliaPlots/RecipesBase.jl)
 so that if you do not need plotting, the package does not introduce this
 dependency.  If you do want plots, simply install [Plots.jl](https://github.com/JuliaPlots/Plots.jl)
 by `import Pkg; Pkg.add("Plots")`.  You then need to do `using Plots` when you
@@ -182,8 +164,9 @@ want to start using Seis.jl's plotting routines.
 
 By default,
 plotting functionality is not exported, so you must also do `using Seis.Plot`
-before the routines `plot` (plots traces) and `section` (plot record sections)
-are available.
+before the routines `section` (plot record sections) and `hodogram` (particle
+motion plots) are available.  (`plot` to show traces is available as soon
+as `Plots` is loaded.)
 
 As an example:
 
