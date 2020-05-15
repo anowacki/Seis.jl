@@ -41,6 +41,50 @@ using Seis
             t.sta.azi = 360rand()
             t′.sta.azi = t.sta.azi - 90rand(1:2:100)
             @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
+
+            @testset "origin_time!" begin
+                # Adjust picks
+                let t = Trace(0, 1, 2)
+                    t.evt.time = DateTime(2000)
+                    t.picks.A = 10
+                    origin_time!(t, DateTime(2000) + Second(10) + Millisecond(123))
+                    @test t.evt.time == DateTime(2000, 1, 1, 0, 0, 10, 123)
+                    @test startdate(t) == DateTime(2000)
+                    @test starttime(t) == t.b ≈ -10.123
+                    @test t.picks.A.time ≈ -0.123
+                end
+                # Don't adjust picks
+                let t = Trace(0, 1, 2)
+                    t.evt.time = DateTime(2000)
+                    t.picks.A = -1
+                    origin_time!(t, DateTime(1999, 12, 31, 23, 59, 59), picks=false)
+                    @test t.evt.time == DateTime(1999, 12, 31, 23, 59, 59)
+                    @test startdate(t) == DateTime(2000)
+                    @test starttime(t) == 1
+                    @test t.picks.A.time == -1
+                end
+                # No event time set
+                let b = rand(), t = Trace(b, 1, 2), p = rand()
+                    t.picks.A = p, "A"
+                    origin_time!(t, DateTime(3000))
+                    @test t.evt.time == DateTime(3000)
+                    @test starttime(t) == b
+                    @test startdate(t) == DateTime(3000) + Millisecond(round(Int, 1000*b))
+                    @test t.picks.A.time == p
+                    @test t.picks.A.name == "A"
+                end
+            end
+
+            @testset "origin_time" begin
+                let t = Trace(0, 1, 2), time = DateTime(3000, 1, 2, 3, 4, 5, 678),
+                        time′ = time + Second(rand(-100:100))
+                    t.evt.time = time
+                    t.picks.A = (1, "A")
+                    @test origin_time(t, time′) == origin_time!(deepcopy(t), time′)
+                    @test origin_time(t, time′, picks=false) ==
+                        origin_time!(deepcopy(t), time′, picks=false)
+                end
+            end
         end
     end
 

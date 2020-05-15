@@ -83,6 +83,48 @@ Return the end `time` of trace `t` in seconds.
 endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
 """
+    origin_time!(t, time::DateTime; picks=true) -> t
+
+Set the origin time of the trace `t` and shift the start time of the trace
+(stored in its `.b` field) so that the absolute time of all samples remains
+the same.
+
+`origin_time!` will also shift all pick times so that they remain at
+the same absolute time.  Set `picks=false` to leave picks at the same
+time relative to the trace start time.
+
+If `t.evt.time` is `missing` (i.e., unset), then it is simply set to
+`time` and no times are shifted.
+"""
+function origin_time!(t::AbstractTrace, time::DateTime; picks=true)
+    if t.evt.time === missing
+        t.evt.time = time
+        return t
+    end
+    # Shift in s of the trace start time from old to new origin time.
+    # Δb is positive if the new time is *later*.
+    Δb = Dates.value(time - t.evt.time)*1e-3
+    t.b -= Δb
+    t.evt.time = time
+    if picks
+        for (key, (time, name)) in t.picks
+            t.picks[key] = (time=time-Δb, name=name)
+        end
+    end
+    t
+end
+
+"""
+    origin_time(t, time::DateTime; picks=true) -> t′
+
+Return a copy to `t` where the event origin time is shifted to `time`.
+
+See the in-place version [`origin_time!`](@ref) for more details.
+"""
+origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
+    origin_time!(deepcopy(t), time; kwargs...)
+
+"""
     is_horizontal(s::Station{T}; tol=eps(T)) where T
     is_horizontal(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
 

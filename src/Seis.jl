@@ -51,6 +51,8 @@ export
     add_pick!,
     add_picks!,
     clear_picks!,
+    origin_time!,
+    origin_time,
     # Geometry
     azimuth,
     backazimuth,
