@@ -222,7 +222,7 @@ section
     y_values = if length(sec.args) >= 2
         sec.args[2]
     else
-        ylabel --> "Distance / °"
+        yguide --> "Distance / °"
         distance_deg.(t)
     end
     t isa AbstractArray{<:Trace} ||
@@ -233,7 +233,7 @@ section
     linewidth --> 1
     framestyle --> :box
     grid --> false
-    xlabel --> "Time / s"
+    xguide --> "Time / s"
     # Time shifts
     shifts = time_shifts(t, align)
     # Y-axis
@@ -323,8 +323,8 @@ hodogram
     xlims --> 1.01.*(-maxval, maxval)
     ylims --> 1.01.*(-maxval, maxval)
     framestyle --> :box
-    xlabel --> coalesce(t1.sta.cha, string(t1.sta.azi))
-    ylabel --> coalesce(t2.sta.cha, string(t2.sta.azi))
+    xguide --> coalesce(t1.sta.cha, string(t1.sta.azi))
+    yguide --> coalesce(t2.sta.cha, string(t2.sta.azi))
     linecolor --> :black
     linewidth --> 1
     grid --> false
