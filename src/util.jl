@@ -203,6 +203,70 @@ Return the number of samples `n` in a trace `t`.
 nsamples(t::AbstractTrace)::Int = length(t.t)
 
 """
+    nsamples(t, b, e) -> n
+
+Return the number of samples `n` in a trace `t` between times `b`
+and `e` seconds.
+
+This function only counts samples that are strictly on or later than
+the `b` time, and before or on the `e` time.
+
+# Example
+```
+julia> t = Trace(0, 1, 25); # 25 samples from 0s to 24 s
+
+julia> nsamples(t, 3, 4.1)
+2
+```
+
+See also: [`nearest_sample`](@ref).
+"""
+function nsamples(t::AbstractTrace, b, e)
+    n = nsamples(t)
+    tb = starttime(t)
+    te = endtime(t)
+    e < tb && return 0
+    b > te && return 0
+    delta = t.delta
+    ib = clamp(ceil(Int, (b - tb)/delta) + 1, 1, n)
+    ie = clamp(floor(Int, (e - tb)/delta) + 1, 1, n)
+    max(0, ie - ib + 1)
+end
+
+"""
+    nsamples(t, start::DateTime, stop::DateTime) -> n
+
+Return the number of samples `n` in a trace `t` between dates
+`start` and `stop`.
+
+# Example
+```
+julia> using Dates
+
+julia> t = Trace(10, 1, 20); # 20 samples from 10 to 30 s
+
+julia> t.evt.time = DateTime(3000)
+3000-01-01T00:00:00
+
+julia> nsamples(t, DateTime(3000), DateTime(3000) + Second(9))
+0
+
+julia> nsamples(t, DateTime(3000) + Second(20), DateTime(3000) + Second(22))
+3
+```
+"""
+function nsamples(t::AbstractTrace, start::DateTime, stop::DateTime)
+    ismissing(t.evt.time) && throw(ArgumentError("trace does not have origin time set"))
+    bdate = startdate(t)
+    edate = enddate(t)
+    (start > edate || stop < bdate) && return 0
+    tb = starttime(t)
+    b = Dates.value(start - bdate)/1000 + tb
+    e = Dates.value(stop - bdate)/1000 + tb
+    nsamples(t, b, e)
+end
+
+"""
     times(t) -> range
 
 Return the set of times `range` at which each sample of the trace `t` is defined.

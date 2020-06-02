@@ -141,4 +141,24 @@ using Seis
             @test nearest_sample(t, DateTime(1000)) == nothing
         end
     end
+
+    @testset "nsamples" begin
+        let n = 100, t = Trace(-1, 0.5, n)
+            t.evt.time = DateTime(3000)
+            @test nsamples(t, starttime(t), endtime(t)) == nsamples(t) == n
+            @test nsamples(t, -1, -0.51) == 1
+            @test nsamples(t, 1, 2) == 3
+            @test nsamples(t, 1, 2.5) == 4
+            @test nsamples(t, -10, 50) == n
+            @test nsamples(t, 2, 1) == 0
+            @test nsamples(t, -6, -1.1) == 0
+            @test nsamples(t, 50, 100) == 0
+            @test nsamples(t, -6, -1) == 1
+            @test nsamples(t, startdate(t), enddate(t)) == n
+            @test nsamples(t, DateTime(2999), DateTime(2999, 12, 31, 23, 59, 59)) == 1
+            @test nsamples(t, DateTime(2000), DateTime(4000)) == n
+            @test nsamples(t, DateTime(3000), DateTime(3000) + Millisecond(4500)) == 10
+            @test nsamples(t, enddate(t), enddate(t) - Second(1)) == 0
+        end
+    end
 end
