@@ -59,7 +59,7 @@ Additional options provided:
     a call to `sortperm`.
 - `decimate`: If `false`, do not decimate traces when plotting for speed.
 """
-plot
+function plot end
 
 # Recipe defining the above
 @recipe function f(t::Union{Seis.AbstractTrace,AbstractArray{<:Trace}};
