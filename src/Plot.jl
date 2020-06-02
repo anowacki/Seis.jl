@@ -202,6 +202,7 @@ Additional options provided via keyword arguments:
               useful if one wants two or more sections to have the same scale.
 - `align`: Set to a `String` to align on the first pick with this name.
            Set to an array of values to align on the value for each trace.
+           Set to a `Symbol` to use the pick of each trace with that key.
 - `decimate`: If `false`, do not perform downsampling of traces for plotting.
            Defaults to `true`.
 - `max_samples`: Control the maximum number of samples to display at one time
@@ -209,7 +210,7 @@ Additional options provided via keyword arguments:
            this off.
 - `pick`:  If `true`, add marks on the record section for each pick in the trace
            headers.
-- `zoom`: Set magnification scale for traces (default t).
+- `zoom`: Set magnification scale for traces (default 1).
 """
 section
 
