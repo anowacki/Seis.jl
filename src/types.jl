@@ -12,6 +12,8 @@ the {get|set}property[!] syntax, i.e., `.`-access like `dict.key`.
 `KeyError` when accessing a nonexistent key.  A key is removed if it is set to
 `missing`.
 
+# Examples
+
 ```
 julia> dict = Seis.SeisDict(:a=>1)
 Dict{Any,Any} with 1 entry:
@@ -79,6 +81,7 @@ A `Position` specifies where in space an object is located.
 The coordinates of a `Position` can be accessed via `getproperty`
 (e.g., `p.x`) or index (e.g., `p[1]`):
 
+# Examples
 ```
 julia> p = Seis.Cartesian(x=1, y=2, z=3)
 Seis.Cartesian{Float64}(1.0, 2.0, 3.0)
@@ -201,8 +204,18 @@ Event(; kwargs...) = Event{DEFAULT_FLOAT, Geographic{DEFAULT_FLOAT}}(; kwargs...
 """
     CartEvent{T}
 
-Alias for `Event{T,Cartesian{T}} where T`, representing an event in
-Cartesian coordinates.
+Alias for `Event{T, Cartesian{T}} where T`, representing an [`Event`](@ref)
+with Cartesian coordinates.
+
+This type is useful for dispatch, allowing one to write methods which
+are only applicable when a `Event` has Cartesian coordinates.
+
+# Example
+```
+julia> using Geodesy
+
+julia> Geodesy.LLA(evt::CartEvent) = LLA(evt.x, evt.y, evt.z)
+```
 """
 const CartEvent{T} = Event{T,Cartesian{T}}
 
@@ -216,7 +229,25 @@ keyword arguments `x`, `y` and `z` (not `lon`, `lat` or `dep`).
 """
 CartEvent(; kwargs...) = Event{DEFAULT_FLOAT, Cartesian{DEFAULT_FLOAT}}(; kwargs...)
 
-"Alias for more concise dispatch"
+"""
+    GeogEvent{T} where T
+
+Alias for `Event{T, Geographic{T}} where T`, representing an [`Event`](@ref)
+with geographic coordinates.
+
+This type is useful for dispatch, allowing one to write methods which
+are only applicable when a `Event` has geographic coordinates.
+
+Note that `Event`s are geographic by default.  Use [`Event()`](@ref Event)
+to construct a geographic `Event`.
+
+# Example
+```
+julia> using Geodesy
+
+julia> Geodesy.LLA(evt::GeogEvent) = LLA(evt.lat, evt.lon, evt.elev)
+```
+"""
 const GeogEvent{T} = Event{T, Geographic{T}}
 
 const EVENT_FIELDS = fieldnames(Event)
@@ -304,10 +335,24 @@ Station{T}(; kwargs...) where T = Station{T, Geographic{T}}(; kwargs...)
 Station(; kwargs...) = Station{DEFAULT_FLOAT, Geographic{DEFAULT_FLOAT}}(; kwargs...)
 
 """
-    CartStation
+    CartStation{T} where T
 
 Alias for `Station{T, Cartesian{T}} where T`, representing a
-`Station` with Cartesian coordinates.
+[`Station`](@ref) with Cartesian coordinates.
+
+This type is useful for dispatch, allowing one to write methods which
+are only applicable when a `Station` has Cartesian coordinates.
+
+# Example
+Create a function which obtains the east-north-up coordinates of
+a `Station`
+```
+julia> using Geodesy
+
+julia> Geodesy.ENU(sta::CartStation) = ENU(sta.x, sta.y, sta.z)
+
+julia> ENU(CartStation(x=1, y=2, z=3))
+```
 """
 const CartStation{T} = Station{T, Cartesian{T}}
 
@@ -325,7 +370,24 @@ CartStation(; kwargs...) = CartStation{DEFAULT_FLOAT}(; kwargs...)
 Base.propertynames(e::Union{Event{T,P}, Station{T,P}}) where {T,P} =
     (fieldnames(P)..., fieldnames(typeof(e))...)
 
-"Alias for more concise dispatch"
+"""
+    GeogStation{T} where T
+
+Alias for `Station{T, Geographic{T}} where T`, representing a [`Station`](@ref)
+with geographic coordinates.
+
+This type is useful for dispatch, allowing one to write methods which
+are only applicable when a `Station` has geographic coordinates.
+
+Note that `Station`s are geographic by default.  Use [`Station()`](@ref Station)
+to construct a geographic `Station`.
+
+# Example
+```
+julia> using Geodesy
+
+julia> Geodesy.LLA(sta::GeogStation) = LLA(sta.lat, sta.lon, sta.elev)
+"""
 const GeogStation{T} = Station{T, Geographic{T}}
 
 const STATION_FIELDS = fieldnames(Station)
@@ -363,6 +425,18 @@ description.
 
 Arrays of `Pick`s, which are stored in `Traces`, can be accessed using
 `getproperty` (`.`-access) and this returns arrays of times or names.
+
+# Example
+```
+julia> t = Trace(0, 1, 1)
+
+julia> t.picks.P = 1.2
+
+julia> t.picks.S = 2.1, "Sn"
+
+julia> t.picks.P.time
+
+julia> t.picks
 """
 const Pick{T} = NamedTuple{(:time, :name), Tuple{T,Union{Missing,String}}} where T
 Base.getproperty(p::AbstractVector{<:Pick}, field::Symbol) = getproperty.(p, field)
@@ -396,6 +470,10 @@ relative to the origin and names (which can be `missing`).  Access picks with th
 The `meta` `Dict` holds any other information about the trace.
 
 If the event `time` is set, then the trace beginning time `b` is relative to this.
+
+Find the trace start time relative to the origin time using [`starttime`](@ref).
+The absolute start time and date, if an origin time is set, is given by
+[`startdate`](@ref).
 """
 mutable struct Trace{T<:AbstractFloat,V<:AbstractVector{<:AbstractFloat},P<:Position{T}} <: AbstractTrace
     b::T
