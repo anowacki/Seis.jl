@@ -22,6 +22,16 @@ as `t.evt.time` is defined.  If not, an error is thrown.
 N.B.  This function assumes that the sampling interval `t.delta` is representable
 as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
 have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+
+# Example
+```
+julia> t = sample_data();
+
+julia> dates(t)
+1981-03-29T10:39:06.66:10 milliseconds:1981-03-29T10:39:16.65
+```
+
+See also: [`times`](@ref).
 """
 function dates(t)
     b, delta = _check_date_b_delta(t)
@@ -36,6 +46,15 @@ Return the `date` of the first sample of the trace `t`.
 N.B.  This function assumes that the sampling interval `t.delta` is representable
 as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
 have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+
+# Example
+```
+julia> t = sample_data(); t.evt.time
+1981-03-29T10:38:14
+
+julia> startdate(t)
+1981-03-29T10:39:06.66
+```
 """
 startdate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b)
 
@@ -47,6 +66,15 @@ Return the `date` of the last sample of the trace `t`.
 N.B.  This function assumes that the sampling interval `t.delta` is representable
 as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
 have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+
+# Example
+```
+julia> t = sample_data(); t.evt.time
+1981-03-29T10:38:14
+
+julia> enddate(t)
+1981-03-29T10:39:16.65
+```
 """
 enddate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b + (nsamples(t)-1)*delta)
 
@@ -72,6 +100,13 @@ end
     starttime(t) -> time
 
 Return the start `time` of trace `t` in seconds.
+
+# Example
+```
+julia> t = Trace(-3, 0.01, rand(20)) # Set start time to -3;
+
+julia> starttime(t)
+-3.0
 """
 starttime(t::AbstractTrace) = t.b
 
@@ -79,6 +114,14 @@ starttime(t::AbstractTrace) = t.b
     endtime(t) -> time
 
 Return the end `time` of trace `t` in seconds.
+
+# Example
+```
+julia> t = Trace(5, 1, 3); # 3 samples at 1 Hz, starting at 5 s
+
+julia> endtime(t)
+7.0
+```
 """
 endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
@@ -95,6 +138,25 @@ time relative to the trace start time.
 
 If `t.evt.time` is `missing` (i.e., unset), then it is simply set to
 `time` and no times are shifted.
+
+# Example
+```
+julia> t = sample_data(); t.picks
+Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float32,Union{Missing, String}}}} with 2 entries:
+  :F => Seis.Pick{Float32}((time=60.980003, name=missing))
+  :A => Seis.Pick{Float32}((time=53.670002, name=missing))
+
+julia> t.evt.time
+1981-03-29T10:38:14
+
+julia> origin_time!(t, t.evt.time + Second(1)); t.evt.time
+1981-03-29T10:38:15
+
+julia> t.picks
+Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float32,Union{Missing, String}}}} with 2 entries:
+  :F => Seis.Pick{Float32}((time=59.980003, name=missing))
+  :A => Seis.Pick{Float32}((time=52.670002, name=missing))
+```
 """
 function origin_time!(t::AbstractTrace, time::DateTime; picks=true)
     if t.evt.time === missing
@@ -130,6 +192,8 @@ origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
 
 Return `true` if the trace `t` is horizontal (i.e., its inclination
 is 90° from the vertical), and `false` otherwise.
+
+See also: [`is_horizontal`](@ref).
 """
 is_horizontal(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 90, atol=tol)
 is_horizontal(t::Trace{T}; tol=eps(T)) where T = is_horizontal(t.sta, tol=tol)
@@ -140,6 +204,8 @@ is_horizontal(t::Trace{T}; tol=eps(T)) where T = is_horizontal(t.sta, tol=tol)
 
 Return `true` if the trace `t` is vertical (i.e., its inclination
 is 0°), and `false` otherwise.
+
+See also: [`is_vertical`](@ref).
 """
 is_vertical(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 0, atol=tol)
 is_vertical(t::Trace{T}; tol=eps(T)) where T = is_vertical(t.sta, tol=tol)
@@ -199,6 +265,15 @@ end
     nsamples(t) -> n
 
 Return the number of samples `n` in a trace `t`.
+
+# Example
+```
+julia> data = rand(4);
+
+julia> t = Trace(0, 1, data);
+
+julia> nsamples(t)
+4
 """
 nsamples(t::AbstractTrace)::Int = length(t.t)
 
@@ -270,13 +345,76 @@ end
     times(t) -> range
 
 Return the set of times `range` at which each sample of the trace `t` is defined.
+
+# Example
+```
+julia> t = sample_data();
+
+julia> times(t)
+52.66f0:0.01f0:62.65f0
+```
+
+See also: [`dates`](@ref).
 """
 times(t::AbstractTrace) = t.b .+ (0:(nsamples(t) - 1)).*t.delta
 
 """
-    trace(t) -> y
+    trace(t) -> data
 
-Return an array containing the values of the `Trace` `t`.
+Return an array `data` containing the values of the `Trace` `t` at each
+sampling point.  `data` is now a variable bound to `t`s values, and changing
+`data` will change `t`.  `trace(t)` may itself also be modified and the trace
+will be updated.
+
+!!! note
+    The value returned by `trace` is a variable bound to an internal field
+    of the trace.  Therefore, assigning another value to `trace(t)` or
+    `data` will **not** update the values in `t`.  Instead, update the values
+    in-place using the `.` operator (like `data .= 1`).  See examples below.
+
+!!! note
+    The underlying data array holding the trace can be rebound by assigning to
+    the trace's field `t`, but this is unsupported and make break in future.
+
+# Examples
+
+Retrieving the data values for a trace, and modifying the first value.
+```
+julia> t = sample_data();
+
+julia> data = trace(t)
+1000-element Array{Float32,1}:
+ -0.09728001
+ -0.09728001
+  ⋮
+ -0.0768
+ -0.0768
+
+julia> data[1] = 0;
+
+julia> trace(t)
+1000-element Array{Float32,1}:
+  0.0
+ -0.09728001
+  ⋮
+ -0.0768
+ -0.0768
+```
+
+Setting the data values for a new synthetic trace.
+```
+julia> t = Trace(0, 0.01, 1000); # 1000-point, 100 Hz trace with random data
+
+julia> trace(t) .= sin.(π.*times(t));
+
+julia> trace(t)
+1000-element Array{Float64,1}:
+  0.0
+  0.03141075907812829
+  ⋮
+ -0.06279051952931425
+ -0.031410759078131116
+```
 """
 trace(t::AbstractTrace) = t.t
 
