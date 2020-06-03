@@ -387,8 +387,8 @@ trace if any.  So if a trace's `starttime` is 3 s and a pick is at 4 s,
 the pick points to a time 1 s after the trace starts.
 
 Picks have two fields: `time` and `name`.  `time` is the time in seconds
-after zero time, which is the event time if set.  `name` may be `String`
-or `missing` if no name is needed for this pick.
+after zero time, which is the event time if set.  `name` may be a `String`
+such as `"PcP"`, or `missing` if no name is needed for this pick.
 
 ### Getting picks
 Picks are accessible in the `picks` field of a trace:
@@ -435,7 +435,7 @@ t.picks
 Or, you can use `setindex!` (`[]`):
 
 ```@repl example
-t.picks.S = 2.5
+t.picks[:S] = 2.5
 t.picks
 ```
 
@@ -443,14 +443,15 @@ Note that the `:S` pick is overwritten.  Note also here that by not providing
 a name for the pick, its name defaults to `missing`.
 
 ### Removing picks
-Remove picks as is usual for `Dict`-like collections of things:
+Remove picks as usual for `Dict`-like collections of things, with `delete!`:
 
 ```@repl example
 delete!(t.picks, :S)
 t.picks
 ```
 
-You can also use the special method of setting a pick to `missing`:
+You can also use the special method for the `picks` field of setting a
+pick to `missing`:
 
 ```@repl example
 t.picks.F = missing
@@ -476,6 +477,8 @@ t = sample_data(:array)
 t[1].picks # Picks of the first trace
 t.picks.A.time # Times of all A picks for all traces
 ```
+
+
 
 ## Geometry
 Seis allows you to have traces defined in any coordinate system you like.
