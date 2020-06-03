@@ -23,6 +23,10 @@ julia> dict.a
 
 julia> dict.b
 missing
+
+julia> dict.a = missing
+
+julia> dict
 ```
 
 Arrays of `SeisDict`s also define `.`-access and setting via broadcasting, so one
