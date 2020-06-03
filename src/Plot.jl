@@ -130,6 +130,13 @@ function plot end
         end
     end
 
+    # FIXME: Update this as this it may break
+    # Text annotations with custom font attributes requires using Plots.text,
+    # but we don't want to depend on Plots.  Instead use Main.Plots, in the hope
+    # that the user has loaded Plots into Main.
+    #   workaround (https://discourse.julialang.org/t/annotations-and-line-widths-in-plots-jl-heatmaps/4259/3)
+    plots = Main.Plots
+
     # Labels
     get!(plotattributes, :label, channel_code.(t))
     annot_params = (9, :black, :top, :right)
@@ -139,7 +146,8 @@ function plot end
         @series begin
             seriestype := :scatter
             subplot := i
-            series_annotations := [Main.Plots.text(plotattributes[:label][i], annot_params...)]
+            # FIXME: Update to a better way of plotting annotations
+            series_annotations := [plots.text(plotattributes[:label][i], annot_params...)]
             [xlims[end] - 0.007(xlims[end] - xlims[1])], [all_ylims[i][end]]
         end
     end
@@ -160,7 +168,6 @@ function plot end
             end
         end
 
-        # Pick labels: workaround (see https://discourse.julialang.org/t/annotations-and-line-widths-in-plots-jl-heatmaps/4259/3)
         seriestype := :scatter
         markerstrokealpha := 0.0
         # seriesalpha := 0.0
@@ -171,8 +178,8 @@ function plot end
             length(picks(t[i])) == 0 && continue
             @series begin
                 subplot := i
-                # FIXME: Update to a better way of implementing this: Main.Plots may break
-                series_annotations := [Main.Plots.text.(coalesce(p.name, ""), annotation_params...)
+                # FIXME: Update to a better way of plotting annotations
+                series_annotations := [plots.text.(coalesce(p.name, ""), annotation_params...)
                                        for p in Seis.picks(t[i])
                                        if xlims[1] <= p.time <= xlims[2]]
                 x = [p.time for p in Seis.picks(t[i]) if xlims[1] <= p.time <= xlims[2]]
