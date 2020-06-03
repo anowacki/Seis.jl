@@ -44,7 +44,6 @@ Seis.Pick{Float64}((time=2.0, name=missing))
 ```
 """
 function add_pick!(t::AbstractTrace, time, name::Union{Missing,AbstractString}=missing)
-    p = (time=time, name=name)
     key = if !ismissing(name)
         base_key = name
         key = Symbol(base_key)
@@ -61,15 +60,15 @@ function add_pick!(t::AbstractTrace, time, name::Union{Missing,AbstractString}=m
         end
         i
     end
-    t.picks[key] = p
+    t.picks[key] = time, name
     t.picks[key]
 end
 
 """
     add_pick!(t, p::Pick, name=p.name) -> p
 
-Add a travel time pick to the `Trace` `t` from a `Seis.Pick`.  By default,
-the pick name is used.
+Add a travel time pick to the `Trace` `t` from a [`Seis.Pick`](@ref).
+By default, the pick name is used.
 """
 add_pick!(t::AbstractTrace, p::Pick, name=p.name) = add_pick!(t, p.time, name)
 
@@ -121,8 +120,8 @@ function picks(t::AbstractTrace, name_or_match; sort=:time)
     _sortpicks(ps, sort)::Vector{Pick{eltype(t)}}
 end
 
-_picks(t::AbstractTrace, name::AbstractString) = filter(x->coalesce(x[2], "")==name, picks(t))
-_picks(t::AbstractTrace, match::Regex) = filter(x->occursin(match, coalesce(x[2], "")), picks(t))
+_picks(t::AbstractTrace, name::AbstractString) = filter(x->coalesce(x.name, "")==name, picks(t))
+_picks(t::AbstractTrace, match::Regex) = filter(x->occursin(match, coalesce(x.name, "")), picks(t))
 function _picks(t::AbstractTrace, key::Symbol)
     p = t.picks[key]
     p === missing ? [] : [p]
@@ -131,11 +130,11 @@ end
 _sortpicks(ps, ::Nothing) = ps
 function _sortpicks(ps, sort)
     inds = if sort == :time
-        sortperm(first.(ps))
+        sortperm(getfield.(ps, :time))
     elseif sort == :name
-        sortperm(string.(replace(last.(ps), missing=>"")))
+        sortperm(string.(replace(getfield.(ps, :name), missing=>"")))
     else
         throw(ArgumentError("`sort` can be only `:time` or `:name`"))
     end
     ps[inds]
-end    
+end
