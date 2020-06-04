@@ -13,9 +13,21 @@ notifications:
 matrix:
   - PYTHON=""
 
-matrix:
+jobs:
   allow_failures:
     - julia: nightly
+  include:
+    - stage: "Documentation"
+      julia: 1.4
+      os: linux
+      script:
+        - julia --project=docs/ -e 'ENV["PYTHON"] = "";
+                                    import Pkg;
+                                    Pkg.pkg"add https://github.com/anowacki/TauPy.jl https://github.com/anowacki/SeisTau.jl"'
+        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
+                                               Pkg.instantiate()'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip
 
 coveralls: true
 
