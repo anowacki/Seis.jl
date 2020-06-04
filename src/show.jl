@@ -67,7 +67,7 @@ end
 
 ## Pick
 Base.show(io::IO, p::Pick{T}) where T =
-    print(io, "Seis.Pick{$T}((time=$(p.time), name=$(repr(p.name))))")
+    print(io, "Seis.Pick{$T}(time=$(p.time), name=$(repr(p.name)))")
 
 ## Trace
 # List printing

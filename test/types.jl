@@ -4,8 +4,7 @@ using Seis
 
 @testset "Types" begin
     @testset "SeisDict" begin
-        let
-            local d, dd
+        @testset "Single dicts" begin
             d = Seis.SeisDict(:a=>1)
             @test d[:a] == 1
             @test d.a == 1
@@ -16,6 +15,9 @@ using Seis
             @test haskey(d, :a) == false
             @test haskey(d, :b) == false
             @test collect(keys(d)) == []
+        end
+        
+        @testset "Arrays" begin
             dd = [Seis.SeisDict(:a=>i) for i in 1:3]
             @test dd.a == [1,2,3]
             dd.a = [2,3,4]

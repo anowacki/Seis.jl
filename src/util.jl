@@ -170,7 +170,7 @@ function origin_time!(t::AbstractTrace, time::DateTime; picks=true)
     t.evt.time = time
     if picks
         for (key, (time, name)) in t.picks
-            t.picks[key] = (time=time-Δb, name=name)
+            t.picks[key] = Seis.Pick{eltype(t)}(time-Δb, name)
         end
     end
     t
