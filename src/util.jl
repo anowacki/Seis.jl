@@ -141,10 +141,12 @@ If `t.evt.time` is `missing` (i.e., unset), then it is simply set to
 
 # Example
 ```
+julia> using Dates
+
 julia> t = sample_data(); t.picks
-Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float32,Union{Missing, String}}}} with 2 entries:
-  :F => Seis.Pick{Float32}((time=60.980003, name=missing))
-  :A => Seis.Pick{Float32}((time=53.670002, name=missing))
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
+  :F => Seis.Pick{Float32}(time=60.980003, name=missing)
+  :A => Seis.Pick{Float32}(time=53.670002, name=missing)
 
 julia> t.evt.time
 1981-03-29T10:38:14
@@ -153,9 +155,9 @@ julia> origin_time!(t, t.evt.time + Second(1)); t.evt.time
 1981-03-29T10:38:15
 
 julia> t.picks
-Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float32,Union{Missing, String}}}} with 2 entries:
-  :F => Seis.Pick{Float32}((time=59.980003, name=missing))
-  :A => Seis.Pick{Float32}((time=52.670002, name=missing))
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
+  :F => Seis.Pick{Float32}(time=59.980003, name=missing)
+  :A => Seis.Pick{Float32}(time=52.670002, name=missing)
 ```
 """
 function origin_time!(t::AbstractTrace, time::DateTime; picks=true)

@@ -17,33 +17,35 @@ a picks with name "PKP", time 1001 s and key `:PKP`.)
 
 # Example
 
-```julia
+```
 julia> t = Trace(0, 1, 2);
 
 julia> add_pick!.(t, [1, 2], ["A", missing]);
 
 julia> t.picks
-Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}}} with 2 entries:
-  :A => Seis.Pick{Float64}((time=1.0, name="A"))
-  1  => Seis.Pick{Float64}((time=2.0, name=missing))
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float64}} with 2 entries:
+  :A => Seis.Pick{Float64}(time=1.0, name="A")
+  1  => Seis.Pick{Float64}(time=2.0, name=missing)
 
 julia> add_pick!(t, 4)
-Seis.Pick{Float64}((time=4.0, name=missing))
+Seis.Pick{Float64}(time=4.0, name=missing)
 
 julia> t.picks
-Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}}} with 3 entries:
-  :A => Seis.Pick{Float64}((time=1.0, name="A"))
-  2  => Seis.Pick{Float64}((time=4.0, name=missing))
-  1  => Seis.Pick{Float64}((time=2.0, name=missing))
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float64}} with 3 entries:
+  :A => Seis.Pick{Float64}(time=1.0, name="A")
+  2  => Seis.Pick{Float64}(time=4.0, name=missing)
+  1  => Seis.Pick{Float64}(time=2.0, name=missing)
 
 julia> t.picks.A
-Seis.Pick{Float64}((time=1.0, name="A"))
+Seis.Pick{Float64}(time=1.0, name="A")
 
 julia> t.picks[1]
-Seis.Pick{Float64}((time=2.0, name=missing))
+Seis.Pick{Float64}(time=2.0, name=missing)
 ```
+
+See also: [`Seis.Pick`](@ref).
 """
-function add_pick!(t::AbstractTrace, time, name::Union{Missing,AbstractString}=missing)
+function add_pick!(t::AbstractTrace, time, name=missing)
     key = if !ismissing(name)
         base_key = name
         key = Symbol(base_key)
@@ -75,11 +77,11 @@ the pick name is used.
 julia> t1 = Trace(0, 1, 20); t2 = sample_data();
 
 julia> add_pick!(t1, t2.picks.A, "A")
-Seis.Pick{Float64}((time=53.67000198364258, name="A"))
+Seis.Pick{Float64}(time=53.67000198364258, name="A")
 
 julia> t1.picks
-Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}}} with 1 entry:
-  :A => Seis.Pick{Float64}((time=53.67000198364258, name="A"))
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float64}} with 1 entry:
+  :A => Seis.Pick{Float64}(time=53.67000198364258, name="A")
 ```
 """
 add_pick!(t::AbstractTrace, p::Pick, name=p.name) = add_pick!(t, p.time, name)
@@ -106,14 +108,14 @@ Remove all picks associated with the `Trace` `t`.
 julia> t = sample_data();
 
 julia> picks(t)
-2-element Array{NamedTuple{(:time, :name),Tuple{Float32,Union{Missing, String}}},1}:
- Seis.Pick{Float32}((time=53.670002, name=missing))
- Seis.Pick{Float32}((time=60.980003, name=missing))
+2-element Array{Seis.Pick{Float32},1}:
+ Seis.Pick{Float32}(time=53.670002, name=missing)
+ Seis.Pick{Float32}(time=60.980003, name=missing)
 
 julia> clear_picks!(t);
 
 julia> picks(t)
-0-element Array{NamedTuple{(:time, :name),Tuple{Float32,Union{Missing, String}}},1}
+0-element Array{Seis.Pick{Float32},1}
 ```
 """
 clear_picks!(t::AbstractTrace) = empty!(t.picks)
@@ -156,17 +158,17 @@ to sort alphanumerically by name (where unnamed picks appear first).
 julia> t = Trace(0, 1, 2); t.picks.P = (1, "Pn"); t.picks.S = (1.8, "S");
 
 julia> t.picks
-Seis.SeisDict{Union{Int64, Symbol},NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}}} with 2 entries:
-  :P => Seis.Pick{Float64}((time=1.0, name="Pn"))
-  :S => Seis.Pick{Float64}((time=1.8, name="S"))
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float64}} with 2 entries:
+  :P => Seis.Pick{Float64}(time=1.0, name="Pn")
+  :S => Seis.Pick{Float64}(time=1.8, name="S")
 
 julia> picks(t, "S")
-1-element Array{NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}},1}:
- Seis.Pick{Float64}((time=1.8, name="S"))
+1-element Array{Seis.Pick{Float64},1}:
+ Seis.Pick{Float64}(time=1.8, name="S")
 
-julia> picks(t, r"^P.*")
-1-element Array{NamedTuple{(:time, :name),Tuple{Float64,Union{Missing, String}}},1}:
- Seis.Pick{Float64}((time=1.0, name="Pn"))
+julia> picks(t, r"^P")
+1-element Array{Seis.Pick{Float64},1}:
+ Seis.Pick{Float64}(time=1.0, name="Pn")
 ```
 """
 function picks(t::AbstractTrace, name_or_match; sort=:time)

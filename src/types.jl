@@ -437,7 +437,7 @@ tuples, or named tuples with fields `time` and `name`.
 Arrays of `Pick`s, which are stored in `Traces`, can be accessed using
 `getproperty` (`.`-access) and this returns arrays of times or names.
 
-# Example
+# Examples
 
 ## Getting and setting values:
 
@@ -467,7 +467,6 @@ julia> t.picks
 Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float64}} with 2 entries:
   :P => Seis.Pick{Float64}(time=1.2, name=missing)
   :S => Seis.Pick{Float64}(time=2.1, name="Sn")
-
 ```
 
 ## Iteration

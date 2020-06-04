@@ -146,4 +146,26 @@ using Seis
         @test length(t.picks) == length(picks(t)) == 0
         @test t.picks[pick_key] === missing
     end
+
+    @testset "add_pick!" begin
+        let t = Trace(0, 1, 1), p = Seis.Pick(1, "A")
+            add_pick!(t, p)
+            @test haskey(t.picks, :A)
+            @test t.picks.A == p
+            add_pick!(t, p)
+            @test haskey(t.picks, :A_1)
+            @test t.picks.A_1 == p
+
+            add_pick!(t, p, "B")
+            @test haskey(t.picks, :B)
+            @test t.picks.B == Seis.Pick(p.time, "B")
+            add_pick!(t, p, missing)
+            @test haskey(t.picks, 1)
+            @test t.picks[1] == Seis.Pick(p.time)
+
+            add_pick!(t, p, missing)
+            @test haskey(t.picks, 2)
+            @test t.picks[2] == t.picks[1]
+        end
+    end
 end
