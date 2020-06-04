@@ -488,10 +488,12 @@ end
 
 Pick(time, name) = Pick{DEFAULT_FLOAT}(time, name)
 Pick(args) = Pick{DEFAULT_FLOAT}(args...)
+Pick(; kwargs...) = Pick{DEFAULT_FLOAT}(; kwargs...)
 Pick{T}(tup::Tuple{<:Any,<:Any}) where T = Pick{T}(tup...)
 Pick{T}(; time, name=missing) where T = Pick{T}(time, name)
 Base.convert(::Type{Pick}, time::Real) = Pick(time)
 Base.convert(::Type{Pick}, x::Tuple{<:Any,<:Any}) = Pick(x...)
+Base.convert(::Type{Pick}, p::Pick) = Pick(p.time, p.name)
 Base.convert(::Type{Pick}, x::NamedTuple{(:time,:name)}) = Pick(x...)
 Base.convert(::Type{Pick{T}}, time::Real) where T = Pick{T}(time)
 Base.convert(::Type{Pick{T}}, x::Tuple{<:Any,<:Any}) where T = Pick{T}(x...)

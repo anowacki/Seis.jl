@@ -12,6 +12,17 @@ using Seis
             @test Seis.Pick{T}(; time=1) == Seis.Pick{T}(1, missing)
             @test Seis.Pick{T}(; time=2, name="B") == Seis.Pick{T}(2, "B")
         end
+        @testset "Untyped" begin
+            default_float = Float64
+            @test Seis.Pick(1) isa Seis.Pick{default_float}
+            @test Seis.Pick(1, "A") isa Seis.Pick{default_float}
+            @test Seis.Pick(1).time === default_float(1)
+            @test Seis.Pick(1).name === missing
+            @test Seis.Pick(1, "A").time === default_float(1)
+            @test Seis.Pick(1, "A").name ==="A"
+            @test Seis.Pick(; time=-1) == Seis.Pick(-1)
+            @test Seis.Pick(; name="A", time=2) == Seis.Pick(2, "A")
+        end
     end
 
     @testset "Conversion" begin
@@ -20,10 +31,17 @@ using Seis
                 @test convert(Seis.Pick{T}, time) == Seis.Pick{T}(time)
                 @test convert(Seis.Pick{T}, (time, name)) == Seis.Pick{T}(time, name)
                 @test convert(Seis.Pick{T}, (time=time, name=name)) == Seis.Pick{T}(time, name)
+                from_type = T == Float32 ? Float64 : Float32
+                @test convert(Seis.Pick{T}, Seis.Pick{from_type}(1, "A")) isa Seis.Pick{T}
+                @test convert(Seis.Pick{T}, Seis.Pick{from_type}(1, "A")).time === T(1)
             end
         end
-        @test convert(Seis.Pick, 1) == Seis.Pick{Float64}(1)
-        @test convert(Seis.Pick, (1, "A")) == Seis.Pick{Float64}(1, "A")
+        @testset "Untyped" begin
+            @test convert(Seis.Pick, 1) == Seis.Pick{Float64}(1)
+            @test convert(Seis.Pick, (1, "A")) == Seis.Pick{Float64}(1, "A")
+            @test convert(Seis.Pick, Seis.Pick{Float32}(1, "A")) == Seis.Pick{Float64}(1, "A")
+            @test convert(Seis.Pick, Seis.Pick(1, "A")) === Seis.Pick(1, "A")
+        end
     end
 
     # Picks can be iterated to give their time, then name
