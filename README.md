@@ -7,6 +7,15 @@
 Seis.jl is an open, fast and flexible framework for analysing seismic
 data in [Julia](https://julialang.org).
 
+For detailed instructions on using Seis, see the documentation via the
+links below.
+
+[![Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://anowacki.github.io/Seis.jl/stable)
+[![Development branch documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://anowacki.github.io/Seis.jl/dev)
+
+This readme file gives a brief introduction to installing and using
+Seis.
+
 ## Installation
 
 At present, Seis is unregistered and it and its dependencies must be
@@ -158,7 +167,8 @@ auto-detection.
 Plotting is available when `using Plots`.  Seis.jl
 makes use of [RecipesBase.jl](https://github.com/JuliaPlots/RecipesBase.jl)
 so that if you do not need plotting, the package does not introduce this
-dependency.  If you do want plots, simply install [Plots.jl](https://github.com/JuliaPlots/Plots.jl)
+dependency.  If you do want plots, simply install
+[Plots.jl](https://github.com/JuliaPlots/Plots.jl)
 by `import Pkg; Pkg.add("Plots")`.  You then need to do `using Plots` when you
 want to start using Seis.jl's plotting routines.
 
@@ -187,10 +197,16 @@ See the help for the `Seis.Plot` module for more information.
 ## Basic processing
 
 Basic time series processing of traces is possible using functions such as
-`integrate`, `bandpass`, `remove_trend`.  Until proper documentation is
-ready, see the exported functions in `src/Seis.jl` for the full list.
+`integrate`, `bandpass`, `remove_trend`.  See the online documentation
+for a full description of the functions available and how to use them.
 
 ## Maintainers
 
 At present, [Andy Nowacki](mailto:a.nowacki@leeds.ac.uk) (@anowacki) is
 the primary maintainer of Seis.jl.
+
+## Contributing
+
+Contributions to Seis are most welcome.  Please open issues in this
+repo with bug reports or feature requests.  Pull requests for the same
+are also very welcome.
