@@ -1,0 +1,9 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Geodesics = "6aaf26a4-c633-11e8-35ae-8904cb805353"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Seis = "dd80f4d8-c2f6-58bd-9bd3-4635f134261d"
+
+[compat]
+Documenter = "0.24"
+Plots = "1"

@@ -27,13 +27,15 @@ module Seis
 
 export
     # Types
-    Station,
-    CartStation,
-    Event,
-    CartEvent,
     AbstractTrace,
-    Trace,
+    CartEvent,
+    CartStation,
     CartTrace,
+    Event,
+    GeogEvent,
+    GeogStation,
+    Station,
+    Trace,
     # 'Getters'
     dates,
     enddate,

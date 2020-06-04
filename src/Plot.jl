@@ -59,7 +59,7 @@ Additional options provided:
     a call to `sortperm`.
 - `decimate`: If `false`, do not decimate traces when plotting for speed.
 """
-plot
+function plot end
 
 # Recipe defining the above
 @recipe function f(t::Union{Seis.AbstractTrace,AbstractArray{<:Trace}};
@@ -130,6 +130,13 @@ plot
         end
     end
 
+    # FIXME: Update this as this it may break
+    # Text annotations with custom font attributes requires using Plots.text,
+    # but we don't want to depend on Plots.  Instead use Main.Plots, in the hope
+    # that the user has loaded Plots into Main.
+    #   workaround (https://discourse.julialang.org/t/annotations-and-line-widths-in-plots-jl-heatmaps/4259/3)
+    plots = Main.Plots
+
     # Labels
     get!(plotattributes, :label, channel_code.(t))
     annot_params = (9, :black, :top, :right)
@@ -139,7 +146,8 @@ plot
         @series begin
             seriestype := :scatter
             subplot := i
-            series_annotations := [Main.Plots.text(plotattributes[:label][i], annot_params...)]
+            # FIXME: Update to a better way of plotting annotations
+            series_annotations := [plots.text(plotattributes[:label][i], annot_params...)]
             [xlims[end] - 0.007(xlims[end] - xlims[1])], [all_ylims[i][end]]
         end
     end
@@ -160,7 +168,6 @@ plot
             end
         end
 
-        # Pick labels: workaround (see https://discourse.julialang.org/t/annotations-and-line-widths-in-plots-jl-heatmaps/4259/3)
         seriestype := :scatter
         markerstrokealpha := 0.0
         # seriesalpha := 0.0
@@ -171,8 +178,8 @@ plot
             length(picks(t[i])) == 0 && continue
             @series begin
                 subplot := i
-                # FIXME: Update to a better way of implementing this: Main.Plots may break
-                series_annotations := [Main.Plots.text.(coalesce(p.name, ""), annotation_params...)
+                # FIXME: Update to a better way of plotting annotations
+                series_annotations := [plots.text.(coalesce(p.name, ""), annotation_params...)
                                        for p in Seis.picks(t[i])
                                        if xlims[1] <= p.time <= xlims[2]]
                 x = [p.time for p in Seis.picks(t[i]) if xlims[1] <= p.time <= xlims[2]]
@@ -202,6 +209,7 @@ Additional options provided via keyword arguments:
               useful if one wants two or more sections to have the same scale.
 - `align`: Set to a `String` to align on the first pick with this name.
            Set to an array of values to align on the value for each trace.
+           Set to a `Symbol` to use the pick of each trace with that key.
 - `decimate`: If `false`, do not perform downsampling of traces for plotting.
            Defaults to `true`.
 - `max_samples`: Control the maximum number of samples to display at one time
@@ -209,7 +217,7 @@ Additional options provided via keyword arguments:
            this off.
 - `pick`:  If `true`, add marks on the record section for each pick in the trace
            headers.
-- `zoom`: Set magnification scale for traces (default t).
+- `zoom`: Set magnification scale for traces (default 1).
 """
 section
 

@@ -24,7 +24,9 @@ relative to the zero time.
 Optionally specify headers to which `b_time` and `e_time` are relative as
 `b_header` and `e_header` respectively.  For example:
 
-    s = read_cut(file, :a, -1, :f + 20)
+```
+s = read_cut(file, :a, -1, :f + 20)
+```
 
 If `b` is before the start of the trace, then the trace is read from the beginning;
 similarly, if `e` is after the end of the trace, the trace is read up until the end.
@@ -140,12 +142,12 @@ function write(s::AbstractArray{SACTrace}, file::Array{String}; args...)
 end
 
 """
-    read_wild(pat, dir="."; echo=true) -> A, files
+    read_wild(pat, dir="."; echo=true) -> sac_traces, files
 
 Read files matching globbing pattern `pat` from directory `dir`.
 If `echo` is false, do not show which files are being read.
 
-Returns an array of SACTrace types `A`, and an array of file names `files`.
+Returns an array of `SACTrace`s `sac_traces`, and an array of file names `files`.
 **NB:** If no files are matched, then empty `SACTrace` and `String` arrays
 are returned and a warning message printed.
 """
