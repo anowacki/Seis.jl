@@ -10,9 +10,6 @@ julia:
 notifications:
   email: false
 
-matrix:
-  - PYTHON=""
-
 jobs:
   allow_failures:
     - julia: nightly
@@ -28,8 +25,6 @@ jobs:
                                                Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
       after_success: skip
-
-coveralls: true
 
 before_install:
   - julia -e 'import Pkg; Pkg.pkg"add https://github.com/anowacki/Geodesics.jl"'
