@@ -7,7 +7,7 @@ const DEFAULT_FLOAT = Float64
     SeisDict
 
 Wrapper around `Base.Dict` which allows one to get or set values using
-the {get|set}property[!] syntax, i.e., `.`-access like `dict.key`.
+the `{get|set}property[!]` syntax, i.e., `.`-access like `dict.key`.
 `SeisDict`s also differ in that `missing` is returned instead of throwing a
 `KeyError` when accessing a nonexistent key.  A key is removed if it is set to
 `missing`.
@@ -439,7 +439,7 @@ Arrays of `Pick`s, which are stored in `Traces`, can be accessed using
 
 # Examples
 
-## Getting and setting values:
+## Getting and setting values
 
 ```
 julia> t = Trace(0, 1, 1)

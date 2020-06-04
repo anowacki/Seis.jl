@@ -6,6 +6,9 @@ minor releases of Seis, and hence are not part of the public API.
 ## Private function index
 
 ### Private types
+```@docs
+Seis.Pick
+```
 
 #### Dictionaries
 ```@docs
