@@ -121,6 +121,7 @@ import Geodesics
 
 # All basic types
 include("types.jl")
+include("conversion.jl")
 
 # File formats submodules
 include("io/SeisIOIO.jl")

@@ -279,7 +279,76 @@ using Seis
             ts.evt = t.evt
             @test all(x->x===t.evt, ts.evt)
             ts .= t
-            @test all(x->x===t, ts)
+            @test all(x->x==t, ts)
+            # Test for aliasing
+            trace(t) .= -1
+            @test all(x->all(trace(x) .== -1), ts)
+        end
+    end
+
+    # Conversion tests for Picks are in traveltimes.jl
+    # TODO: Move Pick tests here.
+    @testset "Conversion" begin
+        @testset "$Geom" for Geom in (Seis.Geographic, Seis.Cartesian)
+            Ts = (Float32, Float64)
+            @testset "$Tin -> $Tout" for Tin in Ts, Tout in Ts
+                @testset "Position $Geom" begin
+                    intype = Geom{Tin}
+                    outtype = Geom{Tout}
+                    @test convert(outtype, intype(1, 2, 3)) isa outtype
+                    @test getfield(convert(outtype, intype(1, 2, 3)), 1) == 1
+                    @test convert(outtype, intype(missing, missing, missing)) isa outtype
+                    @test getfield(convert(outtype, intype(missing, 2, 3)), 1) === missing
+                    # Identity 'conversions' give the same object
+                    if intype == outtype
+                        in = intype(1, 2, 3)
+                        @test convert(outtype, in) === in
+                    end
+                end
+
+                # Events and Stations
+                @testset "$ES" for ES in (Event, Station)
+                    intype = ES{Tin,Geom{Tin}}
+                    outtype = ES{Tout,Geom{Tout}}
+                    kwargs = Geom == Seis.Geographic ? (lon=1, lat=2, dep=3) : (x=1, y=2, z=3)
+                    @test convert(outtype, intype()) isa outtype
+                    @test convert(outtype, intype(; kwargs...)) isa outtype
+                    posfield = ES == Event ? 1 : 5
+                    @test getfield(convert(outtype, intype(; kwargs...)), posfield) == Geom{Tout}(1, 2, 3)
+                    # Identity 'conversions' give the same object
+                    if intype == outtype
+                        in = intype(; kwargs...)
+                        @test convert(outtype, in) === in
+                    end
+                end
+
+                @testset "Trace $Geom" begin
+                    Vs = [Vector{TT} for TT in Ts]
+                    @testset "Data type $Vin -> $Vout" for Vin in Vs, Vout in Vs
+                        intype = Trace{Tin, Vin, Geom{Tin}}
+                        outtype = Trace{Tout, Vout, Geom{Tout}}
+                        vtype = eltype(Vout)
+                        data = vtype[1, 2, 3]
+                        tin = intype(0, 1, data)
+                        tout = convert(outtype, tin)
+                        @test tout isa outtype
+                        @test trace(tout) isa Vout
+                        @test all(trace(tin) .≈ trace(tout))
+                        # Check aliasing is as expected
+                        trace(tin) .= -1
+                        if Vin == Vout
+                            @test trace(tin) === trace(tout)
+                            if intype == outtype
+                                @test tin === tout
+                            else
+                                @test tin !== tout
+                            end
+                        else
+                            @test trace(tin) !== trace(tout)
+                        end
+                    end
+                end
+            end
         end
     end
 end
