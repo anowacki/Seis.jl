@@ -499,6 +499,7 @@ Base.convert(::Type{Pick{T}}, x::Tuple{<:Any,<:Any}) where T = Pick{T}(x...)
 Base.convert(::Type{Pick{T}}, p::Pick) where T = Pick{T}(p.time, p.name)
 Base.convert(::Type{Pick{T}}, x::NamedTuple{(:time,:name)}) where T = Pick{T}(x...)
 Base.first(p::Pick) = p.time
+Base.last(p::Pick) = p.name
 
 # Picks iterate time, name
 Base.iterate(p::Pick, i=1) = i == 1 ? (p.time, 2) : (i == 2 ? (p.name, 3) : nothing)

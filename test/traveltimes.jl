@@ -54,6 +54,7 @@ using Seis
             @test v == name
             @test iterate(p, i) === nothing
             @test first(p) == time
+            @test last(p) == name
             a, b = p
             @test a == time
             @test b == name
