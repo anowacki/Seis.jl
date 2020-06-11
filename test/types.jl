@@ -311,6 +311,12 @@ using Seis
                     intype = ES{Tin,Geom{Tin}}
                     outtype = ES{Tout,Geom{Tout}}
                     kwargs = Geom == Seis.Geographic ? (lon=1, lat=2, dep=3) : (x=1, y=2, z=3)
+                    if ES == Station
+                        kwargs = (net="A", sta="B", loc="C", cha="D", elev=-1,
+                                  azi=rand(), inc=rand(), meta=Dict(:x=>"X"), kwargs...)
+                    else
+                        kwargs = (id="XYZ", time=now(), meta=Dict(:y=>"Y"), kwargs...)
+                    end
                     @test convert(outtype, intype()) isa outtype
                     @test convert(outtype, intype(; kwargs...)) isa outtype
                     posfield = ES == Event ? 1 : 5

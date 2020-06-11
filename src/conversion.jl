@@ -17,7 +17,7 @@ for Geom in (Cartesian, Geographic)
             Event{Tout,$geom{Tout}}(e.pos, e.time, e.id, e.meta)
 
         Base.convert(::Type{Station{Tout,$geom{Tout}}}, s::Station{Tin,$geom{Tin}}) where {Tin, Tout} =
-            Station{Tout,$geom{Tout}}(s.net, s.sta, s.cha, s.loc, s.pos, s.elev,
+            Station{Tout,$geom{Tout}}(s.net, s.sta, s.loc, s.cha, s.pos, s.elev,
                 s.azi, s.inc, s.meta)
 
         Base.convert(::Type{Trace{T,V,$geom{T}}}, t::Trace{T,V,$geom{T}}) where {T,V} = t
