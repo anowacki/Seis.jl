@@ -258,7 +258,16 @@ const GeogEvent{T} = Event{T, Geographic{T}}
 
 const EVENT_FIELDS = fieldnames(Event)
 
-Base.getproperty(e::AbstractArray{<:Event}, f::Symbol) = getproperty.(e, f)
+function Base.getproperty(e::AbstractArray{<:Event}, f::Symbol)
+    if f === :lon || f === :lat || f === :dep || f === :x || f === :y || f === :z
+        getproperty.(e, f)
+    elseif f === :time || f === :meta || f === :id
+        getproperty.(e, f)
+    else
+        getfield(e, f)
+    end
+end
+
 Base.setproperty!(e::AbstractArray{<:Event}, f::Symbol, val) =
     setproperty!.(e, f, val)
 Base.propertynames(e::AbstractArray{<:Event}, private=false) = fieldnames(eltype(e))
@@ -397,6 +406,7 @@ julia> Geodesy.LLA(sta::GeogStation) = LLA(sta.lat, sta.lon, sta.elev)
 const GeogStation{T} = Station{T, Geographic{T}}
 
 const STATION_FIELDS = fieldnames(Station)
+
 function Base.getproperty(e::Union{Station,Event}, p::Symbol)
     if p === :lon || p === :lat || p === :dep || p === :x || p === :y || p === :z
         getfield(e.pos, p)
@@ -414,7 +424,20 @@ function Base.setproperty!(e::Union{Event{T},Station{T}}, p::Symbol, v) where T
     end
 end
 
-Base.getproperty(s::AbstractArray{<:Station}, f::Symbol) = getproperty.(s, f)
+function Base.getproperty(s::AbstractArray{<:Station}, f::Symbol)
+    if f === :lon || f === :lat || f === :dep || f === :elev
+        getproperty.(s, f)
+    elseif f === :x || f === :y || f === :z
+        getproperty.(s, f)
+    elseif f === :net || f === :sta || f === :cha || f == :loc
+        getproperty.(s, f)
+    elseif f === :inc || f === :azi
+        getproperty.(s, f)
+    else
+        getfield(s, f)
+    end
+end
+
 Base.setproperty!(s::AbstractArray{<:Station}, f::Symbol, val) =
     setproperty!.(s, f, val)
 Base.propertynames(s::AbstractArray{<:Station}, private=false) = propertynames(first(s))
@@ -507,7 +530,13 @@ Base.iterate(p::Pick, i=1) = i == 1 ? (p.time, 2) : (i == 2 ? (p.name, 3) : noth
 Base.getindex(p::Pick, i::Integer) = getfield(p, i)
 
 # Vectors of picks can have their values retrieved as a vector
-Base.getproperty(p::AbstractArray{<:Pick}, field::Symbol) = getproperty.(p, field)
+function Base.getproperty(p::AbstractArray{<:Pick}, field::Symbol)
+    if field === :time || field === :name
+        getproperty.(p, field)
+    else
+        getfield(p, field)
+    end
+end
 
 """
     AbstractTrace
@@ -611,16 +640,37 @@ CartTrace(args...) = Trace{DEFAULT_FLOAT, Vector{DEFAULT_FLOAT},
 
 const TRACE_FIELDS = fieldnames(Trace)
 
-Base.getproperty(t::AbstractArray{<:Trace}, f::Symbol) = getfield.(t, f)
-Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val) =
-    for tt in t setproperty!(tt, f, val) end
+# Get an array of values from an array of traces
+function Base.getproperty(t::AbstractArray{<:Trace}, f::Symbol)
+    if f === :b || f === :delta || f === :meta || f === :evt || f === :sta || f === :picks
+        getfield.(t, f)
+    else
+        getfield(t, f)
+    end
+end
+
+# Set an array of traces with a single value
+function Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val)
+    if f === :b || f === :delta || f === :meta || f === :evt || f == :sta || f === :picks
+        for tt in t
+            setproperty!(tt, f, val)
+        end
+    else
+        # Fallback in case of desired dot-access to fields of an array type
+        setfield!(t, f, val)
+    end
+end
+
+# Set an array of traces with an array of values
 function Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val::AbstractArray)
     length(t) == length(val) || throw(DimensionMismatch())
     for (tt, vv) in zip(t, val)
         setproperty!(tt, f, vv)
     end
 end
+
 Base.propertynames(t::AbstractArray{<:Trace}, private=false) = fieldnames(eltype(t))
+
 Base.:(==)(t1::Trace, t2::Trace) =
     all(x -> isequal(x[1], x[2]), (getfield.((t1, t2), f) for f in TRACE_FIELDS))
 

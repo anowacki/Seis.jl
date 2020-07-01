@@ -357,4 +357,28 @@ using Seis
             end
         end
     end
+
+    # Test that views of arrays of our types do not cause errors
+    @testset "Views" begin
+        @testset "$T" for T in (Event, Station)
+            es = [T(lon=rand()) for _ in 1:3]
+            ev = view(es, 2:3)
+            @test ev.lon == es[2:3].lon
+            @test ev[1] == es[2]
+        end
+
+        @testset "Pick" begin
+            ps = [Seis.Pick(rand(), name) for name in ("A", "B", "C")]
+            pv = view(ps, 2:3)
+            @test pv.time == ps[2:3].time
+            @test pv[1] == ps[2]
+        end
+
+        @testset "Trace" begin
+            ts = [Trace(rand(), 1, 0) for _ in 1:3]
+            tv = view(ts, 2:3)
+            @test tv.b == ts[2:3].b
+            @test tv[1] == ts[2]
+        end
+    end
 end
