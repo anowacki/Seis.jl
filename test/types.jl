@@ -381,4 +381,51 @@ using Seis
             @test tv[1] == ts[2]
         end
     end
+
+    # Hashing, isequal and uniqueness
+    function test_hash_isequal(x, x′, y)
+        @test isequal(x, x′)
+        @test !isequal(x, y)
+        @test hash(x) == hash(x′)
+        @test hash(x) != hash(y)
+        @test unique([x, x′, y]) == [x, y]
+    end
+
+    @testset "Hash and isequal" begin
+        @testset "Cartesian" begin
+            c = [Seis.Cartesian(x=1) for _ in 1:3]
+            c[3].y = 2
+            test_hash_isequal(c...)
+        end
+        @testset "Geographic" begin
+            g = [Seis.Geographic(lon=1) for _ in 1:3]
+            g[3].lat = 2
+            test_hash_isequal(g...)
+        end
+        @testset "$T" for T in (Event, Station)
+            e = [T(lon=1) for _ in 1:3]
+            e[3].meta.a = 1
+            test_hash_isequal(e...)
+            e[3].meta.a = missing
+            e[3].dep = 2
+            test_hash_isequal(e...)
+        end
+        @testset "Trace" begin
+            t = [Trace(0, 1, 0) for _ in 1:3]
+            push!(trace(t[3]), 1)
+            test_hash_isequal(t...)
+            empty!(trace(t[3]))
+            t[3].b = 1
+            test_hash_isequal(t...)
+            t[3].b = t[1].b
+            t[3].sta.lon = 1
+            test_hash_isequal(t...)
+            t[3].sta.lon = missing
+            t[3].evt.time = now()
+            test_hash_isequal(t...)
+            t[3].evt.time = missing
+            t[3].meta.a = 1
+            test_hash_isequal(t...)
+        end
+    end
 end
