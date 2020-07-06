@@ -140,6 +140,10 @@ using Seis
             @test nearest_sample(t, DateTime(3000), inside=false) == nsamples(t)
             @test nearest_sample(t, DateTime(1000)) == nothing
         end
+        let t = sample_data()
+            @test nearest_sample(t, t.evt.time) === nothing
+            @test nearest_sample(t, t.evt.time, inside=false) == 1
+        end
     end
 
     @testset "nsamples" begin

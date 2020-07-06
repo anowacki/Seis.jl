@@ -256,9 +256,9 @@ function nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
     ismissing(t.evt.time) && error("trace does not have origin time set")
     d = dates(t)
     if inside
-        t.evt.time <= datetime <= d[end] || return nothing
+        d[1] <= datetime <= d[end] || return nothing
     end
-    datetime <= t.evt.time && return 1
+    datetime <= d[1] && return 1
     datetime >= d[end] && return nsamples(t)
     argmin(abs.(d .- datetime))
 end
