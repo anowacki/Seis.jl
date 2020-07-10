@@ -195,6 +195,21 @@ origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
 Return `true` if the trace `t` is horizontal (i.e., its inclination
 is 90° from the vertical), and `false` otherwise.
 
+# Examples
+```
+julia> s = Station(azi=0, inc=90);
+
+julia> is_horizontal(s)
+true
+
+julia> t = sample_data();
+
+julia> is_horizontal(t)
+false
+
+julia> t.sta.inc
+0.0f0
+```
 See also: [`is_horizontal`](@ref).
 """
 is_horizontal(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 90, atol=tol)
@@ -206,6 +221,19 @@ is_horizontal(t::Trace{T}; tol=eps(T)) where T = is_horizontal(t.sta, tol=tol)
 
 Return `true` if the trace `t` is vertical (i.e., its inclination
 is 0°), and `false` otherwise.
+
+# Examples
+```
+julia> s = Station(azi=0, inc=90);
+
+julia> is_vertical(s)
+false
+
+julia> t = sample_data();
+
+julia> is_vertical(t)
+true
+```
 
 See also: [`is_vertical`](@ref).
 """
@@ -235,6 +263,19 @@ Return the index `i` of the nearest sample of the trace `t` to `time` seconds.
 If `inside` is `true` (the default), return `nothing` when `time` lies outside
 the trace.  Set `inside` to `false` to instead return the first or last index
 when `time` is outside the trace.
+
+# Examples
+```
+julia> t = Trace(0, 1, rand(5)); # Trace starting at 0 s, 1 Hz sampling
+
+julia> nearest_sample(t, 2)
+3
+
+julia> nearest_sample(t, -1)
+
+julia> nearest_sample(t, -1, inside=false)
+1
+```
 """
 function nearest_sample(t::AbstractTrace, time; inside=true)::Union{Int,Nothing}
     if inside
@@ -251,6 +292,21 @@ end
 Form of `nearest_sample` where `datetime` is given as absolute time.
 
 An error is thrown if no origin time is specified for `t.evt.time`.
+
+# Example
+```
+julia> using Dates: DateTime, Second
+
+julia> t = sample_data();
+
+julia> nearest_sample(t, DateTime(1981, 03, 29, 10, 39, 7))
+35
+
+julia> nearest_sample(t, startdate(t) - Second(10)) # 10 s before the first sample
+
+julia> nearest_sample(t, startdate(t) -  Second(10), inside=false)
+1
+```
 """
 function nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
     ismissing(t.evt.time) && error("trace does not have origin time set")

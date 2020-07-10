@@ -213,6 +213,11 @@ Read a single file:
 julia> read_mseed("data.mseed")
 ```
 
+Read a single file assuming a Cartesian geometry:
+```
+julia> read_mseed(CartTrace{Float32, Vector{Float32}}, "data.mseed")
+```
+
 !!! note
     Using a float type of `Float64` for `T`  (e.g.,
     `Trace{Float64, Vector{Float64}, Seis.Geographic{Float32}}}`)
@@ -244,7 +249,7 @@ The following keyword arguments can be passed to `read_mseed`:
 
 - `maximum_offset`: The maximum sum of all gaps beyond which gaps are no
   longer tolerated in a single trace.  This is calculated by simply adding
-  all the gaps together.  By deftault this is the sampling interval.
+  all the gaps together.  By default this is the sampling interval.
 """
 read_mseed(T::Type, file; kwargs...) = Miniseed.read(T, file; kwargs...)
 read_mseed(file; kwargs...) = Miniseed.read(file; kwargs...)
@@ -284,7 +289,9 @@ read_mseed(pattern, dir; kwargs...) =
     channel_code(s::Station) -> code
 
 Return the channel code for trace `t` or station `s`, in the form of
-"\$net.\$name.\$location.\$component".  Missing fields are left blank.
+`"⟨network⟩.⟨name⟩.⟨location⟩.⟨component⟩"`.  Missing fields are left blank.
+The information is taken respectively from the `net`, `sta`, `cha` and `loc`
+fields of the `Station`.
 """
 channel_code(sta::Station) = join(_blankmissing.((sta.net, sta.sta, sta.loc, sta.cha)), ".")
 channel_code(t::AbstractTrace) = channel_code(t.sta)

@@ -16,7 +16,8 @@ the `{get|set}property[!]` syntax, i.e., `.`-access like `dict.key`.
 
 ```
 julia> dict = Seis.SeisDict(:a=>1)
-Dict{Any,Any} with 1 entry:
+Seis.SeisDict{Any,Any} with 1 entry:
+  :a => 1
 
 julia> dict.a
 1
@@ -25,22 +26,45 @@ julia> dict.b
 missing
 
 julia> dict.a = missing
+missing
 
 julia> dict
+Seis.SeisDict{Any,Any} with 0 entries
+```
+
+Access via `getindex` and `setindex!` (using `[]`s) is still possible:
+
+```
+julia> dict[:c] = 3
+3
+
+julia> dict[:c]
+3
+
+julia> dict[:c] = missing
+missing
+
+julia> dict[:d] # No key with this value
+missing
+
+julia> dict
+Seis.SeisDict{Any,Any} with 0 entries
 ```
 
 Arrays of `SeisDict`s also define `.`-access and setting via broadcasting, so one
 may do:
 
 ```
-julia> d1 = Seis.SeisDict(:a=>1, :b=>2)
-Dict{Any,Any} with 2 entries:
+julia> d1 = Seis.SeisDict(:a=>1)
+Seis.SeisDict{Any,Any} with 1 entry:
   :a => 1
-  :b => 2
 
 julia> d2 = deepcopy(d1); d2.a = 2;
 
-julia> d = [d1, d2];
+julia> d = [d1, d2]
+2-element Array{Seis.SeisDict{Any,Any},1}:
+ Seis.SeisDict(:a => 1)
+ Seis.SeisDict(:a => 2)
 
 julia> d.a
 2-element Array{Int64,1}:
@@ -251,7 +275,7 @@ to construct a geographic `Event`.
 ```
 julia> using Geodesy
 
-julia> Geodesy.LLA(evt::GeogEvent) = LLA(evt.lat, evt.lon, evt.elev)
+julia> Geodesy.ENU(evt::GeogEvent) = ENU(evt.lat, evt.lon, evt.elev)
 ```
 """
 const GeogEvent{T} = Event{T, Geographic{T}}
@@ -542,6 +566,20 @@ end
     AbstractTrace
 
 Abstract type from which you should subtype if creating new types of traces.
+
+# Interface
+
+!!! note
+    The formal interface for `AbstractTrace`s is still a work in progress and may change with
+    a minor version increment.
+
+The following methods should be defined for all `AbstractTrace`s:
+
+- `trace(t)`: Return the data for the trace.
+- `times(t)`: Return the time at each sample of `t`.
+- `starttime(t)`: The time of the first sample.
+- `nsamples(t)`: The number of samples in `t`.
+- `Base.eltype(t)`: The element type of the data samples.
 """
 abstract type AbstractTrace end
 
@@ -600,8 +638,8 @@ Create a new `Trace` with uninitialised data of length `n` samples.
     Trace{T,V}(args...) -> trace::Trace{T,V,Seis.Geographic{T}}
     Trace{T}(args...) -> trace::Trace{T,Vector{T},Seis.Geographic{T}}
 
-Construct traces with non-default precision and string types.  In the third
-form, the vector type defaults to `Vector{$DEFAULT_FLOAT}`, whilst in
+Construct traces with non-default number and data types.  In the third
+form, the data type defaults to `Vector{$DEFAULT_FLOAT}`, whilst in
 both the second and third forms, `P` defaults to `Seis.Geographic{T}`.
 """
 Trace{T,V,P}(b, delta, t::AbstractVector) where {T,V,P} =
@@ -631,7 +669,7 @@ See [`Trace`](@ref) for more details of the different construction methods.
     CartTrace{T}(args...)
 
 Construct a `Trace` with Cartesian coordinates for the `Event` and `Station`
-with non-default precision and string types.  See [`Trace{T,V}`](@ref)
+with non-default number and data types.  See [`Trace{T,V}`](@ref)
 for details.
 """
 CartTrace{T}(args...) where T = Trace{T, Vector{T}, Cartesian{T}}(args...)
