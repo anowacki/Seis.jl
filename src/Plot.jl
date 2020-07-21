@@ -41,6 +41,9 @@ const MAX_SAMPLES = 30_000
 does its own decimation or doesn't suffer performance issues."
 const DECIMATE = Ref(true)
 
+"Whether or not the deprecated `pick` option has been previously used"
+const HAVE_CALLED_PICK = Ref(false)
+
 """
     plot(traces::AbstractArray{<:Seis.Trace}; kwargs...) -> ::Plots.Plot
     plot(trace::AbstractTrace; kwargs...) -> ::Plots.Plot
@@ -55,7 +58,7 @@ Additional options provided:
   (Use `line=nothing` to turn off drawing of lines with the `fill` options.)
 - `label`: Set to label for each trace.  This is placed in the top right
   corner.
-- `pick`: If `false`, do not plot picks.
+- `show_picks`: If `false`, do not plot picks.
 - `sort`: Sort the traces according to one of the following:
   - `:dist`: Epicentral distance
   - `:alpha`: Alphanumerically by channel code
@@ -72,8 +75,11 @@ function plot end
         fill_down=nothing,
         fill_up=nothing,
         max_samples=MAX_SAMPLES,
-        pick=true,
+        show_picks=true,
         sort=nothing,
+        # TODO: Remove this when minor version bumped or a major version released.
+        # Deprecated
+        pick=nothing,
     )
 
     # Make single trace into a vector
@@ -189,18 +195,20 @@ function plot end
     end
 
     # Picks
-    if pick
+    show_picks = _deprecated_pick(pick, show_picks)
+    if show_picks
+        pick_times, pick_names = _picks_in_window(t, xlims[1], xlims[end])
         # Pick lines
         seriestype := :vline
         linecolor := :blue
         linewidth --> 1
         annot_params = (10, :blue, :left, :bottom)
         for i in eachindex(t)
-            length(picks(t[i])) == 0 && continue
+            length(pick_times[i]) == 0 && continue
             @series begin
                 guidefontcolor := :blue
                 subplot := i
-                [p.time for p in Seis.picks(t[i]) if xlims[1] <= p.time <= xlims[2]]
+                pick_times[i]
             end
         end
 
@@ -211,15 +219,14 @@ function plot end
         primary := false
         annotation_params = (8, :left, :bottom, :blue)
         for i in eachindex(t)
-            length(picks(t[i])) == 0 && continue
+            length(pick_times[i]) == 0 && continue
             @series begin
                 subplot := i
                 # FIXME: Update to a better way of plotting annotations
-                series_annotations := [plots.text.(coalesce(p.name, ""), annotation_params...)
-                                       for p in Seis.picks(t[i])
-                                       if xlims[1] <= p.time <= xlims[2]]
-                x = [p.time for p in Seis.picks(t[i]) if xlims[1] <= p.time <= xlims[2]]
-                y = get(plotattributes, :ylims, extrema(trace(t[i])))[1]
+                series_annotations := [plots.text.(name, annotation_params...)
+                                       for name in pick_names[i]]
+                x = pick_times[i]
+                y = all_ylims[i][1]
                 x, repeat([y], length(x))
             end
         end
@@ -254,7 +261,7 @@ Additional options provided via keyword arguments:
 - `max_samples`: Control the maximum number of samples to display at one time
            in order to make plotting quicker.  Set `decimate` to `false` to turn
            this off.
-- `pick`:  If `true`, add marks on the record section for each pick in the trace
+- `show_picks`:  If `true`, add marks on the record section for each pick in the trace
            headers.
 - `zoom`: Set magnification scale for traces (default 1).
 """
@@ -265,7 +272,10 @@ section
 @recipe function f(sec::Section; align=nothing, decimate=DECIMATE[],
         fill_down=nothing, fill_up=nothing,
         max_samples=MAX_SAMPLES,
-        pick=false, zoom=1.0, absscale=nothing
+        show_picks=false, zoom=1.0, absscale=nothing,
+        # TODO: Remove this when minor version bumped or a major version released.
+        # Deprecated
+        pick=nothing
     )
     # Arguments
     t = sec.args[1]
@@ -355,14 +365,14 @@ section
 
     # Picks
     ptime, py, names = Float64[], Float64[], String[]
-    if pick
+    show_picks = _deprecated_pick(pick, show_picks)
+    if show_picks
         for (i, tt) in enumerate(t)
-            ps = picks(tt)
-            for (time, name) in ps
+            for (key, (time, name)) in tt.picks
                 xlims[1] <= time - shifts[i] <= xlims[end] || continue
                 push!(ptime, time - shifts[i])
                 push!(py, y_shifts[i])
-                push!(names, coalesce(name, ""))
+                push!(names, coalesce(name, string(key)))
             end
         end
     end
@@ -461,7 +471,7 @@ function time_shifts(t::AbstractArray{<:AbstractTrace}, align)
             zeros(length(t))
         elseif align isa String || align isa Regex
             shifts = try
-                [first(picks(tt, align)).time for tt in t]
+                [first(Seis.picks(tt, align)).time for tt in t]
             catch err
                 error("Error finding pick '$align' for every trace.  (Error: $err)")
             end
@@ -636,6 +646,52 @@ function _intercept(x1, y1, x2, y2, level)
     dy = y2 - y1
     ∇ = dy/dx
     x1 + (level - y1)/∇
+end
+
+# TODO: Remove this when minor version bumped or a major version released.
+"""
+    _deprecated_pick(pick, show_picks) -> showpicks′
+
+Obtain the value of the `picks` keyword argument, warning the user if
+`pick` is not `nothing` the first time this is called.  If `pick` is
+not unset, then return that value; otherwise use the input `picks`
+"""
+function _deprecated_pick(pick, show_picks)
+    if pick != nothing
+        if !HAVE_CALLED_PICK[]
+            @warn("The `pick` option to `plot` and `section` has been deprecated " *
+                  "in favour of `show_picks`, and will be removed in a future version.")
+            HAVE_CALLED_PICK[] = true
+        end
+        return pick
+    else
+        return show_picks
+    end
+end
+
+"""
+    _picks_in_window(traces, xlims, shifts=zeros(lengt(traces))) -> times, names
+
+Return vectors of vectors of pick `times` and `names` within the time window
+between `t1` and `t2` s.  The first element of `times` and `names` gives
+the times and names of picks for the first trace in `traces`, and so on.
+"""
+function _picks_in_window(traces, t1, t2, shifts=zeros(length(traces)))
+    length(traces) == length(shifts) ||
+        throw(DimensionMismatch("traces and shifts not the same length"))
+    pick_times = Vector{Float64}[]
+    pick_names = Vector{String}[]
+    for (i, (tt, shift)) in enumerate(zip(traces, shifts))
+        push!(pick_times, [])
+        push!(pick_names, [])
+        for (key, (time, name)) in tt.picks
+            if t1 <= time - shift <= t2
+                push!(pick_times[end], time - shift)
+                push!(pick_names[end], coalesce(name, string(key)))
+            end
+        end
+    end
+    pick_times, pick_names
 end
 
 end # module
