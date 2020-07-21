@@ -163,6 +163,14 @@ using Seis
             @test nsamples(t, DateTime(2000), DateTime(4000)) == n
             @test nsamples(t, DateTime(3000), DateTime(3000) + Millisecond(4500)) == 10
             @test nsamples(t, enddate(t), enddate(t) - Second(1)) == 0
+            @test nsamples(t, typemin(DateTime), typemax(DateTime)) == n
+            @test nsamples(t, typemin(DateTime), DateTime(3000)) == 3
+            @test nsamples(t, DateTime(3000), typemax(DateTime)) == 98
+            @test nsamples(t, -Inf, Inf) == n
+            @test nsamples(t, -Inf, 0) == 3
+            @test nsamples(t, 0, Inf) == 98
+            @test nsamples(t, Inf, 1) == 0
+            @test nsamples(t, 0, -Inf) == 0
         end
     end
 end
