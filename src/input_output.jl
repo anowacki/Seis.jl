@@ -244,8 +244,8 @@ The following keyword arguments can be passed to `read_mseed`:
   interval of the trace being read.
 
   !!! note
-  Set `maximum_gap` to 0 to always split
-  miniseed files into separate traces at all gaps.
+      Set `maximum_gap` to 0 to always split
+      miniseed files into separate traces at all gaps.
 
 - `maximum_offset`: The maximum sum of all gaps beyond which gaps are no
   longer tolerated in a single trace.  This is calculated by simply adding
