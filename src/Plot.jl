@@ -45,25 +45,36 @@ const DECIMATE = Ref(true)
     plot(traces::AbstractArray{<:Seis.Trace}; kwargs...) -> ::Plots.Plot
     plot(trace::AbstractTrace; kwargs...) -> ::Plots.Plot
 
-Plot a set of traces as a set of separate wiggles.
+Plot a set of traces as a set of separate wiggles, each with its own axes.
 
 Additional options provided:
 
-- `ylims`=`:all`: All traces have same amplitude limits
-- `label`: Set to label for each trace.
+- `decimate`: If `false`, do not decimate traces when plotting for speed.
+- `fill_down`: Set the fill colour of the negative parts of traces.
+- `fill_up`: Set the fill colour of the positive parts of traces.
+  (Use `line=nothing` to turn off drawing of lines with the `fill` options.)
+- `label`: Set to label for each trace.  This is placed in the top right
+  corner.
 - `pick`: If `false`, do not plot picks.
 - `sort`: Sort the traces according to one of the following:
   - `:dist`: Epicentral distance
   - `:alpha`: Alphanumerically by channel code
   - `::AbstractVector`: According to the indices in a vector passed in, e.g. from
     a call to `sortperm`.
-- `decimate`: If `false`, do not decimate traces when plotting for speed.
+- `ylims`: Control y-axis limits of traces:
+  - `:all`: All traces have same amplitude limits
 """
 function plot end
 
 # Recipe defining the above
 @recipe function f(t::Union{Seis.AbstractTrace,AbstractArray{<:Trace}};
-        pick=true, sort=nothing, decimate=DECIMATE[], max_samples=MAX_SAMPLES)
+        decimate=DECIMATE[],
+        fill_down=nothing,
+        fill_up=nothing,
+        max_samples=MAX_SAMPLES,
+        pick=true,
+        sort=nothing,
+    )
 
     # Make single trace into a vector
     t isa AbstractArray || (t = [t])
@@ -94,8 +105,6 @@ function plot end
     legend --> false
     framestyle --> :box
     grid --> false
-    linecolor --> :black
-    linewidth --> 1
 
     # Set amplitude limits
     if get(plotattributes, :ylims, nothing) == :all
@@ -122,7 +131,34 @@ function plot end
     traces = [trace(tt)[1:ndecimate:end] for tt in t′]
     all_times = [times(tt)[1:ndecimate:end] for tt in t′]
 
+    # Filled portions
+    if fill_up != nothing || fill_down != nothing
+        for i in eachindex(traces)
+            t⁻, y⁻, t⁺, y⁺ = _below_above(all_times[i], traces[i], 0)
+            if fill_down != nothing
+                @series begin
+                    subplot := i
+                    linewidth := 0
+                    fillrange := 0
+                    fillcolor := fill_down
+                    t⁻, y⁻
+                end
+            end
+            if fill_up != nothing
+                @series begin
+                    subplot := i
+                    linewidth := 0
+                    fillrange := 0
+                    fillcolor := fill_up
+                    t⁺, y⁺
+                end
+            end
+        end
+    end
+
     # Plot traces
+    linecolor --> :black
+    linewidth --> 1
     for i in eachindex(t)
         @series begin
             subplot := i
@@ -212,6 +248,9 @@ Additional options provided via keyword arguments:
            Set to a `Symbol` to use the pick of each trace with that key.
 - `decimate`: If `false`, do not perform downsampling of traces for plotting.
            Defaults to `true`.
+- `fill_down`: Set the fill colour of the negative parts of traces.
+- `fill_up`: Set the fill colour of the positive parts of traces.
+           (Use `line=nothing` to turn off drawing of lines with the `fill` options.)
 - `max_samples`: Control the maximum number of samples to display at one time
            in order to make plotting quicker.  Set `decimate` to `false` to turn
            this off.
@@ -223,8 +262,11 @@ section
 
 @userplot Section
 
-@recipe function f(sec::Section; align=nothing, decimate=DECIMATE[], max_samples=MAX_SAMPLES,
-        pick=false, zoom=1.0, absscale=nothing)
+@recipe function f(sec::Section; align=nothing, decimate=DECIMATE[],
+        fill_down=nothing, fill_up=nothing,
+        max_samples=MAX_SAMPLES,
+        pick=false, zoom=1.0, absscale=nothing
+    )
     # Arguments
     t = sec.args[1]
     y_values = if length(sec.args) >= 2
@@ -237,8 +279,6 @@ section
         throw(ArgumentError("section requires an array of `Seis.Trace`s"))
     decimate isa Bool || throw(ArgumentError("decimate must be `true` or `false`"))
     # Defaults
-    linecolor --> :black
-    linewidth --> 1
     framestyle --> :box
     grid --> false
     xguide --> "Time / s"
@@ -262,6 +302,11 @@ section
             throw(ArgumentError("Unrecognised y axis name '$y_values'"))
         end
     end
+    # Sort so bottom traces plot last
+    order = sortperm(y_shifts, rev=true)
+    shifts = shifts[order]
+    y_shifts = y_shifts[order]
+    t = view(t, order)
     # Scale
     scale = isnothing(absscale) ? abs(maximum(y_shifts) - minimum(y_shifts))/10 : absscale
     scale = zoom*scale
@@ -275,7 +320,34 @@ section
     # Time limits of plot
     xlims = get!(plotattributes, :xlims, (minimum(first.(time)), maximum(last.(time))))
 
-    # Plot
+    # Filled portions
+    if fill_up != nothing || fill_down != nothing
+        for (tt, yy, level) in zip(time, traces, y_shifts)
+            t⁻, y⁻, t⁺, y⁺ = _below_above(tt, yy, level)
+            if fill_down != nothing
+                @series begin
+                    primary := false
+                    linewidth := 0
+                    fillrange := level
+                    fillcolor := fill_down
+                    t⁻, y⁻
+                end
+            end
+            if fill_up != nothing
+                @series begin
+                    primary := false
+                    linewidth := 0
+                    fillrange := level
+                    fillcolor := fill_up
+                    t⁺, y⁺
+                end
+            end
+        end
+    end
+
+    # Lines
+    linecolor --> :black
+    linewidth --> 1
     @series begin
         label := "" # Won't show in legend when blank
         time, traces
@@ -421,6 +493,149 @@ function traces_limits(t::AbstractArray{<:Trace},
     ymin = minimum(minimum.(trace.(t)))
     ymax = maximum(maximum.(trace.(t)))
     tmin, tmax, ymin, ymax
+end
+
+"""
+    _below_above(x, y, level) -> x⁻, y⁻, x⁺, y⁺
+
+Divide the data in `y`, with times at `x`, into two series, linearly extrapolated
+such that points always lie at `level` wherever `y` crosses that value.
+`x⁻` and `y⁻` are the respective point times below `level` and
+`x⁺` and `y⁺` are those above.
+
+Continuous series of points below (or below) `level` are separated in
+`x⁻` and `y⁻` (or `x⁺` and `y⁺`) with `NaN`.
+
+# Example
+```
+julia> x = 1:3;
+
+julia> y = [0, 0, 2];
+
+julia> Seis.Plot._below_above(x, y, 1)
+[1.0, 2.0, 2.5, NaN], [0.0, 0.0, 1.0, NaN], [2.5, 3.0], [1.0, 2.0]
+```
+"""
+function _below_above(x, y, level)
+    n = length(x)
+    length(x) == n || throw(DimensionMismatch("`x` and `y` must be the same length"))
+    T = float(eltype(y))
+    nan = T(NaN)
+    x⁺ = T[]
+    y⁺ = T[]
+    x⁻ = T[]
+    y⁻ = T[]
+    sizehint!(x⁺, 3n÷2)
+    sizehint!(y⁺, 3n÷2)
+    sizehint!(x⁻, 3n÷2)
+    sizehint!(y⁻, 3n÷2)
+    last_point = :neither
+    last_x = last_y = zero(T)
+    first_point = true
+    for (xx, yy) in zip(x, y)
+        # First point
+        if first_point
+            if yy > level
+                push!(x⁺, xx)
+                push!(y⁺, yy)
+                last_point = :above
+            elseif yy < level
+                push!(x⁻, xx)
+                push!(y⁻, yy)
+                last_point = :below
+            else # y == level
+                last_point = :neither
+            end
+            first_point = false
+        # Above line
+        elseif yy > level
+            # Last point was above line: add this point
+            if last_point === :above
+                push!(x⁺, xx)
+                push!(y⁺, yy)
+            # Last point was below, so add the crossing point
+            # to both and a delimiter (NaN) for plotting
+            elseif last_point === :below
+                x_cross = _intercept(last_x, last_y, xx, yy, level)
+                y_cross = level
+                push!(x⁺, x_cross)
+                push!(y⁺, y_cross)
+                push!(x⁺, xx)
+                push!(y⁺, yy)
+                push!(x⁻, x_cross)
+                push!(y⁻, y_cross)
+                push!(x⁻, nan)
+                push!(y⁻, nan)
+            # Last point was on the line, so add the last point and this point
+            elseif last_point === :neither
+                push!(x⁺, last_x)
+                push!(y⁺, last_y)
+                push!(x⁺, xx)
+                push!(y⁺, yy)
+            end
+            last_point = :above
+        # Below line
+        elseif yy < level
+            if last_point === :above
+                x_cross = _intercept(last_x, last_y, xx, yy, level)
+                y_cross = level
+                push!(x⁺, x_cross)
+                push!(y⁺, y_cross)
+                push!(x⁺, nan)
+                push!(y⁺, nan)
+                push!(x⁻, x_cross)
+                push!(y⁻, y_cross)
+                push!(x⁻, xx)
+                push!(y⁻, yy)
+            elseif last_point === :below
+                push!(x⁻, xx)
+                push!(y⁻, yy)
+            elseif last_point === :neither
+                push!(x⁻, last_x)
+                push!(y⁻, last_y)
+                push!(x⁻, xx)
+                push!(x⁻, yy)
+            end
+            last_point = :below
+        # On line
+        else # yy == level
+            # Add this point and a delimiter as this is the first point on the line
+            if last_point === :above
+                push!(x⁺, xx)
+                push!(y⁺, yy)
+                push!(x⁺, nan)
+                push!(y⁺, nan)
+            elseif last_point === :below
+                push!(x⁻, xx)
+                push!(y⁻, yy)
+                push!(x⁻, nan)
+                push!(y⁻, nan)
+            end
+            # Otherwise the last point was on the line as well, and do nothing
+            last_point = :neither
+        end
+        last_x = T(xx)
+        last_y = yy
+    end
+    x⁻, y⁻, x⁺, y⁺
+end
+
+"""
+    _intercept(x1, y1, x2, y2, level) -> x
+
+Return the value of `x` at which the line defined by the coordinates
+`(x1, y1)` and `(x2, y2)` intercepts `y=level`.
+
+If `y1` and `y2` do not straddle `level`, then the value returned will not
+lie between `x1` and `x2`, as expected.
+
+If `x1` is equal to `x2`, the behaviour is undefined .
+"""
+function _intercept(x1, y1, x2, y2, level)
+    dx = x2 - x1
+    dy = y2 - y1
+    ∇ = dy/dx
+    x1 + (level - y1)/∇
 end
 
 end # module

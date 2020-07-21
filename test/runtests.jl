@@ -25,4 +25,6 @@ end
         include("io/sac.jl")
         include("io/miniseed.jl")
     end
+
+    include("plot.jl")
 end
