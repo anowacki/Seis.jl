@@ -442,20 +442,12 @@ are contained within the time window `t1`-`t2` s relative to the values in `shif
 """
 function decimation_value(t::AbstractArray{<:Trace}, shifts, t1, t2, max_samples)
     n = 1
-    np = sum(num_points.(t, shifts .+ t1, shifts .+ t2))
+    np = sum(nsamples.(t, shifts .+ t1, shifts .+ t2))
     while np÷n > max_samples
         n += 1
     end
     n
 end
-
-"""
-    num_points(t::Trace, t1, t2) -> np
-
-Return the number of points `np` between `t1` and `t2` seconds relative to the
-origin time of the trace `t`.
-"""
-num_points(t::Trace, t1, t2) = sum(t1 .<= times(t) .<= t2)
 
 """
     time_shifts(t, align) -> shifts
