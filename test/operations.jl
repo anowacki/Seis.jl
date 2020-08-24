@@ -43,6 +43,27 @@ end
             @test starttime(t′) == -2
             @test endtime(t′) == -2 - t.delta
         end
+
+        # Fail gracefully when no picks match
+        @testset "Picks" begin
+            @testset "$f" for f in (cut, cut!)
+                types = (Symbol, Regex, String)
+                @testset "Type $T1" for T1 in types
+                    pick1 = T1("nopick1")
+                    let t = Trace(0, 1, 10)
+                        @test_throws ArgumentError f(t, pick1, 1, 2)
+                        @testset "Type $T2" for T2 in types
+                            pick2 = "nopick2"
+                            @test_throws ArgumentError f(t, pick1, 1, pick2, 2)
+                            t.picks.A = (1, "A")
+                            @test_throws ArgumentError f(t, pick1, 1, T2("A"), 2)
+                            @test_throws ArgumentError f(t, T2("A"), 1, pick2, 2)
+                        end
+                        @test_throws ArgumentError f(t, pick1, 1, 2)
+                    end
+                end
+            end
+        end
     end
 
     @testset "Decimate" begin

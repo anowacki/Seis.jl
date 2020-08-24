@@ -66,14 +66,37 @@ cut!(t::AbstractTrace, b::DateTime, e::DateTime; kwargs...) =
     cut!(t, pick1, offset1, pick2, offset; kwargs...) -> t
     cut!(t, pick, offset1, offset2; kwargs...) ->
 
-Cut a trace `t` in place between `offset1` s after the first pick with name `pick1`
+Cut a trace `t` in place between `offset1` s after the first pick `pick1`
 and `offset2` s after `pick2`.
 
 In the second form, both offsets are relative to `pick`.
+
+The values of `pick1`, `pick2` and `pick` are passed to [`picks`](@ref)
+and so may be a `Symbol` (giving the key of the pick), a `String` (giving
+the pick name) or a `Regex` (which matches the pick name).
+
+# Example
+```
+julia> t = sample_data();
+
+julia> starttime(t), endtime(t)
+(52.66f0, 62.65f0)
+
+julia> cut!(t, :A, 0, :F, 1);
+
+julia> starttime(t), endtime(t)
+(53.67f0, 61.979996f0)
+```
 """
-cut!(t::AbstractTrace, pick1, offset1, pick2, offset2; kwargs...) =
-    cut!(t, first(picks(t, pick1, sort=:time)).time + offset1,
-            first(picks(t, pick2, sort=:time)).time + offset2; kwargs...)
+function cut!(t::AbstractTrace, pick1, offset1, pick2, offset2; kwargs...)
+    picks1 = picks(t, pick1, sort=:time)
+    picks2 = picks(t, pick2, sort=:time)
+    isempty(picks1) && throw(ArgumentError("trace does not contain pick '$pick1'"))
+    isempty(picks2) && throw(ArgumentError("trace does not contain pick '$pick2'"))
+    cut!(t, first(picks1).time + offset1,
+            first(picks2).time + offset2; kwargs...)
+end
+
 cut!(t::AbstractTrace, pick1, offset1, offset2; kwargs...) =
     cut!(t, pick1, offset1, pick1, offset2; kwargs...)
 
@@ -87,6 +110,8 @@ Return a copy of the trace `t` cut between `start` and `end` s relative to the e
 origin.  You may also specify a `start_date` and `end_date`, or choose times
 `offset1` and `offset2` s relative to `pick1` and `pick2` respectively.  Both offset
 times may also be specified relative to one `pick`.
+
+See also: [`cut!`](@ref), [`picks`](@ref).
 """
 cut(t::AbstractTrace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
 
