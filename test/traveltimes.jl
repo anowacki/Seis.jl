@@ -88,7 +88,6 @@ using Seis
 
     let t = Trace(0, 1, rand(2)), pick_time = rand(), pick_name = "pPKiKPPKiKP",
             pick_key = Symbol(pick_name)
-        @test picks(t) == []
         add_pick!(t, pick_time, pick_name)
         @test length(picks(t)) == 1
         @test t.picks[pick_key].time == pick_time
@@ -146,6 +145,20 @@ using Seis
         clear_picks!(t)
         @test length(t.picks) == length(picks(t)) == 0
         @test t.picks[pick_key] === missing
+
+        # Correct return type for empty sets of picks
+        @testset "picks no key" begin
+            @testset "Eltype $T" for T in (Float32, Float64)
+                let t = Trace{T}(0, 1, 10)
+                    @test isempty(picks(t, :nokey))
+                    @test picks(t, :nokey) isa Vector{Seis.Pick{T}}
+                    @test isempty(picks(t, "noname"))
+                    @test picks(t, "noname") isa Vector{Seis.Pick{T}}
+                    @test isempty(picks(t, r"nomatch"))
+                    @test picks(t, r"nomatch") isa Vector{Seis.Pick{T}}
+                end
+            end
+        end
     end
 
     @testset "add_pick!" begin

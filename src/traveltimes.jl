@@ -180,7 +180,7 @@ _picks(t::AbstractTrace, name::AbstractString) = filter(x->coalesce(x.name, "")=
 _picks(t::AbstractTrace, match::Regex) = filter(x->occursin(match, coalesce(x.name, "")), picks(t))
 function _picks(t::AbstractTrace, key::Symbol)
     p = t.picks[key]
-    p === missing ? [] : [p]
+    p === missing ? Pick{eltype(t)}[] : [p]
 end
 
 _sortpicks(ps, ::Nothing) = ps
