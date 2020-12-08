@@ -79,6 +79,22 @@ import Seis.SAC
                 @test ismissing(t′.picks.pickone)
                 @test ismissing(t′.picks.picktwo)
             end
+
+            # Reading only headers
+            let t = read_sac(filepath, header_only=true),
+                    t2 = read_sac(filepath)
+                empty!(trace(t2))
+                @test isempty(trace(t))
+                @test t == t2
+            end
+            let ts = read_sac("*.sac", dirname(filepath),
+                        header_only=true, echo=false),
+                    t2s = read_sac("*.sac", dirname(filepath), echo=false)
+                empty!(trace(t2s[1]))
+                @test length(ts) == 1
+                @test isempty(trace(ts[1]))
+                @test ts == t2s
+            end
         end
 
         # Removing null bytes from strings on read

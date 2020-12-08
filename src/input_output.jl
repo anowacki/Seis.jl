@@ -3,28 +3,36 @@
 #
 
 """
-    read_sac(file) → ::Trace
+    read_sac(file; terse=false, header_only=true) → ::Trace
 
-Read a single evenly-sampled SAC file and return a Trace.
+Read a single evenly-sampled SAC file and return a Trace.  If `terse` is
+`true`, then warn when auto-byteswapping files.  To read only SAC
+headers from files, returning an empty trace, set `header_only` to `true.
 
-    read_sac(glob, dir) → ::Vector{Trace}
+---
+
+    read_sac(glob, dir; echo=true, header_only=false) → ::Vector{Trace}
 
 Read SAC files which match the patern `glob` in directory `dir` and return
 a set of `Traces`.  Add the file names to `t.meta.file`.  These are relative
 paths.
 
+File names matching the pattern are shown unless `echo` is `false`.
+
+---
+
 When reading SAC files, the following conventions are observed:
 
-- The event id is held in KEVNM
-- Channel ID is held in KCMPNM
-- Location ID is held in KHOLE
-- If O and the file origin time parameters are set, O is shifted to 0 time, and
+- The event id is held in header `KEVNM`
+- Channel ID is held in `KCMPNM`
+- Location ID is held in `KHOLE`
+- If `O` and the file origin time parameters are set, `O` is shifted to 0 time, and
   all time picks are adjusted.  This is similar to using the commands `ch o gmt [date];
-  ch allt (0 - &1,o&)` to set the origin.
+  ch allt (0 - &1,o&)` to set the origin in SAC.
 - Time picks are added to the `Trace` picks.
 
 SAC headers which don't directly translate to `Trace` attributes are placed in the
-.meta field and have names prefixed by "SAC_".
+`.meta` field and have names prefixed by `"SAC_"`.
 """
 function read_sac(glob, dir; kwargs...)
     s, f = SAC.read_wild(glob, dir; kwargs...)
