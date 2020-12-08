@@ -4,11 +4,17 @@
 Ensure that header values which are based on the trace or other header values
 are consistent, such as `depmax`.  Should be called after any operation on the trace
 `s.t`.
+
+!!! note
+    If the trace is empty, then `depmax`, `depmin` and `depmen` are not updated,
+    but the trace end time is adjusted according to `npts`.
 """
 function update_headers!(s::SACTrace)
-    s.depmax = maximum(s.t)
-    s.depmin = minimum(s.t)
-    s.depmen = mean(s.t)
+    if !isempty(s.t)
+        s.depmax = maximum(s.t)
+        s.depmin = minimum(s.t)
+        s.depmen = mean(s.t)
+    end
     s.e = s.b + s.delta*(s.npts - 1)
     s
 end

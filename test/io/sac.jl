@@ -137,4 +137,13 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
             end
         end
     end
+
+    @testset "Empty traces" begin
+        s = SAC.SACTrace([], 1, 0)
+        @test s.npts == 0
+        @test s.e == s.b - 1
+        @test isempty(s.t)
+        SAC.update_headers!(s)
+        @test SAC.isundefined(s, :depmen)
+    end
 end
