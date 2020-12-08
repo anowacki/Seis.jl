@@ -1,16 +1,27 @@
 # Input/output routines
 
 """
-    read(file; swap=true, terse=false) -> s::SACTrace
+    read(file; swap=true, terse=false, check_npts=true, header_only=false) -> s::SACTrace
 
 Return the SAC trace as read from file `file` as a `SACTrace` object.  If `swap` is false,
 then auto-byteswapping is not performed and an error is returned if the file is not
 of the assumed endianness.  Autoswapping is reported unless `terse` is `true`.
+
+By default an error is thrown if the trace on disk is not the same length
+as specified by the `npts` header variable.  If `check_npts` is `false`,
+then no error is thrown and the trace is returned.  (Note that in this
+case the `npts` header is out of sync with the trace.)  This option may be
+useful for SAC data which has been incorrectly written.
+
+If `header_only` is true, then only the header part of the file is read
+from disk.  This option sets `check_npts` to `false`.
 """
-function read(file; swap::Bool=true, terse::Bool=false, check_npts::Bool=true)
+function read(file; swap::Bool=true, terse::Bool=false, header_only::Bool=false,
+        check_npts::Bool=!header_only)
     data = open(file, "r") do f
-        Base.read(f)
+        header_only ? Base.read(f, SAC_HEADER_LEN) : Base.read(f)
     end
+    header_only && (check_npts = false)
     SACTrace(data, file, swap=swap, terse=terse, check_npts=check_npts)
 end
 
@@ -142,16 +153,18 @@ function write(s::AbstractArray{SACTrace}, file::Array{String}; args...)
 end
 
 """
-    read_wild(pat, dir="."; echo=true) -> sac_traces, files
+    read_wild(pat, dir="."; echo=true, header_only=false) -> sac_traces, files
 
 Read files matching globbing pattern `pat` from directory `dir`.
 If `echo` is false, do not show which files are being read.
+Read only trace headers is `header_only` is `true`.
 
 Returns an array of `SACTrace`s `sac_traces`, and an array of file names `files`.
 **NB:** If no files are matched, then empty `SACTrace` and `String` arrays
 are returned and a warning message printed.
 """
-function read_wild(pat::String, dir::String="."; echo::Bool=true)
+function read_wild(pat::String, dir::String=".";
+        echo::Bool=true, header_only::Bool=false)
     files = Glob.glob(pat, dir)
     n = size(files, 1)
     if n == 0
@@ -161,7 +174,7 @@ function read_wild(pat::String, dir::String="."; echo::Bool=true)
     A = Array{SACTrace}(undef, n)
     for i = 1:n
         echo && @info("SAC.read: '$(files[i])'")
-        A[i] = SAC.read(files[i]; terse=!echo)
+        A[i] = SAC.read(files[i]; terse=!echo, header_only=header_only)
     end
     return A, files
 end
