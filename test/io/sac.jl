@@ -135,6 +135,22 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
                 write_sac(t, tempfile)
                 @test_throws ErrorException SAC.read(tempfile)
             end
+
+            @testset "Headers only" begin
+                s1 = SAC.read(sample_data_path, header_only=true)
+                @test isempty(s1.t)
+                s2 = SAC.read(sample_data_path)
+                for f in fieldnames(SAC.SACTrace)
+                    f === :t && continue
+                    # These are computed from the trace upon reading the whole
+                    # file but taken from the headers otherwise.
+                    if f in (:depmin, :depmax, :depmen)
+                        @test s1[f] ≈ s2[f]
+                    else
+                        @test s1[f] == s2[f]
+                    end
+                end
+            end
         end
     end
 
