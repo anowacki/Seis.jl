@@ -433,7 +433,7 @@ will be updated.
 
 !!! note
     The underlying data array holding the trace can be rebound by assigning to
-    the trace's field `t`, but this is unsupported and make break in future.
+    the trace's field `t`, but this is unsupported and may break in future.
 
 # Examples
 
