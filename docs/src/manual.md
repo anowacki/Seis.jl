@@ -466,8 +466,8 @@ t.picks
 ```
 
 ### Arrays of picks
-Because `t.picks` is a special type of `Dict` (a `Seis.Dict`), we can
-also access the `time` and `name` fields of sets of picks easily.
+Because `t.picks` is a special type of `Dict` (a [`Seis.SeisDict`](@ref)),
+we can also access the `time` and `name` fields of sets of picks easily.
 
 For example, if dealing with a set of stations where we have a pick
 for each, we can extract the vector of all pick times simply:
