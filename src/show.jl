@@ -120,7 +120,7 @@ function Base.show(io::IO, ::MIME"text/plain", t::Trace{T,V,P}) where {T,V,P}
     # Extra info for trace
     print(io, "\n Trace:")
     padded_print("picks", "")
-    print(length(t.picks))
+    print(io, length(t.picks))
     padded_print("meta", "")
     show_dict(io, t.meta, hdr_string_len, indent)
 end
