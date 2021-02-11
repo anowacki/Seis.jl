@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Manual · Seis.jl documentation</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">Seis.jl documentation</span></div><form class="docs-search" action="../search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li class="is-active"><a class="tocitem" href>Manual</a><ul class="internal"><li><a class="tocitem" href="#Preamble-1"><span>Preamble</span></a></li><li><a class="tocitem" href="#Sample-data-1"><span>Sample data</span></a></li><li><a class="tocitem" href="#Types-1"><span>Types</span></a></li><li><a class="tocitem" href="#Getting-data-in-1"><span>Getting data in</span></a></li><li><a class="tocitem" href="#Creating-data-from-scratch-1"><span>Creating data from scratch</span></a></li><li><a class="tocitem" href="#Writing-data-out-1"><span>Writing data out</span></a></li><li><a class="tocitem" href="#Basic-processing-1"><span>Basic processing</span></a></li><li><a class="tocitem" href="#Accessing-raw-trace-data-1"><span>Accessing raw trace data</span></a></li><li><a class="tocitem" href="#Accessing-other-properties-1"><span>Accessing other properties</span></a></li><li><a class="tocitem" href="#Picks-1"><span>Picks</span></a></li><li><a class="tocitem" href="#Geometry-1"><span>Geometry</span></a></li></ul></li><li><a class="tocitem" href="../plotting/">Plotting</a></li><li><a class="tocitem" href="../function-index/">Function index</a></li><li><a class="tocitem" href="../internal-index/">Internals</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Manual</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Manual</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/anowacki/Seis.jl/blob/master/docs/src/manual.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="User-manual-1"><a class="docs-heading-anchor" href="#User-manual-1">User manual</a><a class="docs-heading-anchor-permalink" href="#User-manual-1" title="Permalink"></a></h1><p>This section describes how to use Seis to perform various basic processing operations on seismic data.</p><h2 id="Preamble-1"><a class="docs-heading-anchor" href="#Preamble-1">Preamble</a><a class="docs-heading-anchor-permalink" href="#Preamble-1" title="Permalink"></a></h2><p>The examples in this manual all assume that you have first used the module like so:</p><pre><code class="language-julia-repl">julia&gt; using Seis</code></pre><h2 id="Sample-data-1"><a class="docs-heading-anchor" href="#Sample-data-1">Sample data</a><a class="docs-heading-anchor-permalink" href="#Sample-data-1" title="Permalink"></a></h2><p>Seis comes with a small selection of sample data which will be used for the examples in this manual.  See the help for <a href="../function-index/#Seis.sample_data"><code>sample_data</code></a> for details.</p><h2 id="Types-1"><a class="docs-heading-anchor" href="#Types-1">Types</a><a class="docs-heading-anchor-permalink" href="#Types-1" title="Permalink"></a></h2><p>Working with Seis requires understanding a little bit about the types it uses.  Fundamentally, there are three important types:</p><ul><li><a href="../function-index/#Seis.Trace"><code>Trace</code></a>s, which contain</li><li><a href="../function-index/#Seis.Station"><code>Station</code></a>s and</li><li><a href="../function-index/#Seis.Event"><code>Event</code></a>s.</li></ul><p>Each of these types have fields which either must contain data, or allow data to be <a href="https://docs.julialang.org/en/v1/manual/missing/#missing-1"><code>missing</code></a>.</p><h3 id="Traces-1"><a class="docs-heading-anchor" href="#Traces-1"><code>Trace</code>s</a><a class="docs-heading-anchor-permalink" href="#Traces-1" title="Permalink"></a></h3><p>A <code>Trace</code> holds a single continuous record of evenly-sampled data. As such, it cannot contain gaps or overlaps.  It may be referenced to an absolute start time, and by convention all times of day in Seis are <a href="https://en.wikipedia.org/wiki/Coordinated_Universal_Time">UTC</a>. Equally, however, a trace may have no absolute reference time.</p><p>Traces have a small number of fields which are directly accessible by users:</p><ul><li><code>delta</code> is the samping interval (1 / sampling rate) in s;</li><li><code>b</code> is the start time of the trace, relative to any absolute time if any;</li><li><code>sta</code> is a <a href="#Stations-1"><code>Station</code></a> holding information about the site where this recording was made;</li><li><code>evt</code> is an <a href="#Events-1"><code>Event</code></a> holding information about any event related to this recording, such as an earthquake;</li><li><code>picks</code> holds a set of times of importance such as arrival picks; and</li><li><code>meta</code> holds any other information.</li></ul><p>None of these fields can be <code>missing</code>.</p><p>To access the data stored in a trace, use the <a href="../function-index/#Seis.trace"><code>trace</code></a> function to return the underlying array.</p><p>The user-accessible fields can be retrieved or modified as usual for composite types:</p><pre><code class="language-julia-repl">julia&gt; # A trace starting a 0 s with sampling interval 1 s made of 100 random samples
+       t = Trace(0, 1, rand(100))
+Seis.Trace{Float64,Array{Float64,1},Seis.Geographic{Float64}}:
+            b: 0.0
+        delta: 1.0
+ Station{Float64,Seis.Geographic{Float64}}:
+     sta.meta: Seis.SeisDict{Symbol,Any}()
+ Event{Float64,Seis.Geographic{Float64}}:
+     evt.meta: Seis.SeisDict{Symbol,Any}()
+ Trace:
+        picks: 0
+         meta:
+
+julia&gt; # Update the sampling interval to 0.1 s
+       t.delta = 0.1
+0.1</code></pre><h4 id="Mutability-1"><a class="docs-heading-anchor" href="#Mutability-1">Mutability</a><a class="docs-heading-anchor-permalink" href="#Mutability-1" title="Permalink"></a></h4><p><code>Trace</code>s are mutable.  This means that the values they hold can be changed by the user at will.  It is often useful to copy a trace after you have performed an operation on it.  Thoughout Seis, as with Julia generally, functions which modify a <code>Trace</code> have an exclamation mark (<code>!</code>) at the end of their name.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p><code>Trace</code>s are &#39;parameterised&#39; on the type of floating point numbers they use, the type of data storage, and the geometry in which they are defined (i.e., either in geographic or Cartesian coordinates). A <code>Trace</code> is technically a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>T</code> is the number type used, <code>V</code> is the type of vector holding the trace data, and <code>P</code> is the geometry type. This is why a trace has a scary-looking type like <code>Trace{Float32, Array{Float32, 1}, Seis.Geographic{Float32}}</code>. You only need to deal with these type parameters if you want to change these defaults.  See <a href="#Geometry-1">Geometry</a> for more information.</p></div></div><h3 id="Collections-of-Traces-1"><a class="docs-heading-anchor" href="#Collections-of-Traces-1">Collections of <code>Trace</code>s</a><a class="docs-heading-anchor-permalink" href="#Collections-of-Traces-1" title="Permalink"></a></h3><p>In Seis, methods are usually written to accept <code>Trace</code>s.  There is no special container for several traces; instead you can use <code>Array</code>s of traces just as you would any other collection of types.</p><p>For example, to find the epicentral distance between the earthquake and a number of recordings of it at different stations, you could use Julia&#39;s broadcasting feature to call the <a href="../function-index/#Seis.distance_deg"><code>distance_deg</code></a> function on each <code>Trace</code>.  (Note that the <code>sample_data</code> function returns a simple <code>Vector{Trace}</code> of recordings.)</p><pre><code class="language-julia-repl">julia&gt; t = sample_data(:array)
+60-element Array{Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}},1}:
+ Seis.Trace(.ABA..SHZ: delta=0.05, b=996.73, nsamples=6002)
+ Seis.Trace(.APA..SHZ: delta=0.05, b=996.87, nsamples=6002)
+ Seis.Trace(.AWI..SHZ: delta=0.05, b=996.86, nsamples=6002)
+ Seis.Trace(.BBH..SHZ: delta=0.05, b=996.34, nsamples=6002)
+ Seis.Trace(.BBO..SHZ: delta=0.05, b=996.51, nsamples=6002)
+ Seis.Trace(.BDL..SHZ: delta=0.05, b=995.81, nsamples=6002)
+ Seis.Trace(.BTA..SHZ: delta=0.05, b=995.8, nsamples=6002)
+ Seis.Trace(.BWH..SHZ: delta=0.05, b=996.1, nsamples=6002)
+ Seis.Trace(.CRA..SHZ: delta=0.05, b=999.85, nsamples=6002)
+ Seis.Trace(.CSF..SHZ: delta=0.05, b=995.22, nsamples=6002)
+ ⋮
+ Seis.Trace(.WCB..SHZ: delta=0.05, b=987.78, nsamples=6002)
+ Seis.Trace(.WME..SHZ: delta=0.05, b=987.89, nsamples=6002)
+ Seis.Trace(.WPM..SHZ: delta=0.05, b=987.8, nsamples=6002)
+ Seis.Trace(.XAL..SHZ: delta=0.05, b=994.08, nsamples=6002)
+ Seis.Trace(.XDE..SHZ: delta=0.05, b=994.94, nsamples=6002)
+ Seis.Trace(.YEL..SHZ: delta=0.05, b=996.79, nsamples=6002)
+ Seis.Trace(.YLL..SHZ: delta=0.05, b=988.17, nsamples=6002)
+ Seis.Trace(.YRC..SHZ: delta=0.05, b=988.03, nsamples=6002)
+ Seis.Trace(.YRE..SHZ: delta=0.05, b=988.29, nsamples=6002)
+
+julia&gt; typeof(t)
+Array{Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}},1}
+
+julia&gt; eltype(t)
+Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}}
+
+julia&gt; distance_deg.(t)
+60-element Array{Float64,1}:
+ 150.77944621926457
+ 151.35719900309945
+ 150.82652363302728
+ 148.47569756225323
+ 148.85352129112246
+ 148.80415824159704
+ 148.7142987502766
+ 148.39243651154584
+ 153.2137411026592
+ 149.1411942978774
+   ⋮
+ 150.1093711892705
+ 150.11145961826915
+ 150.27951531203723
+ 148.7781191276318
+ 149.06873665863068
+ 143.1208080990685
+ 150.3761745994614
+ 150.2332219600003
+ 150.51277958154284</code></pre><p>To find the nearest station, you could write the following:</p><pre><code class="language-julia-repl">julia&gt; t[argmin(distance_deg.(t))].sta
+Seis.Station{Float32,Seis.Geographic{Float32}}:
+             lon: -1.083
+             lat: 60.5509
+             dep: missing
+             net: missing
+             sta: YEL
+             loc: missing
+             cha: SHZ
+            elev: missing
+             azi: 0.0
+             inc: 0.0
+            meta:</code></pre><h3 id="Stations-1"><a class="docs-heading-anchor" href="#Stations-1"><code>Station</code>s</a><a class="docs-heading-anchor-permalink" href="#Stations-1" title="Permalink"></a></h3><p><code>Station</code>s define a stationary point in space where a recording was made. They have the following fields which you can access and modify:</p><ul><li><code>net</code>, <code>sta</code>, <code>loc</code> and <code>cha</code> are used respectively for the network, station, channel and location names of a single recording channel. They correspond to the <a href="http://www.fdsn.org/pdf/SEEDManual_V2.4_Appendix-A.pdf">SEED channel naming convention</a>, but all can be <code>missing</code>.</li><li><code>lon</code>, <code>lat</code> and <code>elev</code> are the longitude and latitude (in °, positive eastwards and northwards) of the station, whilst <code>elev</code> is the elevation above sea level in m.</li><li><code>azi</code> and <code>inc</code> together define the orientation of the channel; that is, in which spatial direction positive values point.  <code>azi</code> is the local azimuth in ° measured clockwise from north, whilst <code>inc</code> is the local inclination in ° measured from the vertical downwards.  For seismic data, vertical channels will have <code>inc == 0</code> and <code>azi == 0</code>, whilst horizontal channels will have <code>inc == 90</code> and <code>azi == 0</code> for north and <code>azi == 90</code> for east.</li><li><code>meta</code> holds all other information.</li></ul><p>See <a href="#Geometry-1">Geometry</a> for more details on other coordinate systems in which objects can be placed in Seis.</p><h3 id="Events-1"><a class="docs-heading-anchor" href="#Events-1"><code>Event</code>s</a><a class="docs-heading-anchor-permalink" href="#Events-1" title="Permalink"></a></h3><p>An <code>Event</code> marks the source of a <code>Trace</code>.  Typically, it represents the source of energy for a recording, or it may simply indicate the start time of a section of data with no energy source implied.</p><p><code>Event</code>s have the following accessible fields, all of which can be <code>missing</code>:</p><ul><li><code>time</code> is a <code>Dates.DateTime</code> giving an absolute date and time in UTC against which a <code>Trace</code>&#39;s <code>b</code> field (beginning time) is relative. For an earthquake or other source of energy, it should be the origin time of that event.</li><li><code>lon</code>, <code>lat</code> and <code>dep</code> are the longitude and latitude (in °) and depth (in km) of any identified source for the data, such as an earthquake.</li><li><code>id</code> is a <code>String</code> giving some identifying information about an event, and could be a catalogue ID or otherwise.</li><li><code>meta</code> holds all other information.  By convention, the following fields in <code>meta</code> might be used:<ul><li><code>mag</code> holds an event magnitude;</li><li><code>quakeml</code> holds information about an event in QuakeML form, if any;</li><li><code>catalog</code> gives the name of the catalogue for this event.</li></ul></li></ul><h2 id="Getting-data-in-1"><a class="docs-heading-anchor" href="#Getting-data-in-1">Getting data in</a><a class="docs-heading-anchor-permalink" href="#Getting-data-in-1" title="Permalink"></a></h2><p>Data can be loaded into Julia via a number of means:</p><ul><li><p>Reading data from disk in SAC or miniSEED format.</p><p>For this use either <a href="../function-index/#Seis.read_sac"><code>read_sac</code></a> or <a href="../function-index/#Seis.read_mseed"><code>read_mseed</code></a>.</p><p>To read a single file, use the one-argument form:</p><pre><code class="language-none">julia&gt; t1 = read_sac(&quot;single_file.sac&quot;)
+Seis.Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}}:
+           b: 52.66
+       delta: 0.01
+Station{Float32,Seis.Geographic{Float32}}:
+     sta.lon: -120.0
+     sta.lat: 48.0
+     sta.sta: CDV
+     sta.azi: 0.0
+     sta.inc: 0.0
+    sta.meta: Seis.SeisDict{Symbol,Any}()
+Event{Float32,Seis.Geographic{Float32}}:
+     evt.lon: -125.0
+     evt.lat: 48.0
+     evt.dep: 0.0
+    evt.time: 1981-03-29T10:38:14
+      evt.id: K8108838
+    evt.meta: Seis.SeisDict{Symbol,Any}()
+Trace:
+       picks: 2
+        meta: SAC_lpspol =&gt; true
+              SAC_nevid =&gt; 0
+              SAC_iftype =&gt; 1
+              file =&gt; &quot;../test/test_data/seis.sac&quot;
+              SAC_idep =&gt; 50
+              SAC_iztype =&gt; 9
+              SAC_lcalda =&gt; true
+              SAC_unused18 =&gt; false
+              SAC_lovrok =&gt; true
+              SAC_norid =&gt; 0
+              SAC_ievtyp =&gt; 42
+
+julia&gt; t2 = read_mseed(&quot;file.mseed&quot;)
+2-element Array{Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}},1}:
+ Seis.Trace(GB.CWF..BHZ: delta=0.02, b=0.0, nsamples=3000)
+ Seis.Trace(GB.CWF..HHZ: delta=0.01, b=0.0, nsamples=6000)</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>SAC files can contain only one single continuous data channel, whilst miniSEED files can contain more than one, and so an array of <code>Trace</code>s are returned.</p></div></div><p>Reading several files using a globbing pattern:</p><pre><code class="language-none">julia&gt; read_sac(&quot;Event_*/*Z.sac&quot;, &quot;DATA&quot;)</code></pre></li><li><p>Downloading data from a remote server.</p><p>For this, install and use <a href="https://github.com/anowacki/SeisRequests.jl">SeisRequests</a>.</p><pre><code class="language-none">julia&gt; using SeisRequests
+
+julia&gt; t = get_data(code=&quot;IU.ANMO.00.BH?&quot;, starttime=&quot;2018-02-02&quot;, endtime=&quot;2018-02-02T01:00:00&quot;) # an hour of data
+[ Info: Request status: Successful request, results follow
+3-element Array{Trace{Float64,Array{Float64,1},Seis.Geographic{Float64}},1}:
+ Seis.Trace(IU.ANMO.00.BH1: delta=0.05, b=0.0, nsamples=72000)
+ Seis.Trace(IU.ANMO.00.BH2: delta=0.05, b=0.0, nsamples=72000)
+ Seis.Trace(IU.ANMO.00.BHZ: delta=0.05, b=0.0, nsamples=72000)</code></pre></li></ul><h2 id="Creating-data-from-scratch-1"><a class="docs-heading-anchor" href="#Creating-data-from-scratch-1">Creating data from scratch</a><a class="docs-heading-anchor-permalink" href="#Creating-data-from-scratch-1" title="Permalink"></a></h2><p><a href="../function-index/#Seis.Trace"><code>Trace</code></a>s can be constructed using the constructors.  For example:</p><pre><code class="language-julia-repl">julia&gt; b = 0
+0
+
+julia&gt; delta = 0.01
+0.01
+
+julia&gt; data = randn(1000)
+1000-element Array{Float64,1}:
+  1.0531040918568588
+ -0.6757927468914589
+  0.4400717495620504
+ -0.19279696598421567
+ -2.3184617752564867
+  0.5721098603209582
+ -0.5340801996408615
+ -0.8755907210132988
+  0.8972142013920148
+ -0.49474306299955945
+  ⋮
+ -0.8602958295589607
+  1.0928110997960532
+ -1.522843501876273
+  0.31589606511579943
+ -0.40555650587511616
+  0.5632834619983424
+ -0.9752049488309114
+  0.8733934033941692
+  0.6943272579532167
+
+julia&gt; t = Trace(b, delta, data) # Fill trace with data already available
+Seis.Trace{Float64,Array{Float64,1},Seis.Geographic{Float64}}:
+            b: 0.0
+        delta: 0.01
+ Station{Float64,Seis.Geographic{Float64}}:
+     sta.meta: Seis.SeisDict{Symbol,Any}()
+ Event{Float64,Seis.Geographic{Float64}}:
+     evt.meta: Seis.SeisDict{Symbol,Any}()
+ Trace:
+        picks: 0
+         meta:</code></pre><h2 id="Writing-data-out-1"><a class="docs-heading-anchor" href="#Writing-data-out-1">Writing data out</a><a class="docs-heading-anchor-permalink" href="#Writing-data-out-1" title="Permalink"></a></h2><p>Seis currently supports writing in SAC format, using the <a href="../function-index/#Seis.write_sac"><code>write_sac</code></a> function.</p><pre><code class="language-julia-repl">julia&gt; t = sample_data()
+Seis.Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}}:
+            b: 52.66
+        delta: 0.01
+ Station{Float32,Seis.Geographic{Float32}}:
+      sta.lon: -120.0
+      sta.lat: 48.0
+      sta.sta: CDV
+      sta.azi: 0.0
+      sta.inc: 0.0
+     sta.meta: Seis.SeisDict{Symbol,Any}()
+ Event{Float32,Seis.Geographic{Float32}}:
+      evt.lon: -125.0
+      evt.lat: 48.0
+      evt.dep: 0.0
+     evt.time: 1981-03-29T10:38:14
+       evt.id: K8108838
+     evt.meta: Seis.SeisDict{Symbol,Any}()
+ Trace:
+        picks: 2
+         meta: SAC_lpspol =&gt; true
+               SAC_nevid =&gt; 0
+               SAC_iftype =&gt; 1
+               file =&gt; &quot;/home/travis/build/anowacki/Seis.jl/src/../data/seis.sac&quot;
+               SAC_idep =&gt; 50
+               SAC_iztype =&gt; 9
+               SAC_lcalda =&gt; true
+               SAC_unused18 =&gt; false
+               SAC_lovrok =&gt; true
+               SAC_norid =&gt; 0
+               SAC_ievtyp =&gt; 42
+
+julia&gt; write_sac(t, &quot;outfile.sac&quot;)
+4000</code></pre><h2 id="Basic-processing-1"><a class="docs-heading-anchor" href="#Basic-processing-1">Basic processing</a><a class="docs-heading-anchor-permalink" href="#Basic-processing-1" title="Permalink"></a></h2><p>Once read in or obtained some other way, data can be processed in a number of ways.</p><p>Note that, as mentioned above (<a href="#Mutability-1">Mutability</a>), traces can be modified in place, or copies taken when processing steps are applied.  Modifying in place is usually faster as it does not involve copying all the information, but it is often more convenient to copy traces as well.  For this reason, there is always a modifying version of a function (ending in <code>!</code>), and a copying version, without.</p><ul><li>Cut the data to a certain window, in either relative time, absolute time, or relative to a time pick, with <a href="../function-index/#Seis.cut"><code>cut</code></a> or <a href="../function-index/#Seis.cut!"><code>cut!</code></a>.</li><li>Decimate the data, with or without an antialiasing filter (<a href="../function-index/#Seis.decimate"><code>decimate</code></a>, <a href="../function-index/#Seis.decimate!"><code>decimate!</code></a>).</li><li>Remove the mean value of the trace with <a href="../function-index/#Seis.remove_mean"><code>remove_mean</code></a> or <a href="../function-index/#Seis.remove_mean!"><code>remove_mean!</code></a>.</li><li>Remove a linear trend in the data with <a href="../function-index/#Seis.remove_trend"><code>remove_trend</code></a> or <a href="../function-index/#Seis.remove_trend!"><code>remove_trend!</code></a>.</li><li>Taper the signal with <a href="../function-index/#Seis.taper"><code>taper</code></a> or <a href="../function-index/#Seis.taper!"><code>taper!</code></a>.</li><li>Filter the data, performing a low-pass (<a href="../function-index/#Seis.lowpass"><code>lowpass</code></a>, <a href="../function-index/#Seis.lowpass!"><code>lowpass!</code></a>), high-pass (<a href="../function-index/#Seis.highpass"><code>highpass</code></a>, <a href="../function-index/#Seis.highpass!"><code>highpass!</code></a>), band-pass (<a href="../function-index/#Seis.bandpass"><code>bandpass</code></a>, <a href="../function-index/#Seis.bandpass!"><code>bandpass!</code></a>) or band-stop (<a href="../function-index/#Seis.bandstop"><code>bandstop</code></a>, <a href="../function-index/#Seis.bandstop!"><code>bandstop!</code></a>) filter.  For each, an acausal version of the filter can be obtained by passing the <code>twopass=true</code> option.</li><li>Differentiate (<a href="../function-index/#Seis.differentiate"><code>differentiate</code></a>, <a href="../function-index/#Seis.differentiate!"><code>differentiate!</code></a>) or integrate (<a href="../function-index/#Seis.integrate"><code>integrate</code></a>, <a href="../function-index/#Seis.integrate!"><code>integrate!</code></a>) the trace.</li><li>Normalise the data to a certain value with <a href="../function-index/#LinearAlgebra.normalize"><code>normalize</code></a> or <a href="../function-index/#LinearAlgebra.normalize!"><code>normalize!</code></a> (or <a href="../function-index/#Seis.normalise"><code>normalise</code></a> for us Brits).</li><li>Take the envelope of a trace with <a href="../function-index/#Seis.envelope"><code>envelope</code></a> or <a href="../function-index/#Seis.envelope!"><code>envelope!</code></a>.</li></ul><p>In addition, pairs of traces can be rotated:</p><ul><li><a href="../function-index/#Seis.rotate_through"><code>rotate_through</code></a> and <a href="../function-index/#Seis.rotate_through!"><code>rotate_through!</code></a> rotate a pair of horizontal traces by a certain angle.</li><li><a href="../function-index/#Seis.rotate_to_gcp"><code>rotate_to_gcp</code></a> and <a href="../function-index/#Seis.rotate_to_gcp!"><code>rotate_to_gcp!</code></a> rotate pairs to radial (pointing away from the source at the station) and transverse (90° clockwise from this) components.</li></ul><h2 id="Accessing-raw-trace-data-1"><a class="docs-heading-anchor" href="#Accessing-raw-trace-data-1">Accessing raw trace data</a><a class="docs-heading-anchor-permalink" href="#Accessing-raw-trace-data-1" title="Permalink"></a></h2><p>Beyond these basic functions, <code>Trace</code>s are designed to be used to build your own processing workflows on top.  For example, shear wave splitting analysis can be done with <a href="https://github.com/anowacki/SeisSplit.jl">SeisSplit</a> and array processing with <a href="https://github.com/anowacki/Beamforming.jl">Beamforming</a>.</p><p>To access the raw trace, use the <a href="../function-index/#Seis.trace"><code>trace</code></a> function, which returns the data:</p><pre><code class="language-julia-repl">julia&gt; t = Trace(0, 0.1, [1, 2, 3, 4, 5])
+Seis.Trace{Float64,Array{Float64,1},Seis.Geographic{Float64}}:
+            b: 0.0
+        delta: 0.1
+ Station{Float64,Seis.Geographic{Float64}}:
+     sta.meta: Seis.SeisDict{Symbol,Any}()
+ Event{Float64,Seis.Geographic{Float64}}:
+     evt.meta: Seis.SeisDict{Symbol,Any}()
+ Trace:
+        picks: 0
+         meta:
+
+julia&gt; data = trace(t)
+5-element Array{Float64,1}:
+ 1.0
+ 2.0
+ 3.0
+ 4.0
+ 5.0</code></pre><p>As is usual with Julia, <code>data</code> is a variable bound to the same object as the underlying data of the trace <code>t</code>.  Modifying <code>data</code> will also modify the values in <code>t</code>:</p><pre><code class="language-julia-repl">julia&gt; data[1] = 0 # Set the first point to be zero
+0
+
+julia&gt; trace(t) # Note the first point is now 0
+5-element Array{Float64,1}:
+ 0.0
+ 2.0
+ 3.0
+ 4.0
+ 5.0</code></pre><p><code>data</code> can be <a href="https://docs.julialang.org/en/v1/base/collections/#Base.empty!"><code>empty!</code></a>d, or <a href="https://docs.julialang.org/en/v1/base/collections/#Base.push!"><code>push!</code></a>ed or <a href="https://docs.julialang.org/en/v1/base/collections/#Base.append!"><code>append!</code></a>ed to, and so on—it is simply a vector of data points.</p><h2 id="Accessing-other-properties-1"><a class="docs-heading-anchor" href="#Accessing-other-properties-1">Accessing other properties</a><a class="docs-heading-anchor-permalink" href="#Accessing-other-properties-1" title="Permalink"></a></h2><h3 id="Times-1"><a class="docs-heading-anchor" href="#Times-1">Times</a><a class="docs-heading-anchor-permalink" href="#Times-1" title="Permalink"></a></h3><p>The first sample of a trace <code>t</code> occurs at time <code>t.b</code>, and each sample is <code>t.delta</code> seconds after the previous one.  Therefore, each sample of the trace has a time, and this array (actually a subtype of <code>AbstractRange</code>) can be obtained with <a href="../function-index/#Seis.times"><code>times</code></a>:</p><pre><code class="language-julia-repl">julia&gt; times(t)
+0.0:0.1:0.4</code></pre><p>For consistency, the start and end times of a trace are given by <a href="../function-index/#Seis.starttime"><code>starttime</code></a> and <a href="../function-index/#Seis.endtime"><code>endtime</code></a>:</p><pre><code class="language-julia-repl">julia&gt; starttime(t), endtime(t)
+(0.0, 0.4)</code></pre><p>All these times are relative to the event date if that is set.  If it is, then <a href="../function-index/#Seis.startdate"><code>startdate</code></a> and <a href="../function-index/#Seis.enddate"><code>enddate</code></a> give the start and end date of the trace in UTC:</p><pre><code class="language-julia-repl">julia&gt; using Dates
+
+julia&gt; t.evt.time = DateTime(2013, 5, 24, 5, 44, 49, 880) # Set the origin time
+2013-05-24T05:44:49.88
+
+julia&gt; startdate(t), enddate(t)
+(Dates.DateTime(&quot;2013-05-24T05:44:49.88&quot;), Dates.DateTime(&quot;2013-05-24T05:44:50.28&quot;))</code></pre><p>Like before, we can get a set of dates for every sample with <a href="../function-index/#Seis.dates"><code>dates</code></a>:</p><pre><code class="language-julia-repl">julia&gt; dates(t)
+Dates.DateTime(&quot;2013-05-24T05:44:49.88&quot;):Dates.Millisecond(100):Dates.DateTime(&quot;2013-05-24T05:44:50.28&quot;)</code></pre><p>There should be 5 values here, since we gave the trace a set of 5 data points. <a href="../function-index/#Seis.nsamples"><code>nsamples</code></a> tells us this:</p><pre><code class="language-julia-repl">julia&gt; nsamples(t)
+5</code></pre><p>The closest sample to a certain time or date can be found with <a href="../function-index/#Seis.nearest_sample"><code>nearest_sample</code></a>:</p><pre><code class="language-julia-repl">julia&gt; nearest_sample(t, 0.11)
+2
+
+julia&gt; nearest_sample(t, DateTime(2013, 5, 24, 5, 44, 50))
+2</code></pre><h2 id="Picks-1"><a class="docs-heading-anchor" href="#Picks-1">Picks</a><a class="docs-heading-anchor-permalink" href="#Picks-1" title="Permalink"></a></h2><p>Seis allows you to assign arbitrary time picks to a <code>Trace</code> and use these in flexible ways.</p><p>Picks are simply markers which label a certain point in time with a label. They are useful for marking particular phase arrivals and for other purposes.  All picks in Seis are relative to the origin time for the trace if any.  So if a trace&#39;s <code>starttime</code> is 3 s and a pick is at 4 s, the pick points to a time 1 s after the trace starts.</p><p>Picks have two fields: <code>time</code> and <code>name</code>.  <code>time</code> is the time in seconds after zero time, which is the event time if set.  <code>name</code> may be a <code>String</code> such as <code>&quot;PcP&quot;</code>, or <code>missing</code> if no name is needed for this pick.</p><h3 id="Getting-picks-1"><a class="docs-heading-anchor" href="#Getting-picks-1">Getting picks</a><a class="docs-heading-anchor-permalink" href="#Getting-picks-1" title="Permalink"></a></h3><p>Picks are accessible in the <code>picks</code> field of a trace:</p><pre><code class="language-julia-repl">julia&gt; t = sample_data();
+
+julia&gt; t.picks
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
+  :F =&gt; Seis.Pick{Float32}(time=60.980003, name=missing)
+  :A =&gt; Seis.Pick{Float32}(time=53.670002, name=missing)</code></pre><p>You can see that there are two picks defined: one at 53.67 s with key <code>:A</code>, and one at 60.98 s with key <code>:F</code>.  Each pick is associated with a key, which can be a <code>Symbol</code>, or an <code>Int</code>.  Picks with a <code>Symbol</code> key are named picks and can be accessed in two ways.</p><p>You can access a named pick with dot notation if you know the literal key:</p><pre><code class="language-julia-repl">julia&gt; t.picks.A
+Seis.Pick{Float32}(time=53.670002, name=missing)</code></pre><p>You can also use <code>getindex</code> or <code>[]</code> notation to access a named pick using a variable bound to a <code>Symbol</code> or a literal value:</p><pre><code class="language-julia-repl">julia&gt; t.picks[:A]
+Seis.Pick{Float32}(time=53.670002, name=missing)
+
+julia&gt; pickkey = :A; t.picks[pickkey]
+Seis.Pick{Float32}(time=53.670002, name=missing)</code></pre><p>For any pick, access its time and name like so:</p><pre><code class="language-julia-repl">julia&gt; t.picks.A.time, t.picks.A.name
+(53.670002f0, missing)</code></pre><h3 id="Setting-picks-1"><a class="docs-heading-anchor" href="#Setting-picks-1">Setting picks</a><a class="docs-heading-anchor-permalink" href="#Setting-picks-1" title="Permalink"></a></h3><p>Setting picks is done similarly.  To add a named pick with name <code>:S</code>, time 2 s and name <code>&quot;Sg&quot;</code>, you can do</p><pre><code class="language-julia-repl">julia&gt; t.picks.S = 2, &quot;Sg&quot;
+(2, &quot;Sg&quot;)
+
+julia&gt; t.picks
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 3 entries:
+  :F =&gt; Seis.Pick{Float32}(time=60.980003, name=missing)
+  :A =&gt; Seis.Pick{Float32}(time=53.670002, name=missing)
+  :S =&gt; Seis.Pick{Float32}(time=2.0, name=&quot;Sg&quot;)</code></pre><p>Or, you can use <code>setindex!</code> (<code>[]</code>):</p><pre><code class="language-julia-repl">julia&gt; t.picks[:S] = 2.5
+2.5
+
+julia&gt; t.picks
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 3 entries:
+  :F =&gt; Seis.Pick{Float32}(time=60.980003, name=missing)
+  :A =&gt; Seis.Pick{Float32}(time=53.670002, name=missing)
+  :S =&gt; Seis.Pick{Float32}(time=2.5, name=missing)</code></pre><p>Note that the <code>:S</code> pick is overwritten.  Note also here that by not providing a name for the pick, its name defaults to <code>missing</code>.</p><h3 id="Removing-picks-1"><a class="docs-heading-anchor" href="#Removing-picks-1">Removing picks</a><a class="docs-heading-anchor-permalink" href="#Removing-picks-1" title="Permalink"></a></h3><p>Remove picks as usual for <code>Dict</code>-like collections of things, with <code>delete!</code>:</p><pre><code class="language-julia-repl">julia&gt; delete!(t.picks, :S)
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
+  :F =&gt; Seis.Pick{Float32}(time=60.980003, name=missing)
+  :A =&gt; Seis.Pick{Float32}(time=53.670002, name=missing)
+
+julia&gt; t.picks
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
+  :F =&gt; Seis.Pick{Float32}(time=60.980003, name=missing)
+  :A =&gt; Seis.Pick{Float32}(time=53.670002, name=missing)</code></pre><p>You can also use the special method for the <code>picks</code> field of setting a pick to <code>missing</code>:</p><pre><code class="language-julia-repl">julia&gt; t.picks.F = missing
+missing
+
+julia&gt; t.picks
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 1 entry:
+  :A =&gt; Seis.Pick{Float32}(time=53.670002, name=missing)</code></pre><p>Remove all picks with the <a href="../function-index/#Seis.clear_picks!"><code>clear_picks!</code></a> function:</p><pre><code class="language-julia-repl">julia&gt; clear_picks!(t)
+Dict{Union{Int64, Symbol},Seis.Pick{Float32}}()
+
+julia&gt; t.picks
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}}()</code></pre><h3 id="Arrays-of-picks-1"><a class="docs-heading-anchor" href="#Arrays-of-picks-1">Arrays of picks</a><a class="docs-heading-anchor-permalink" href="#Arrays-of-picks-1" title="Permalink"></a></h3><p>Because <code>t.picks</code> is a special type of <code>Dict</code> (a <a href="../internal-index/#Seis.SeisDict"><code>Seis.SeisDict</code></a>), we can also access the <code>time</code> and <code>name</code> fields of sets of picks easily.</p><p>For example, if dealing with a set of stations where we have a pick for each, we can extract the vector of all pick times simply:</p><pre><code class="language-julia-repl">julia&gt; t = sample_data(:array)
+60-element Array{Trace{Float32,Array{Float32,1},Seis.Geographic{Float32}},1}:
+ Seis.Trace(.ABA..SHZ: delta=0.05, b=996.73, nsamples=6002)
+ Seis.Trace(.APA..SHZ: delta=0.05, b=996.87, nsamples=6002)
+ Seis.Trace(.AWI..SHZ: delta=0.05, b=996.86, nsamples=6002)
+ Seis.Trace(.BBH..SHZ: delta=0.05, b=996.34, nsamples=6002)
+ Seis.Trace(.BBO..SHZ: delta=0.05, b=996.51, nsamples=6002)
+ Seis.Trace(.BDL..SHZ: delta=0.05, b=995.81, nsamples=6002)
+ Seis.Trace(.BTA..SHZ: delta=0.05, b=995.8, nsamples=6002)
+ Seis.Trace(.BWH..SHZ: delta=0.05, b=996.1, nsamples=6002)
+ Seis.Trace(.CRA..SHZ: delta=0.05, b=999.85, nsamples=6002)
+ Seis.Trace(.CSF..SHZ: delta=0.05, b=995.22, nsamples=6002)
+ ⋮
+ Seis.Trace(.WCB..SHZ: delta=0.05, b=987.78, nsamples=6002)
+ Seis.Trace(.WME..SHZ: delta=0.05, b=987.89, nsamples=6002)
+ Seis.Trace(.WPM..SHZ: delta=0.05, b=987.8, nsamples=6002)
+ Seis.Trace(.XAL..SHZ: delta=0.05, b=994.08, nsamples=6002)
+ Seis.Trace(.XDE..SHZ: delta=0.05, b=994.94, nsamples=6002)
+ Seis.Trace(.YEL..SHZ: delta=0.05, b=996.79, nsamples=6002)
+ Seis.Trace(.YLL..SHZ: delta=0.05, b=988.17, nsamples=6002)
+ Seis.Trace(.YRC..SHZ: delta=0.05, b=988.03, nsamples=6002)
+ Seis.Trace(.YRE..SHZ: delta=0.05, b=988.29, nsamples=6002)
+
+julia&gt; t[1].picks # Picks of the first trace
+Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
+  :A  =&gt; Seis.Pick{Float32}(time=1134.08, name=missing)
+  :T1 =&gt; Seis.Pick{Float32}(time=137.35, name=missing)
+
+julia&gt; t.picks.A.time # Times of all A picks for all traces
+60-element Array{Float32,1}:
+ 1134.08
+ 1135.62
+ 1134.61
+ 1128.9
+ 1130.0
+ 1129.5
+ 1129.3
+ 1128.4
+ 1141.9
+ 1130.67
+    ⋮
+ 1132.43
+ 1132.69
+ 1133.04
+ 1129.33
+ 1130.14
+ 1114.24
+ 1133.36
+ 1132.82
+ 1133.64</code></pre><h2 id="Geometry-1"><a class="docs-heading-anchor" href="#Geometry-1">Geometry</a><a class="docs-heading-anchor-permalink" href="#Geometry-1" title="Permalink"></a></h2><p>Seis allows you to have traces defined in any coordinate system you like. By default, it provides two main types:</p><ul><li><code>Geographic</code>, where coordinates are given as longitudes and latitudes in °, and depths in km below sea level, and</li><li><code>Cartesian</code>, where coordinates are <span>$x$</span>, <span>$y$</span> and <span>$z$</span> in a right-handed system and each is given in m.  Conventionally in Seis, <span>$x$</span> is a local easting and <span>$y$</span> is a local northing, meaning <span>$z$</span> is the upwards direction and usually <span>$z$</span> is <span>$0$</span> at sea level or the local reference level.</li></ul><p>By default in Seis, all <code>Event</code>s, <code>Station</code>s and <code>Trace</code>s are geographic, and use the <code>Geographic</code> type.  Therefore you do not need to do anything special to work in geographic sense with longitudes, latitudes, and so on.</p><h3 id="Cartesian-geometry-1"><a class="docs-heading-anchor" href="#Cartesian-geometry-1">Cartesian geometry</a><a class="docs-heading-anchor-permalink" href="#Cartesian-geometry-1" title="Permalink"></a></h3><p>However, if you are dealing with data where it makes more sense to consider positions in a Cartesian system, that is straightforward. Use the special constructors for Cartesian objects to create them:</p><ul><li><a href="../function-index/#Seis.CartTrace"><code>CartTrace</code></a> creates a new <code>Trace</code> in an <span>$x, y, z$</span> system.</li><li><a href="../function-index/#Seis.CartStation"><code>CartStation</code></a> creates a Cartesian-referenced <code>Station</code>.</li><li><a href="../function-index/#Seis.CartEvent"><code>CartEvent</code></a> makes a Cartesian-referenced event.</li></ul><p>Where it makes sense, certain accessor functions like <a href="../function-index/#Seis.distance_km"><code>distance_km</code></a> are defined for these types, and these are necessarily different to those for geographic objects.</p><p>For example, <a href="../function-index/#Seis.distance_km"><code>distance_km</code></a> will calculate the straight-line distance between the event and station when in Cartesian coordinates:</p><pre><code class="language-julia-repl">julia&gt; t = CartTrace(0, 1e-4, 1000)
+Seis.Trace{Float64,Array{Float64,1},Seis.Cartesian{Float64}}:
+            b: 0.0
+        delta: 0.0001
+ Station{Float64,Seis.Cartesian{Float64}}:
+     sta.meta: Seis.SeisDict{Symbol,Any}()
+ Event{Float64,Seis.Cartesian{Float64}}:
+     evt.meta: Seis.SeisDict{Symbol,Any}()
+ Trace:
+        picks: 0
+         meta:
+
+julia&gt; t.sta.x, t.sta.y, t.sta.z = 101, -35, 12
+(101, -35, 12)
+
+julia&gt; t.evt.x, t.evt.y, t.evt.z = 12, 14, -100
+(12, 14, -100)
+
+julia&gt; distance_km(t)
+0.10159724405711013</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types-1"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types-1">Geometry type hierarchy and custom geometry types</a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types-1" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)-1"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)-1"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)-1" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)-1"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)-1"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)-1" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 11 February 2021 23:47">Thursday 11 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
