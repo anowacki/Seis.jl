@@ -391,6 +391,7 @@ julia> trace(normalise(t, 2))
 """
 function normalise!(t::AbstractTrace, val=1)
     maxval = maximum(abs, trace(t))
+    iszero(maxval) && return t
     t.t .*= val/maxval
     t
 end

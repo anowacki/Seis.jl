@@ -176,6 +176,12 @@ end
             normalize!(t′)
             @test t == t′
         end
+        @testset "Empty traces" begin
+            let t = Trace(0, 1, zeros(5))
+                @test trace(normalise(t)) == trace(t)
+                @test trace(normalise(t, rand())) == trace(t)
+            end
+        end
     end
 
     @testset "Taper" begin
