@@ -50,7 +50,7 @@ function read(::Type{T}, data::AbstractVector{UInt8};
         ) where {T<:AbstractTrace}
     seisdata = SeisIO.SeisData()
     io = IOBuffer(data)
-    seisdata = SeisIO.SEED.parsemseed!(seisdata, io, Int64(nx_add), Int64(nx_new),
+    SeisIO.SEED.parsemseed!(seisdata, io, Int64(nx_add), Int64(nx_new),
         strict, verbose)
     SeisIOIO.parse_seisio(T, seisdata; maximum_gap=maximum_gap,
         maximum_offset=maximum_offset)

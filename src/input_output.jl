@@ -258,6 +258,14 @@ The following keyword arguments can be passed to `read_mseed`:
 - `maximum_offset`: The maximum sum of all gaps beyond which gaps are no
   longer tolerated in a single trace.  This is calculated by simply adding
   all the gaps together.  By default this is the sampling interval.
+
+---
+
+    read_mseed([T,] data::Vector{UInt8}; kwargs...) -> traces
+
+Read Miniseed `data` from memory, held as a set of bytes, optionally specifying
+the type `T` of traces to return.  Keyword arguments are the same as for
+reading from a file on disk.
 """
 read_mseed(T::Type, file; kwargs...) = Miniseed.read(T, file; kwargs...)
 read_mseed(file; kwargs...) = Miniseed.read(file; kwargs...)
