@@ -126,26 +126,26 @@ julia&gt; delta = 0.01
 
 julia&gt; data = randn(1000)
 1000-element Array{Float64,1}:
-  0.7230744558086872
-  1.6727322491822927
- -0.4654536475077476
- -0.18694564198606917
- -1.4610336752694908
- -2.114055593734776
-  0.9628396262861301
-  0.061786012166173125
- -0.4439398267865932
- -0.08886800518611201
+  1.3737768985444645
+  0.3129270042166059
+  0.5860769128151542
+  2.397185911234843
+ -0.6556534059270794
+  0.7317927392330493
+  0.7271950218452794
+  1.4332995390988483
+  0.11412560868320834
+ -0.5814151287944914
   ⋮
-  0.5720208558272952
- -0.3824779335344857
- -1.5726895889669745
- -1.4642903422142504
-  1.1307922672898754
-  0.01774591251288281
- -0.6795188290406672
- -0.15658040298544132
-  0.6866614290494105
+  0.6025261723499404
+ -0.5397024094292583
+ -0.377358087918727
+ -0.34381893582724016
+  1.8897323295834538
+  0.05125808547758773
+ -2.343077586258777
+ -0.2275439597137601
+ -0.29694025386384637
 
 julia&gt; t = Trace(b, delta, data) # Fill trace with data already available
 Seis.Trace{Float64,Array{Float64,1},Seis.Geographic{Float64}}:
@@ -341,4 +341,4 @@ julia&gt; t.evt.x, t.evt.y, t.evt.z = 12, 14, -100
 (12, 14, -100)
 
 julia&gt; distance_km(t)
-0.10159724405711013</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types-1"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types-1">Geometry type hierarchy and custom geometry types</a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types-1" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)-1"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)-1"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)-1" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)-1"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)-1"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)-1" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 12 February 2021 01:25">Friday 12 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+0.10159724405711013</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types-1"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types-1">Geometry type hierarchy and custom geometry types</a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types-1" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)-1"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)-1"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)-1" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)-1"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)-1"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)-1" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 February 2021 13:44">Thursday 25 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
