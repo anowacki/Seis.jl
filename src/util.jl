@@ -189,6 +189,38 @@ origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
     origin_time!(deepcopy(t), time; kwargs...)
 
 """
+    _has_azimuth(s::Station{T}, azi; tol=eps(T)) -> ::Bool
+
+Return `true` if the azimuth of station `s` is within `tol` of `azi`.
+Angles `azi` and `tol` are in degrees.
+"""
+function _has_azimuth(s::Station{T}, azi; tol=eps(T)) where T
+    isapprox(abs(angle_difference(s.azi, azi)), zero(T), atol=tol)
+end
+
+"""
+    is_east(s::Station{T}; tol=eps(T)) where T -> ::Bool
+    is_east(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+
+Return `true` if the trace `t` is horizontal and points to the east.
+"""
+function is_east(s::Station{T}; tol=eps(T)) where T
+    is_horizontal(s, tol=tol) && _has_azimuth(s, 90, tol=tol)
+end
+is_east(t::Trace{T}; tol=eps(T)) where T = is_east(t.sta, tol=tol)
+
+"""
+    is_north(s::Station{T}; tol=eps(T)) where T -> ::Bool
+    is_north(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+
+Return `true` if the trace `t` is horizontal and points to the north.
+"""
+function is_north(s::Station{T}; tol=eps(T)) where T
+    is_horizontal(s, tol=tol) && _has_azimuth(s, 0, tol=tol)
+end
+is_north(t::Trace{T}; tol=eps(T)) where T = is_north(t.sta, tol=tol)
+
+"""
     is_horizontal(s::Station{T}; tol=eps(T)) where T
     is_horizontal(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
 

@@ -40,6 +40,8 @@ export
     dates,
     enddate,
     endtime,
+    is_east,
+    is_north,
     is_horizontal,
     is_vertical,
     nearest_sample,

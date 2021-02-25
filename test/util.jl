@@ -42,6 +42,43 @@ using Seis
             t′.sta.azi = t.sta.azi - 90rand(1:2:100)
             @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
 
+            @testset "is_east" begin
+                @test is_east(Station(inc=90, azi=90))
+                @test is_east(Station(inc=90, azi=91), tol=1)
+                @test !is_east(Station(inc=90, azi=91))
+                @test !is_east(Station(inc=90, azi=91), tol=0.1)
+                let t = Trace(0, 1, 0)
+                    t.sta = Station(inc=90, azi=90)
+                    @test is_east(t)
+                    @test is_east(t, tol=0.1)
+                    t.sta = Station(inc=90, azi=91)
+                    @test !is_east(t)
+                    @test is_east(t, tol=1)
+                    @test !is_east(t, tol=0.1)
+                end
+            end
+
+            @testset "is_north" begin
+                @test is_north(Station(inc=90, azi=0))
+                @test is_north(Station(inc=90, azi=1), tol=1)
+                @test is_north(Station(inc=90, azi=359), tol=1)
+                @test !is_north(Station(inc=90, azi=1))
+                @test !is_north(Station(inc=90, azi=1), tol=0.1)
+                @test !is_north(Station(inc=90, azi=359), tol=0.1)
+                let t = Trace(0, 1, 0)
+                    t.sta = Station(inc=90, azi=0)
+                    @test is_north(t)
+                    @test is_north(t, tol=0.1)
+                    t.sta = Station(inc=90, azi=1)
+                    @test !is_north(t)
+                    @test is_north(t, tol=1)
+                    @test !is_north(t, tol=0.1)
+                    t.sta = Station(inc=90, azi=359)
+                    @test !is_north(t)
+                    @test is_north(t, tol=1)
+                end
+            end
+
             @testset "origin_time!" begin
                 # Adjust picks
                 let t = Trace(0, 1, 2)
