@@ -455,7 +455,7 @@ function Base.getproperty(s::AbstractArray{<:Station}, f::Symbol)
         getproperty.(s, f)
     elseif f === :net || f === :sta || f === :cha || f == :loc
         getproperty.(s, f)
-    elseif f === :inc || f === :azi
+    elseif f === :inc || f === :azi || f === :meta
         getproperty.(s, f)
     else
         getfield(s, f)

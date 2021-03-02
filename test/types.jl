@@ -71,151 +71,195 @@ using Seis
     end
 
     @testset "Event" begin
-        # Geographic events
-        let dt = now(), lon = rand(), lat = rand(), dep = rand(), id = "id",
-                meta = Dict()
-            local e, es
-            @test (e = Event()) isa Event{Float64}
-            @test all(ismissing, (e.lon, e.lat, e.dep, e.time))
-            @test_throws MethodError Event("x")
-            @test_throws TypeError Event{Int,Seis.Geographic{Int}}()
-            e = Event(lon=lon, lat=lat, dep=dep, time=dt, id=id, meta=meta)
-            @test e.pos == Seis.Geographic(lon, lat, dep)
-            @test e.lon == lon
-            @test e.lat == lat
-            @test e.dep == dep
-            @test e.time == dt
-            @test e.id == id
-            @test e.meta == meta
-            e.meta.key_name = dt
-            @test e.meta.key_name == dt
-            # Arrays
-            es = [deepcopy(e) for _ in 1:3]
-            @test typeof(es) == Vector{Event{Float64, Seis.Geographic{Float64}}}
-            @test length(es.lon) == 3
-            @test es.lat == [lat, lat, lat]
-            es.id = ["1", "2", "3"]
-            @test es.id == ["1", "2", "3"]
-            es.id = "A"
-            @test es.id == ["A", "A", "A"]
-            es .= e
-            @test all(x->x==e, es)
+        @testset "Geographic" begin
+            let dt = now(), lon = rand(), lat = rand(), dep = rand(), id = "id",
+                    meta = Dict()
+                local e, es
+                @test (e = Event()) isa Event{Float64}
+                @test all(ismissing, (e.lon, e.lat, e.dep, e.time))
+                @test_throws MethodError Event("x")
+                @test_throws TypeError Event{Int,Seis.Geographic{Int}}()
+                e = Event(lon=lon, lat=lat, dep=dep, time=dt, id=id, meta=meta)
+                @test e.pos == Seis.Geographic(lon, lat, dep)
+                @test e.lon == lon
+                @test e.lat == lat
+                @test e.dep == dep
+                @test e.time == dt
+                @test e.id == id
+                @test e.meta == meta
+                e.meta.key_name = dt
+                @test e.meta.key_name == dt
+                # Arrays
+                es = [deepcopy(e) for _ in 1:3]
+                @test typeof(es) == Vector{Event{Float64, Seis.Geographic{Float64}}}
+                @test length(es.lon) == 3
+                @test es.lat == [lat, lat, lat]
+                es.id = ["1", "2", "3"]
+                @test es.id == ["1", "2", "3"]
+                es.id = "A"
+                @test es.id == ["A", "A", "A"]
+                es .= e
+                @test all(x->x==e, es)
+            end
+            @testset "meta arrays" begin
+                es = [Event() for _ in 1:3]
+                @test es.meta == [Seis.SeisDict{Symbol,Any}() for _ in 1:3]
+                es.meta.x = [1, 2, 3]
+                @test es[1].meta.x == 1
+                @test es.meta.x == [1, 2, 3]
+                @test all(x -> x === missing, es.meta.y)
+                es.meta.x = missing
+                @test all(x -> x === missing, es.meta.x)
+            end
         end
 
-        # Cartesian events
-        let dt = now(), x = rand(), y = rand(), z = rand(), id = "id",
-                meta = Dict()
-            local e, es
-            @test CartEvent() isa Event{Float64, Seis.Cartesian{Float64}}
-            @test CartEvent{Float32}() isa Event{Float32, Seis.Cartesian{Float32}}
-            e = CartEvent()
-            @test all(ismissing, (e.x, e.y, e.z, e.time, e.id))
-            e = CartEvent(x=x, y=y, z=z, time=dt, id=id, meta=meta)
-            @test e.pos == Seis.Cartesian(x, y, z)
-            @test e.x == x
-            @test e.y == y
-            @test e.z == z
-            @test e.time == dt
-            @test e.id == id
-            @test e.meta == meta
-            e.meta.key_name = dt
-            @test e.meta.key_name == dt
-            # Arrays
-            es = [deepcopy(e) for _ in 1:3]
-            @test typeof(es) == Vector{Event{Float64, Seis.Cartesian{Float64}}}
-            @test length(es.x) == 3
-            @test es.y == [y, y, y]
-            es.id = ["1", "2", "3"]
-            @test es.id == ["1", "2", "3"]
-            es.id = "A"
-            @test es.id == ["A", "A", "A"]
-            es .= e
-            @test all(x->x===e, es)
+        @testset "Cartesian" begin
+            let dt = now(), x = rand(), y = rand(), z = rand(), id = "id",
+                    meta = Dict()
+                local e, es
+                @test CartEvent() isa Event{Float64, Seis.Cartesian{Float64}}
+                @test CartEvent{Float32}() isa Event{Float32, Seis.Cartesian{Float32}}
+                e = CartEvent()
+                @test all(ismissing, (e.x, e.y, e.z, e.time, e.id))
+                e = CartEvent(x=x, y=y, z=z, time=dt, id=id, meta=meta)
+                @test e.pos == Seis.Cartesian(x, y, z)
+                @test e.x == x
+                @test e.y == y
+                @test e.z == z
+                @test e.time == dt
+                @test e.id == id
+                @test e.meta == meta
+                e.meta.key_name = dt
+                @test e.meta.key_name == dt
+                # Arrays
+                es = [deepcopy(e) for _ in 1:3]
+                @test typeof(es) == Vector{Event{Float64, Seis.Cartesian{Float64}}}
+                @test length(es.x) == 3
+                @test es.y == [y, y, y]
+                es.id = ["1", "2", "3"]
+                @test es.id == ["1", "2", "3"]
+                es.id = "A"
+                @test es.id == ["A", "A", "A"]
+                es .= e
+                @test all(x->x===e, es)
+            end
+            @testset "meta arrays" begin
+                es = [CartEvent() for _ in 1:3]
+                @test es.meta == [Seis.SeisDict{Symbol,Any}() for _ in 1:3]
+                es.meta.x = [1, 2, 3]
+                @test es[1].meta.x == 1
+                @test es.meta.x == [1, 2, 3]
+                @test all(x -> x === missing, es.meta.y)
+                es.meta.x = missing
+                @test all(x -> x === missing, es.meta.x)
+            end
         end
     end
 
     @testset "Station" begin
-        # Geographic events
-        let lon = rand(), lat = rand(), elev = rand(), net = "A", sta = "B",
-                cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
-                meta = Dict(), dt = now()
-            local s
-            @test (s = Station()) isa Station{Float64,Seis.Geographic{Float64}}
-            @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.lon, s.lat,
-                                  s.dep, s.elev, s.azi, s.inc))
-            @test_throws MethodError Station(1)
-            s = Station(; net=net, sta=sta, loc=loc, cha=cha, lon=lon, lat=lat,
-                dep=dep, elev=elev, azi=azi, inc=inc, meta=meta)
-            @test s.net == net
-            @test s.sta == sta
-            @test s.loc == loc
-            @test s.cha == cha
-            @test s.lon == lon
-            @test s.lat == lat
-            @test s.dep == dep
-            @test s.pos == Seis.Geographic(lon, lat, dep)
-            @test s.elev == elev
-            @test s.azi == azi
-            @test s.inc == inc
-            @test s.meta == meta
-            s.meta.key_name = dt
-            @test s.meta.key_name == dt
-            s.azi *= 2
-            @test s.azi == azi*2
-            # Arrays
-            ss = [deepcopy(s) for _ in 1:3]
-            @test typeof(ss) == Vector{Station{Float64,Seis.Geographic{Float64}}}
-            @test length(ss.lon) == 3
-            @test ss.lat == [lat, lat, lat]
-            ss.loc = ["1", "2", "3"]
-            @test ss.loc == ["1", "2", "3"]
-            ss.loc = "A"
-            @test ss.loc == ["A", "A", "A"]
-            ss .= s
-            @test all(x->x===s, ss)
+        @testset "Geographic" begin
+            let lon = rand(), lat = rand(), elev = rand(), net = "A", sta = "B",
+                    cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
+                    meta = Dict(), dt = now()
+                local s
+                @test (s = Station()) isa Station{Float64,Seis.Geographic{Float64}}
+                @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.lon, s.lat,
+                                      s.dep, s.elev, s.azi, s.inc))
+                @test_throws MethodError Station(1)
+                s = Station(; net=net, sta=sta, loc=loc, cha=cha, lon=lon, lat=lat,
+                    dep=dep, elev=elev, azi=azi, inc=inc, meta=meta)
+                @test s.net == net
+                @test s.sta == sta
+                @test s.loc == loc
+                @test s.cha == cha
+                @test s.lon == lon
+                @test s.lat == lat
+                @test s.dep == dep
+                @test s.pos == Seis.Geographic(lon, lat, dep)
+                @test s.elev == elev
+                @test s.azi == azi
+                @test s.inc == inc
+                @test s.meta == meta
+                s.meta.key_name = dt
+                @test s.meta.key_name == dt
+                s.azi *= 2
+                @test s.azi == azi*2
+                # Arrays
+                ss = [deepcopy(s) for _ in 1:3]
+                @test typeof(ss) == Vector{Station{Float64,Seis.Geographic{Float64}}}
+                @test length(ss.lon) == 3
+                @test ss.lat == [lat, lat, lat]
+                ss.loc = ["1", "2", "3"]
+                @test ss.loc == ["1", "2", "3"]
+                ss.loc = "A"
+                @test ss.loc == ["A", "A", "A"]
+                ss .= s
+                @test all(x->x===s, ss)
+            end
+            @testset "meta arrays" begin
+                ss = [Station() for _ in 1:3]
+                @test ss.meta == [Seis.SeisDict{Symbol,Any}() for _ in 1:3]
+                ss.meta.x = [1, 2, 3]
+                @test ss[1].meta.x == 1
+                @test ss.meta.x == [1, 2, 3]
+                @test all(x -> x === missing, ss.meta.y)
+                ss.meta.x = missing
+                @test all(x -> x === missing, ss.meta.x)
+            end
         end
 
-        # Cartesian stations
-        let x = rand(), y = rand(), z = rand(), elev = rand(), net = "A", sta = "B",
-                cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
-                meta = Dict(), dt = now()
-            local s
-            @test (s = CartStation()) isa
-                Station{Float64,Seis.Cartesian{Float64}}
-            @test CartStation{Float32}() isa
-                Station{Float32,Seis.Cartesian{Float32}}
-            @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.x, s.y, s.z,
-                                  s.elev, s.azi, s.inc))
-            @test_throws MethodError CartStation(1)
-            s = CartStation(; net=net, sta=sta, loc=loc, cha=cha, x=x, y=y, z=z,
-                elev=elev, azi=azi, inc=inc, meta=meta)
-            @test s.net == net
-            @test s.sta == sta
-            @test s.loc == loc
-            @test s.cha == cha
-            @test s.x == x
-            @test s.y == y
-            @test s.z == z
-            @test s.pos == Seis.Cartesian(x, y, z)
-            @test s.elev == elev
-            @test s.azi == azi
-            @test s.inc == inc
-            @test s.meta == meta
-            s.meta.key_name = dt
-            @test s.meta.key_name == dt
-            s.azi *= 2
-            @test s.azi == azi*2
-            # Arrays
-            ss = [deepcopy(s) for _ in 1:3]
-            @test typeof(ss) == Vector{Station{Float64,Seis.Cartesian{Float64}}}
-            @test length(ss.x) == 3
-            @test ss.x == [x, x, x]
-            ss.loc = ["1", "2", "3"]
-            @test ss.loc == ["1", "2", "3"]
-            ss.loc = "A"
-            @test ss.loc == ["A", "A", "A"]
-            ss .= s
-            @test all(x->x===s, ss)
+        @testset "Cartesian" begin
+            let x = rand(), y = rand(), z = rand(), elev = rand(), net = "A", sta = "B",
+                    cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
+                    meta = Dict(), dt = now()
+                local s
+                @test (s = CartStation()) isa
+                    Station{Float64,Seis.Cartesian{Float64}}
+                @test CartStation{Float32}() isa
+                    Station{Float32,Seis.Cartesian{Float32}}
+                @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.x, s.y, s.z,
+                                      s.elev, s.azi, s.inc))
+                @test_throws MethodError CartStation(1)
+                s = CartStation(; net=net, sta=sta, loc=loc, cha=cha, x=x, y=y, z=z,
+                    elev=elev, azi=azi, inc=inc, meta=meta)
+                @test s.net == net
+                @test s.sta == sta
+                @test s.loc == loc
+                @test s.cha == cha
+                @test s.x == x
+                @test s.y == y
+                @test s.z == z
+                @test s.pos == Seis.Cartesian(x, y, z)
+                @test s.elev == elev
+                @test s.azi == azi
+                @test s.inc == inc
+                @test s.meta == meta
+                s.meta.key_name = dt
+                @test s.meta.key_name == dt
+                s.azi *= 2
+                @test s.azi == azi*2
+                # Arrays
+                ss = [deepcopy(s) for _ in 1:3]
+                @test typeof(ss) == Vector{Station{Float64,Seis.Cartesian{Float64}}}
+                @test length(ss.x) == 3
+                @test ss.x == [x, x, x]
+                ss.loc = ["1", "2", "3"]
+                @test ss.loc == ["1", "2", "3"]
+                ss.loc = "A"
+                @test ss.loc == ["A", "A", "A"]
+                ss .= s
+                @test all(x->x===s, ss)
+            end
+            @testset "meta arrays" begin
+                ss = [CartStation() for _ in 1:3]
+                @test ss.meta == [Seis.SeisDict{Symbol,Any}() for _ in 1:3]
+                ss.meta.x = [1, 2, 3]
+                @test ss[1].meta.x == 1
+                @test ss.meta.x == [1, 2, 3]
+                @test all(x -> x === missing, ss.meta.y)
+                ss.meta.x = missing
+                @test all(x -> x === missing, ss.meta.x)
+            end
         end
     end
 
