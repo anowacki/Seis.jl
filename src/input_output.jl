@@ -130,9 +130,23 @@ header).  The user is responsible for ensuring that the values corresponding to 
 keys can be converted to the correct header type.  Note also that `SAC_` `meta` fields
 override the equivalent `Trace` headers (e.g., `t.sta.sta` is equivalent to `SAC_kstnm`)
 and so one way to override the values in `Trace` headers is to set the `SAC_` fields.
+Note that the header is lowercase (i.e., `SAC_kstnm` not `SAC_KSTNM`).
 
 Time picks with keys corresponding to SAC picks headers (`A`, `F`, and `T0` to `T9`)
 are transferred, but other picks are not.
+
+If `t` is in a Cartesian reference frame (i.e., its positions are given
+by `CartEvent` and `CartStation`), then the Cartesian station coordinates
+`x`, `y` and `z` are saved respectively to headers `USER0`, `USER1` and `USER2`.
+Likewise, the event coordinates are saved respectively to `USER3`, `USER4` and
+`USER5`.  Any information in `meta` fields `SAC_user0` to `SAC_user5` will
+overwrite this data.
+
+!!! note
+    The convention on how non-geographic coordinates are written in SAC headers is
+    not part of the API and may change at any time.  Saving non-standard information
+    in SAC headers should be done explicitly by the user if this information is
+    important.
 
 By default, files are written to disk in bigendian format (MacSAC or SAC/BRIS
 convention).  Use `littleendian=true` to write in littleendian byte order
@@ -144,34 +158,30 @@ write_sac(t::AbstractTrace, file; littleendian=false) =
 """
     SACTrace(t::Trace) -> s
 
-Construct a `SACtr` s from s `Seis.Trace`.
+Construct a `SACTrace` `t` from a `Trace` `s`.
 """
 function SAC.SACTrace(t::AbstractTrace)
     s = SAC.SACTrace(trace(t), t.delta, t.b)
-    for (sacfield, val) in (
-                :o => 0,
-                :stlo => t.sta.lon,
-                :stla => t.sta.lat,
-                :stel => t.sta.elev,
-                :evlo => t.evt.lon,
-                :evla => t.evt.lat,
-                :evdp => t.evt.dep,
-                :cmpaz => t.sta.azi,
-                :cmpinc => t.sta.inc,
-                :nzyear => ismissing(t.evt.time) ? nothing : Dates.year(t.evt.time),
-                :nzjday => ismissing(t.evt.time) ? nothing : Dates.dayofyear(t.evt.time),
-                :nzhour => ismissing(t.evt.time) ? nothing : Dates.hour(t.evt.time),
-                :nzmin => ismissing(t.evt.time) ? nothing : Dates.minute(t.evt.time),
-                :nzsec => ismissing(t.evt.time) ? nothing : Dates.second(t.evt.time),
-                :nzmsec => ismissing(t.evt.time) ? nothing : Dates.millisecond(t.evt.time),
-                :leven => true,
-                :kstnm => t.sta.sta,
-                :kevnm => t.evt.id,
-                :khole => t.sta.loc,
-                :kcmpnm => t.sta.cha,
-                :knetwk => t.sta.net,
-                :iftype => SAC.SAC_ITIME
-            )
+    position_headers = _sac_position_headers(t)
+    for (sacfield, val) in pairs((
+                o = 0,
+                position_headers...,
+                cmpaz = t.sta.azi,
+                cmpinc = t.sta.inc,
+                nzyear = ismissing(t.evt.time) ? nothing : Dates.year(t.evt.time),
+                nzjday = ismissing(t.evt.time) ? nothing : Dates.dayofyear(t.evt.time),
+                nzhour = ismissing(t.evt.time) ? nothing : Dates.hour(t.evt.time),
+                nzmin = ismissing(t.evt.time) ? nothing : Dates.minute(t.evt.time),
+                nzsec = ismissing(t.evt.time) ? nothing : Dates.second(t.evt.time),
+                nzmsec = ismissing(t.evt.time) ? nothing : Dates.millisecond(t.evt.time),
+                leven = true,
+                kstnm = t.sta.sta,
+                kevnm = t.evt.id,
+                khole = t.sta.loc,
+                kcmpnm = t.sta.cha,
+                knetwk = t.sta.net,
+                iftype = SAC.SAC_ITIME
+            ))
         !ismissing(val) && val !== nothing && (s[sacfield] = val)
     end
     # Time picks
@@ -198,6 +208,37 @@ function SAC.SACTrace(t::AbstractTrace)
     SAC.update_headers!(s)
     s
 end
+
+"Fields relating to positions which are set differently depending
+on the geometry of the traces."
+_sac_position_headers(t::Trace{T,V,P}) where {T,V,P<:Geographic}= (
+    stlo = t.sta.lon,
+    stla = t.sta.lat,
+    stel = t.sta.elev,
+    evlo = t.evt.lon,
+    evla = t.evt.lat,
+    evdp = t.evt.dep
+    )
+function _sac_position_headers(t::Trace{T,V,P}) where {T,V,P<:Cartesian}
+    any_present = any(x -> x !== missing, (t.sta.x, t.sta.y, t.sta.z, t.evt.x, t.evt.y, t.evt.z))
+    (
+    user0 = t.sta.x,
+    kuser0 = any_present ? "Seis.jl" : nothing,
+    user1 = t.sta.y,
+    kuser1 = any_present ? "xyz pos" : nothing,
+    user2 = t.sta.z,
+    user3 = t.evt.x,
+    user4 = t.evt.y,
+    user5 = t.evt.z,
+    )
+end
+_sac_position_headers(_::AbstractTrace) = ()
+
+"Convert a SAC undefined header value into `missing` or return its value"
+_sacmissing(x) = SAC.isundefined(x) ? missing : x
+# Remove trailing, illegal null characters from strings; the spec is to pad with spaces.
+_sacmissing(x::String) = (x = replace(x, "\0"=>""); SAC.isundefined(x) ? missing : x)
+_sacmissing(s::SAC.SACTrace, x) = _sacmissing(s[x])
 
 #
 # Miniseed
@@ -313,7 +354,3 @@ channel_code(sta::Station) = join(_blankmissing.((sta.net, sta.sta, sta.loc, sta
 channel_code(t::AbstractTrace) = channel_code(t.sta)
 
 _blankmissing(x) = string(ismissing(x) ? "" : x)
-
-_sacmissing(x) = SAC.isundefined(x) ? missing : x
-_sacmissing(x::String) = (x = replace(x, "\0"=>""); SAC.isundefined(x) ? missing : x)
-_sacmissing(s::SAC.SACTrace, x) = _sacmissing(s[x])

@@ -1,4 +1,5 @@
 using Test
+using Dates
 using Seis
 import Seis.SAC
 using Statistics: mean
@@ -55,6 +56,22 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
             k = 1:100
             s[:t] = k
             @test all(s[:t] .== SAC.SACFloat.(k))
+        end
+
+        @testset "From CartTrace" begin
+            let t = CartTrace(0, 1, 1:3)
+                t.sta = CartStation(net="A", sta="B", cha="D", loc="C", x=1, y=2, z=3)
+                t.evt = CartEvent(time=DateTime(3000), x=5, y=6, z=7)
+                s = SAC.SACTrace(t)
+                @test s[:user0] == t.sta.x
+                @test s[:kuser0] == "Seis.jl"
+                @test s[:user1] == t.sta.y
+                @test s[:kuser1] == "xyz pos"
+                @test s[:user2] == t.sta.z
+                @test s[:user3] == t.evt.x
+                @test s[:user4] == t.evt.y
+                @test s[:user5] == t.evt.z
+            end
         end
     end
 
