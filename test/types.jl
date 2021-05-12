@@ -2,6 +2,10 @@ using Test
 using Dates
 using Seis
 
+@static if VERSION < v"1.2"
+    hasproperty(d, k) = k in propertynames(d)
+end
+
 @testset "Types" begin
     @testset "SeisDict" begin
         @testset "Single dicts" begin
