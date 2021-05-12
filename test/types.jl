@@ -2,19 +2,29 @@ using Test
 using Dates
 using Seis
 
+@static if VERSION < v"1.2"
+    hasproperty(d, k) = k in propertynames(d)
+end
+
 @testset "Types" begin
     @testset "SeisDict" begin
         @testset "Single dicts" begin
             d = Seis.SeisDict(:a=>1)
             @test d[:a] == 1
+            @test haskey(d, :a) == true
+            @test hasproperty(d, :a) == true
+            @test propertynames(d) == [:a]
             @test d.a == 1
             @test d.b === missing
+            @test hasproperty(d, :b) == false
             d.b = 2
             @test d[:b] == d.b == 2
+            @test propertynames(d) == [:a, :b]
             d.a = d.b = missing
             @test haskey(d, :a) == false
             @test haskey(d, :b) == false
             @test collect(keys(d)) == []
+            @test hasproperty(d, :a) == false
         end
         
         @testset "Arrays" begin
