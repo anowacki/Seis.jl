@@ -97,7 +97,7 @@ Base.setproperty!(sd::SeisDict{K,V}, key::Symbol, ::Missing) where {K,V} = delet
 Base.setproperty!(sd::SeisDict{K,Any}, key::Symbol, ::Missing) where K = delete!(sd, key)
 Base.setproperty!(sd::SeisDict{K,V}, key::Symbol, val) where {K,V} = setindex!(sd, V(val), key)
 Base.setproperty!(sd::SeisDict{K,Any}, key::Symbol, val) where K = setindex!(sd, val, key)
-Base.propertynames(sd::SeisDict, private=false) = collect(keys(sd))
+Base.propertynames(sd::SeisDict, private::Bool=false) = collect(keys(sd))
 
 Base.getproperty(sd::AbstractArray{<:SeisDict}, key::Symbol) = getproperty.(sd, key)
 Base.setproperty!(sd::AbstractArray{<:SeisDict}, key::Symbol, val) = setproperty!.(sd, key, val)
