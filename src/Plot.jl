@@ -172,25 +172,16 @@ function plot end
         end
     end
 
-    # FIXME: Update this as this it may break
-    # Text annotations with custom font attributes requires using Plots.text,
-    # but we don't want to depend on Plots.  Instead use Main.Plots, in the hope
-    # that the user has loaded Plots into Main.
-    #   workaround (https://discourse.julialang.org/t/annotations-and-line-widths-in-plots-jl-heatmaps/4259/3)
-    plots = Main.Plots
-
     # Labels
     get!(plotattributes, :label, channel_code.(t))
     annot_params = (9, :black, :top, :right)
-    markerstrokealpha := 0.0
-    markeralpha := 0.0
     for i in eachindex(t)
         @series begin
             seriestype := :scatter
             subplot := i
-            # FIXME: Update to a better way of plotting annotations
-            series_annotations := [plots.text(plotattributes[:label][i], annot_params...)]
-            [xlims[end] - 0.007(xlims[end] - xlims[1])], [all_ylims[i][end]]
+            annotations := [(xlims[end] - 0.007(xlims[end] - xlims[1]), all_ylims[i][end],
+                             (plotattributes[:label][i], annot_params...))]
+            []
         end
     end
 
@@ -220,14 +211,20 @@ function plot end
         annotation_params = (8, :left, :bottom, :blue)
         for i in eachindex(t)
             length(pick_times[i]) == 0 && continue
+            xs = pick_times[i]
+            npicks = length(xs)
+            y = all_ylims[i][1]
+            # Pick symbols
             @series begin
                 subplot := i
-                # FIXME: Update to a better way of plotting annotations
-                series_annotations := [plots.text.(name, annotation_params...)
-                                       for name in pick_names[i]]
-                x = pick_times[i]
-                y = all_ylims[i][1]
-                x, repeat([y], length(x))
+                xs, repeat([y], npicks)
+            end
+            # Pick labels
+            @series begin
+                subplot := i
+                annotations := [(x, y, (name, annotation_params...))
+                                for (x, name) in zip(xs, pick_names[i])]
+                []
             end
         end
     end
@@ -382,10 +379,16 @@ section
     markercolor := :blue
     markerstrokealpha := 0.0
     primary := false
-    annotation_params = (8, :center, :bottom, :blue)
+    annotation_params = (8, :hcenter, :bottom, :blue)
+    # Pick symbols
     @series begin
-        series_annotations := Main.Plots.text.(names, annotation_params...)
         ptime, py
+    end
+    # Pick labels
+    @series begin
+        annotations := [(time, y, (name, annotation_params...))
+                        for (time, y, name) in zip(ptime, py, names)]
+        []
     end
 end
 
