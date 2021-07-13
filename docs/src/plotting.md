@@ -41,8 +41,6 @@ show pick times, and so on.
 
 ```@setup plotting
 using Plots
-# Nasty hack around formatting of annotations
-Main.eval(:(using Plots))
 default(fontfamily="Helvetica")
 ```
 
