@@ -111,11 +111,7 @@ function plot end
     legend --> false
     framestyle --> :box
     grid --> false
-
-    # Set amplitude limits
-    if get(plotattributes, :ylims, nothing) == :all
-        plotattributes[:ylims] = extrema(vcat(trace.(t)...))
-    end
+    xguide --> hcat(fill("", ntraces-1)..., "Time / s")
 
     # Time limits
     xlims = get!(plotattributes, :xlims,
@@ -124,10 +120,24 @@ function plot end
     # Amplitude limits for all traces
     t′ = cut.(t, xlims...; warn=false)
     if get(plotattributes, :ylims, nothing) == :all
-        xmin, xmax, ymin, ymax = trace_limits(t′)
+        xmin, xmax, ymin, ymax = traces_limits(t′)
         plotattributes[:ylims] = (ymin, ymax)
     end
     all_ylims = [get(plotattributes, :ylims, extrema(trace(tt))) for tt in t′]
+
+    # Labels
+    labels = get(plotattributes, :label, channel_code.(t′))
+    if labels isa AbstractString
+        labels = repeat(labels, ntraces)
+    elseif labels isa Symbol
+        labels = [tt.meta[labels] for tt in t′]
+    elseif length(labels) != ntraces
+        throw(ArgumentError(
+            "`label` must be a single label or have the same number of entries as traces"))
+    end
+
+    # Annotations for each subplot
+    all_annotations = Dict(i=>[] for i in 1:ntraces)
 
     # Ticks and xlabel only on bottom x-axis
     xticks := hcat(repeat([nothing], 1, ntraces-1), :auto)
@@ -172,19 +182,6 @@ function plot end
         end
     end
 
-    # Labels
-    get!(plotattributes, :label, channel_code.(t))
-    annot_params = (9, :black, :top, :right)
-    for i in eachindex(t)
-        @series begin
-            seriestype := :scatter
-            subplot := i
-            annotations := [(xlims[end] - 0.007(xlims[end] - xlims[1]), all_ylims[i][end],
-                             (plotattributes[:label][i], annot_params...))]
-            []
-        end
-    end
-
     # Picks
     show_picks = _deprecated_pick(pick, show_picks)
     if show_picks
@@ -193,20 +190,16 @@ function plot end
         seriestype := :vline
         linecolor := :blue
         linewidth --> 1
-        annot_params = (10, :blue, :left, :bottom)
         for i in eachindex(t)
             length(pick_times[i]) == 0 && continue
             @series begin
-                guidefontcolor := :blue
                 subplot := i
                 pick_times[i]
             end
         end
 
+        # Picks, and pick labels for later
         seriestype := :scatter
-        markerstrokealpha := 0.0
-        # seriesalpha := 0.0
-        markeralpha := 0.0
         primary := false
         annotation_params = (8, :left, :bottom, :blue)
         for i in eachindex(t)
@@ -214,18 +207,32 @@ function plot end
             xs = pick_times[i]
             npicks = length(xs)
             y = all_ylims[i][1]
-            # Pick symbols
             @series begin
                 subplot := i
-                xs, repeat([y], npicks)
-            end
-            # Pick labels
-            @series begin
-                subplot := i
-                annotations := [(x, y, (name, annotation_params...))
-                                for (x, name) in zip(xs, pick_names[i])]
+                append!(all_annotations[i], [(x, y, (name, annotation_params...))
+                                       for (x, name) in zip(xs, pick_names[i])])
                 []
             end
+        end
+    end
+
+    # Labels
+    label_params = (9, :black, :top, :right)
+    label_x = xlims[end] - 0.007*(xlims[end] - xlims[1])
+    for i in eachindex(t)
+        label_y = all_ylims[i][end]
+        push!(all_annotations[i], (label_x, label_y, (labels[i], label_params...)))
+    end
+
+    # Plot all labels
+    # N.B.: `annotations` only seem to be plotted for the last series in the recipe
+    for i in eachindex(t′)
+        isempty(all_annotations[i]) && continue
+        @series begin
+            primary := false
+            subplot := i
+            annotations := all_annotations[i]
+            []
         end
     end
 end
@@ -491,7 +498,7 @@ Return the extreme values of time and amplitude of all of the traces `t`, in an
 inefficient manner.
 """
 function traces_limits(t::AbstractArray{<:Trace},
-        shifts=zeros(promote_type(eltype.(t.t)...), length(t)))
+        shifts=zeros(promote_type(eltype.(t)...), length(t)))
     all_times = [times(tt) .+ shift for (tt, shift) in zip(t, shifts)]
     tmin = minimum(first.(all_times))
     tmax = maximum(last.(all_times))
