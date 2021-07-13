@@ -117,7 +117,6 @@ using Statistics: mean, covm, varm
 
 import Glob
 import DSP
-import MacroTools: @capture
 
 import Geodesics
 
