@@ -54,8 +54,8 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     env:
-      - PYTHON: 
-      - GKSwstype: nul
+      GKSwstype: nul
+      PYTHON: 
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@latest
