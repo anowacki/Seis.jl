@@ -677,7 +677,7 @@ version = "1.1.0"
 deps = ["DSP", "Dates", "Geodesics", "Glob", "LinearAlgebra", "RecipesBase", "SeisIO", "Statistics"]
 path = ".."
 uuid = "dd80f4d8-c2f6-58bd-9bd3-4635f134261d"
-version = "0.3.8"
+version = "0.3.9"
 
 [[SeisIO]]
 deps = ["Blosc", "DSP", "Dates", "DelimitedFiles", "FFTW", "Glob", "HDF5", "HTTP", "LightXML", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "Random", "Sockets", "Statistics", "Test"]
