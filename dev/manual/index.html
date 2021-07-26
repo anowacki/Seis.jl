@@ -126,26 +126,26 @@ julia&gt; delta = 0.01
 
 julia&gt; data = randn(1000)
 1000-element Vector{Float64}:
-  1.136086920333791
-  0.8832574939181569
- -0.05379403835988074
-  0.8027952357454486
- -0.6236605175923915
-  0.5501253831398338
- -1.412464896435039
- -1.2226542155803932
-  0.24196400874774135
- -1.0106234086382742
+ -1.183824229798467
+ -0.03620614073974284
+ -0.34343853348808706
+ -0.08740134530618197
+ -0.6449977968544609
+  0.17475186721945646
+ -0.3152415891660915
+ -0.5703032536571265
+ -2.1541479380247313
+  0.3605280374402553
   ⋮
-  2.664024319292304
- -1.029108093248167
- -0.8094157670029949
-  0.2607438601049261
- -0.3606714832575235
- -1.2989009616418157
-  1.5505708057686902
-  0.33509086239121644
-  1.8204824962502784
+  0.5312275827199056
+  0.20583813439887896
+  0.8440810172675304
+ -1.5815715794902991
+  0.6454047742579267
+ -0.09589957984177881
+  0.4112136262579983
+ -0.7318826184515476
+  0.43444810137337964
 
 julia&gt; t = Trace(b, delta, data) # Fill trace with data already available
 Seis.Trace{Float64,Vector{Float64},Seis.Geographic{Float64}}:
@@ -341,4 +341,4 @@ julia&gt; t.evt.x, t.evt.y, t.evt.z = 12, 14, -100
 (12, 14, -100)
 
 julia&gt; distance_km(t)
-0.10159724405711013</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types">Geometry type hierarchy and custom geometry types</a><a id="Geometry-type-hierarchy-and-custom-geometry-types-1"></a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a id="[Seis.Geographic](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a id="[Seis.Cartesian](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Wednesday 14 July 2021 10:52">Wednesday 14 July 2021</span>. Using Julia version 1.6.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+0.10159724405711013</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types">Geometry type hierarchy and custom geometry types</a><a id="Geometry-type-hierarchy-and-custom-geometry-types-1"></a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a id="[Seis.Geographic](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a id="[Seis.Cartesian](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.3 on <span class="colophon-date" title="Monday 26 July 2021 12:20">Monday 26 July 2021</span>. Using Julia version 1.6.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
