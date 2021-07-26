@@ -9,6 +9,34 @@ using Seis
         @test Seis.angle_difference(10, 0) == -10
         @test Seis.angle_difference(359, -1) == 0
         @test Seis.angle_difference(359, 0) == 1
+
+        @testset "Promotion" begin
+            let Ts = (Int, Float32, Float64)
+                @testset "$T1" for T1 in Ts
+                    α = one(T1)
+                    for T2 in Ts
+                        β = one(T2)
+                        Δ = zero(float(promote_type(T1, T2)))
+                        @test Seis.angle_difference(α, β) === Δ
+                    end
+                end
+            end
+        end
+    end
+
+    @testset "_angle_tol" begin
+        @testset "Not ints" begin
+            @test_throws MethodError Seis._angle_tol(1)
+            @test_throws MethodError Seis._angle_tol(Int)
+        end
+        @testset "$T" for T in (Float32, Float64)
+            t = Trace{T,Vector{T},Seis.Geographic{T}}(0, 1, 0)
+            sta = Station{T}()
+            tol = √eps(T)
+            @test Seis._angle_tol(T) === tol
+            @test Seis._angle_tol(t) === tol
+            @test Seis._angle_tol(sta) === tol
+        end
     end
 
     @testset "'Get/Setters'" begin

@@ -7,11 +7,23 @@ clockwise of α, and negative otherwise.
 
 Angles are assumed to be degreees unless `degrees` is `false`.
 """
-function angle_difference(a::Real, b::Real, degrees::Bool=true)
-    whole_circ = degrees ? 360.0 : 2π
+function angle_difference(a, b, degrees::Bool=true)
+    T = float(promote_type(typeof(a), typeof(b)))
+    whole_circ = degrees ? T(360) : T(2)*π
     half_circ = whole_circ/2
     mod(b - a + half_circ, whole_circ) - half_circ
 end
+
+"""
+    _angle_tol(x) -> tol
+
+Return an appropriate tolerance for `x` (a floating point type, `AbstractTrace` or
+`Station`) to use in comparisons of angular quantities in °.  Angles which are `tol`°
+apart can be considered identical.
+"""
+_angle_tol(T::DataType) = √eps(T)
+_angle_tol(::Station{T}) where T = _angle_tol(T)
+_angle_tol(t::AbstractTrace) = _angle_tol(t.sta)
 
 """
     dates(t) -> date_range
@@ -107,6 +119,7 @@ julia> t = Trace(-3, 0.01, rand(20)) # Set start time to -3;
 
 julia> starttime(t)
 -3.0
+```
 """
 starttime(t::AbstractTrace) = t.b
 
@@ -189,43 +202,63 @@ origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
     origin_time!(deepcopy(t), time; kwargs...)
 
 """
-    _has_azimuth(s::Station{T}, azi; tol=eps(T)) -> ::Bool
+    _has_azimuth(s::Station{T}, azi; tol=_angle_tol(T)) where T -> ::Bool
 
 Return `true` if the azimuth of station `s` is within `tol` of `azi`.
 Angles `azi` and `tol` are in degrees.
 """
-function _has_azimuth(s::Station{T}, azi; tol=eps(T)) where T
+function _has_azimuth(s::Station{T}, azi; tol=_angle_tol(T)) where T
     isapprox(abs(angle_difference(s.azi, azi)), zero(T), atol=tol)
 end
 
 """
-    is_east(s::Station{T}; tol=eps(T)) where T -> ::Bool
-    is_east(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+    is_east(s::Station; tol) -> ::Bool
+    is_east(t::AbstractTrace; tol) -> ::Bool
 
-Return `true` if the trace `t` is horizontal and points to the east.
+Return `true` if the trace `t` or station `s` is horizontal and points to
+the east.
+
+The azimuth and inclination of the trace is compared to east and the horizontal
+within a tolerance of `tol`°.  The default is set to be appropriate for the
+floating-point type used for the station or trace, but can be overridden by
+passing a comparison to `tol`.
+
+See also: [`is_north`](@ref), [`is_vertical`](@ref)
 """
-function is_east(s::Station{T}; tol=eps(T)) where T
+function is_east(s::Station{T}; tol=_angle_tol(T)) where T
     is_horizontal(s, tol=tol) && _has_azimuth(s, 90, tol=tol)
 end
-is_east(t::Trace{T}; tol=eps(T)) where T = is_east(t.sta, tol=tol)
+is_east(t::Trace{T}; tol=_angle_tol(T)) where T = is_east(t.sta, tol=tol)
 
 """
-    is_north(s::Station{T}; tol=eps(T)) where T -> ::Bool
-    is_north(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+    is_north(s::Station{T}; tol) where T -> ::Bool
+    is_north(t::AbstractTrace; tol) -> ::Bool
 
 Return `true` if the trace `t` is horizontal and points to the north.
+
+The azimuth and inclination of the trace is compared to east and the horizontal
+within a tolerance of `tol`°.  The default is set to be appropriate for the
+floating-point type used for the station or trace, but can be overridden by
+passing a comparison to `tol`.
+
+See also: [`is_east`](@ref), [`is_vertical`](@ref)
 """
-function is_north(s::Station{T}; tol=eps(T)) where T
+function is_north(s::Station{T}; tol=_angle_tol(T)) where T
     is_horizontal(s, tol=tol) && _has_azimuth(s, 0, tol=tol)
 end
-is_north(t::Trace{T}; tol=eps(T)) where T = is_north(t.sta, tol=tol)
+is_north(t::Trace{T}; tol=_angle_tol(T)) where T = is_north(t.sta, tol=tol)
 
 """
-    is_horizontal(s::Station{T}; tol=eps(T)) where T
-    is_horizontal(t::AbstractTrace; tol=eps(eltype(trace(t)))) -> ::Bool
+    is_horizontal(s::Station; tol)
+    is_horizontal(t::AbstractTrace; tol) -> ::Bool
 
 Return `true` if the trace `t` is horizontal (i.e., its inclination
 is 90° from the vertical), and `false` otherwise.
+
+The inclination of the trace is compared to the horizontal
+within a tolerance of `tol`°.  The default is set to be appropriate for the
+floating-point type used for the station or trace, but can be overridden by
+passing a comparison to `tol`.
 
 # Examples
 ```
@@ -242,10 +275,11 @@ false
 julia> t.sta.inc
 0.0f0
 ```
-See also: [`is_horizontal`](@ref).
+
+See also: [`is_vertical`](@ref), [`is_east`](@ref), [`is_north`](@ref).
 """
-is_horizontal(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 90, atol=tol)
-is_horizontal(t::Trace{T}; tol=eps(T)) where T = is_horizontal(t.sta, tol=tol)
+is_horizontal(s::Station{T}; tol=_angle_tol(T))  where T = isapprox(s.inc, 90, atol=tol)
+is_horizontal(t::Trace{T}; tol=_angle_tol(T)) where T = is_horizontal(t.sta, tol=tol)
 
 """
     is_vertical(s::Station{T}; tol=eps(T)) where T
@@ -253,6 +287,11 @@ is_horizontal(t::Trace{T}; tol=eps(T)) where T = is_horizontal(t.sta, tol=tol)
 
 Return `true` if the trace `t` is vertical (i.e., its inclination
 is 0°), and `false` otherwise.
+
+The inclination of the trace is compared to the vertical
+within a tolerance of `tol`°.  The default is set to be appropriate for the
+floating-point type used for the station or trace, but can be overridden by
+passing a comparison to `tol`.
 
 # Examples
 ```
@@ -267,10 +306,10 @@ julia> is_vertical(t)
 true
 ```
 
-See also: [`is_vertical`](@ref).
+See also: [`is_horizontal`](@ref).
 """
-is_vertical(s::Station{T}; tol=eps(T))  where T = isapprox(s.inc, 0, atol=tol)
-is_vertical(t::Trace{T}; tol=eps(T)) where T = is_vertical(t.sta, tol=tol)
+is_vertical(s::Station{T}; tol=_angle_tol(T))  where T = isapprox(s.inc, 0, atol=tol)
+is_vertical(t::Trace{T}; tol=_angle_tol(T)) where T = is_vertical(t.sta, tol=tol)
 
 """
     linear_regression(x, y)
@@ -516,5 +555,5 @@ Return `true` if the two traces `t1` and `t2` have component azimuths
 90° apart.  Set the tolerance of the comparison with `tol`.
 """
 traces_are_orthogonal(t1::AbstractTrace, t2::AbstractTrace;
-                      tol=max(√eps(eltype(trace(t1))), √eps(eltype(trace(t2))))) =
+                      tol=max(_angle_tol(t1), _angle_tol(t1))) =
     isapprox(abs(angle_difference(t1.sta.azi, t2.sta.azi)), 90, atol=tol)
