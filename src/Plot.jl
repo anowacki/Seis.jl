@@ -322,8 +322,9 @@ section
     y_shifts = y_shifts[order]
     t = view(t, order)
     # Scale
+    polarity = get(plotattributes, :yflip, false) ? -1 : 1
     scale = isnothing(absscale) ? abs(maximum(y_shifts) - minimum(y_shifts))/10 : absscale
-    scale = zoom*scale
+    scale = zoom*polarity*scale
     # Get decimation value
     t1, t2 = get(plotattributes, :xlims, (-Inf, Inf))
     ndecimate = decimate ? decimation_value(t, shifts, t1, t2, max_samples) : 1
