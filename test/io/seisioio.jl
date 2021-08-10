@@ -33,7 +33,7 @@ using Dates: DateTime
             @test trace(t) == x
             chan.loc.datum = "XYZ"
             @test SeisIOIO.parse_seisio(chan)[1].sta.meta.datum == "XYZ"
-            # Conversion to different geometry doesn't preserver location
+            # Conversion to different geometry doesn't preserve location
             t′ = SeisIOIO.parse_seisio(CartTrace{Float64, Vector{Float64}}, chan)
             @test length(t′) == 1
             @test t′[1] isa CartTrace{Float64, Vector{Float64}}
@@ -63,8 +63,22 @@ using Dates: DateTime
         end
     end
 
+    @testset "SeisIOIO.chunks" begin
+        chan = SeisIO.SeisChannel(fs=1.0)
+        chan.t = [ 1   0
+                  11 100_000_000
+                  21 -50_000_000
+                  31 -50_000_000
+                  40   0_000_000]
+        chan.x = Float32.(1:40)
+        data, bs = SeisIOIO.chunks(chan)
+        @test length(data) == length(bs) == 4
+        @test bs == [0.0, 110.0, 70.0, 30.0]
+    end
+
     @testset "Gaps" begin
-        let chan = SeisIO.SeisChannel()
+        @testset "Max gap" begin
+            chan = SeisIO.SeisChannel()
             chan.id = "AN.ABC..XYZ"
             chan.fs = 100
             chan.t = [1 1000; 101 1000; 151 -2000; 200 0]
@@ -85,7 +99,24 @@ using Dates: DateTime
             @test nsamples.(t′) == [100, 50, 50]
             @test sum(nsamples, t′) == sum(nsamples, t)
         end
+
+        # Example taken from SEGY data from UTAH FORGE
+        @testset "Lots of gaps" begin
+            chan = SeisIO.SeisChannel(fs=2000.0, t=[1:32_000:1_152_001 fill(-16_000_000, 37)],
+                id=".0..YYY", name=".0..YYY")
+            chan.t[end,1] = 1_152_000
+            chan.t[1,2] = 1556144542000000
+            chan.t[end,2] = 0
+            append!(chan.x, rand(Float32, chan.t[end,1]))
+            t = SeisIOIO.parse_seisio(chan)
+            @test all(x -> x.offset_μs == -16_000_000, SeisIOIO.gaps(chan))
+            @test length(t) == 36
+            @test all(x -> starttime(x) == 0, t)
+            # Workaround since we don't support sampling intervals less than 1 ms
+            @test all(x -> startdate(decimate(x, 2)) == DateTime(2019, 04, 24, 22, 22, 22), t)
+        end
     end
+
     @testset "IDs" begin
         let chan = SeisIO.SeisChannel(fs=20.0, x=rand(2), t=[1 0; 2 0])
             @test_logs (:warn, "channel code is not in an expected format") SeisIOIO.parse_seisio(chan)

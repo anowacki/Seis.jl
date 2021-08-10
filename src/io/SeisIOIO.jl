@@ -154,22 +154,32 @@ Divide the data in `chan` into vectors of `data`, each with an associated
 `begin_time` which is relative to the channel's start time.
 """
 function chunks(channel::SeisIO.SeisChannel)
+    T = eltype(channel.x)
     delta = 1/channel.fs
     ngaps = SeisIO.ngaps(channel.t)
     if ngaps == 0
         return [channel.x], [0.0]
     else
-        data = Vector{Vector{Float64}}(undef, ngaps + 1)
-        bs = Vector{Float64}(undef, ngaps + 1)
+        data = Vector{Vector{T}}(undef, ngaps + 1)
+        # Chunk start times in s
+        bs = Vector{T}(undef, ngaps + 1)
+        # End time of the previous chunk
+        last_end_time = 0.0
         for i in 1:(ngaps+1)
             start_sample = channel.t[i,1]
             end_sample = channel.t[i+1,1] - 1
+            nsamples = end_sample - start_sample + 1
             if i == ngaps + 1
                 end_sample += 1
             end
             offset_μs = i == 1 ? 0 : channel.t[i,2]
             data[i] = channel.x[start_sample:end_sample]
-            bs[i] = (start_sample - 1)*delta + offset_μs/1e6
+            bs[i] = if i == 1
+                0.0
+            else
+                last_end_time + delta + offset_μs/1e6
+            end
+            last_end_time = bs[i] + (nsamples - 1)*delta
         end
         return data, bs
     end
