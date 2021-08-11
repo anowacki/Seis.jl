@@ -89,6 +89,7 @@ parse_seisio(chan::SeisIO.SeisChannel, file=missing; kwargs...) =
 
 "Convert the id field of a SeisIO.SeisChannel into the name fields of a Trace."
 function assign_name!(t, channel::SeisIO.SeisChannel)
+    isempty(channel.id) && return t
     tokens = split(channel.id, '.')
     if length(tokens) == 4
         t.sta.net, t.sta.sta, t.sta.loc, t.sta.cha = tokens

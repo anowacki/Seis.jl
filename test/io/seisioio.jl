@@ -118,10 +118,15 @@ using Dates: DateTime
     end
 
     @testset "IDs" begin
-        let chan = SeisIO.SeisChannel(fs=20.0, x=rand(2), t=[1 0; 2 0])
-            @test_logs (:warn, "channel code is not in an expected format") SeisIOIO.parse_seisio(chan)
+        let chan = SeisIO.SeisChannel(fs=20.0, x=rand(2), t=[1 0; 2 0], id="unknown format")
+            t = @test_logs (:warn, "channel code is not in an expected format") SeisIOIO.parse_seisio(chan)[1]
+            @test t.sta.sta == "unknown format"
+            @test t.sta.net === t.sta.loc === t.sta.cha === missing
             chan.id = "A.B.C.D"
-            @test channel_code(SeisIOIO.parse_seisio(chan)[1]) == "A.B.C.D"
+            t = SeisIOIO.parse_seisio(chan)[1]
+            @test channel_code(t) == "A.B.C.D"
+            @test (t.sta.net, t.sta.sta, t.sta.loc, t.sta.cha) == ("A", "B", "C", "D")
+            @test_logs SeisIOIO.parse_seisio(SeisIO.SeisChannel(fs=1.0, x=[1., 2.], t=[1 0; 2 0]))
         end
     end
 end
