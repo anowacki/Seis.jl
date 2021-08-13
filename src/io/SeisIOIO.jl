@@ -48,6 +48,8 @@ the absolute gap length in s is greater than `maximum_gap`.
 If `maximum_offset` is specified, traces are split when the sum total of
 offsets (i.e., total of negative and positive gaps) in s is greater than
 `maximum_offset`.
+
+Entirely empty channels are not included.
 """
 function parse_seisio(::Type{T}, seisdata::SeisIO.SeisData, file=missing;
         maximum_gap=nothing, maximum_offset=nothing) where {T<:Seis.AbstractTrace}
@@ -55,6 +57,9 @@ function parse_seisio(::Type{T}, seisdata::SeisIO.SeisData, file=missing;
     traces = T[]
     for i in 1:nchannels
         channel = seisdata[i]
+        # Ignore empty channels
+        isempty(channel) && continue
+
         delta = 1/channel.fs
         time = seisio_date(channel)
         # Deal with gaps
@@ -142,11 +147,13 @@ function assign_position!(sta::Seis.CartStation, loc::SeisIO.XYLoc)
 end
 
 """
-    seisio_date(chan:SeisIO.SeisChannel) -> ::Dates.DateTime
+    seisio_date(chan:SeisIO.SeisChannel) -> ::Union{Dates.DateTime, Missing}
 
 Find the date of the start of a SeisIO.SeisChannel.
+
+If a channel is empty, then return `missing`.
 """
-seisio_date(chan::SeisIO.SeisChannel) = unix2datetime(chan.t[1,2]/1e6)
+seisio_date(chan::SeisIO.SeisChannel) = isempty(chan) ? missing : unix2datetime(chan.t[1,2]/1e6)
 
 """
     chunks(chan::SeisIO.SeisChannel) -> data, begin_time

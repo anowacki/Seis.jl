@@ -129,4 +129,21 @@ using Dates: DateTime
             @test_logs SeisIOIO.parse_seisio(SeisIO.SeisChannel(fs=1.0, x=[1., 2.], t=[1 0; 2 0]))
         end
     end
+
+    @testset "Empty SeisData" begin
+        @testset "Parsing time" begin
+            @testset "Non-empty channel" begin
+                @test SeisIOIO.seisio_date(SeisIO.SeisChannel(t=[1 0; 2 0])) == DateTime(1970)
+            end
+            @testset "Empty channel" begin
+                @test SeisIOIO.seisio_date(SeisIO.SeisChannel()) === missing
+            end
+        end
+        @testset "Seis$name" for (chan, name) in
+                zip((SeisIO.SeisData(), SeisIO.SeisChannel()), ("Data", "Channel"))
+            t = SeisIOIO.parse_seisio(chan)
+            @test t isa Vector{<:Trace}
+            @test isempty(t)
+        end
+    end
 end
