@@ -82,6 +82,22 @@ distance_deg(s::Station, e::Event; kwargs...) = distance_deg(e, s; kwargs...)
 distance_deg(t::Trace; kwargs...) = distance_deg(t.evt, t.sta; kwargs...)
 
 """
+    distance_direct(trace)
+    distance_direct(event, station)
+    distance_direct(station, event)
+
+For a cartesian `trace` or `event`-`station` pair, return the straight-line
+distance between them in **`m`**.
+"""
+function distance_direct(event::CartEvent, station::CartStation)
+    _check_headers_geometry(event, station)
+    sqrt((event.x - station.x)^2 + (event.y - station.y)^2 + (event.z - station.z)^2)
+end
+
+distance_direct(station::CartStation, event::CartEvent) = distance_direct(event, station)
+distance_direct(trace::AbstractTrace) = distance_direct(trace.evt, trace.sta)
+
+"""
     distance_km(event, station; sphere=false, a=$(Geodesics.EARTH_R_MAJOR_WGS84/1e3), flattening=$(Geodesics.F_WGS84)) -> d
 
 For a geographic `trace` or `event`–`station` pair, return the epicentral

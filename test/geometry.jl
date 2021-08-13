@@ -17,6 +17,9 @@ using Seis
     @test distance_deg(e, s, sphere=true) == 45.0
     @test distance_km(e, s) == distance_km(t)
     @test distance_km(e, s, sphere=true) ≈ π/4*6371 rtol=0.01
+    @test_throws MethodError distance_direct(t)
+    @test_throws MethodError distance_direct(e, s)
+    @test_throws MethodError distance_direct(s, e)
     e.lon = missing
     @test_throws ArgumentError azimuth(e, s)
     @test_throws ArgumentError backazimuth(s, e)
@@ -38,6 +41,8 @@ using Seis
     @test_throws MethodError distance_deg(t)
     @test distance_km(e, s) ≈ √2/1000
     @test distance_km(e, s) == distance_km(t)
+    @test distance_direct(e, s) == distance_direct(t)
+    @test distance_direct(e, s) ≈ √3
     @test incidence(e, s) ≈ rad2deg(atan(√2))
     e.x = missing
     @test_throws ArgumentError azimuth(e, s)
@@ -46,4 +51,7 @@ using Seis
     @test_throws ArgumentError azimuth(t)
     @test_throws ArgumentError backazimuth(t)
     @test_throws ArgumentError incidence(t)
+    @test_throws ArgumentError distance_direct(t)
+    @test_throws ArgumentError distance_direct(e, s)
+    @test_throws ArgumentError distance_direct(s, e)
 end

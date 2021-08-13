@@ -61,6 +61,7 @@ export
     azimuth,
     backazimuth,
     distance_deg,
+    distance_direct,
     distance_km,
     incidence,
     # Operations
