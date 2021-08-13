@@ -461,6 +461,51 @@ remove_trend(t::AbstractTrace, args...; kwargs...) = remove_trend!(deepcopy(t), 
 @doc (@doc remove_trend!) remove_trend
 
 """
+    resample!(t::AbstractTrace; delta, n) -> t
+    resample(t::AbstractTrace; delta, n) -> t′
+
+Resample the trace `t` so that either the sampling interval becomes `delta` s,
+or its sampling rate is increased `n` times.  One of `delta` or `n` must
+be given.
+
+In the first form, update the trace in place and return it.  In the second form,
+return an updated copy (`t′`).
+
+The functions uses [`DSP.resample`](@ref) to perform the operation, which applies
+an antialias filter and 'additional operations' to prevent aliasing and minimise
+other artifacts.
+
+To perform decimation without antialiasing, use [`decimate`](@ref) or [`decimate!`](@ref)
+with `antialias=false`.
+
+# Example
+```
+julia> t = Trace(0, 0.5, 1:4);
+
+julia> trace(resample(t, 3))
+```
+"""
+function resample!(t::AbstractTrace; delta=nothing, n=nothing)
+    if (delta === nothing && n === nothing) || (delta !== nothing && n !== nothing)
+        throw(ArgumentError("one and only of `delta` and `n` must be given"))
+    end
+    rate = if delta !== nothing
+        delta == t.delta && return t # Nothing to do
+        t.delta/delta
+    else # n !== nothing
+        n == 1 && return t # Nothing to do
+        n
+    end
+    newtrace = DSP.resample(trace(t), rate)
+    t.t = newtrace
+    t.delta = t.delta/rate
+    t
+end
+DSP.resample(t::AbstractTrace; kwargs...) = resample!(deepcopy(t); kwargs...)
+@doc (@doc resample!) resample
+
+
+"""
     taper!(t::AbstractTrace, width=0.05, form=:hanning) -> t
     taper(t::AbstractTrace, width=0.05, form=:hamming) -> t′
 

@@ -161,6 +161,39 @@ end
         end
     end
 
+    @testset "Resample" begin
+        t = Trace(0, 0.5, sin.(0:0.3:6π) .+ 0.2sin.(0:1.2:24π))
+        @testset "Calling" begin
+            @test_throws ArgumentError resample(t)
+            @test_throws ArgumentError resample(t, n=1, delta=t.delta)
+            @test_throws ArgumentError resample!(t)
+            @test_throws ArgumentError resample!(t, n=1, delta=t.delta)
+
+        end
+        @testset "n = $n" for n in (0.5, 1//2, 1, 4, 8//2, 10)
+            @test resample(t, n=n) == resample!(deepcopy(t), n=n)
+            @test resample(t, n=n).delta ≈ t.delta/n
+            # Check that the points line up approximately
+            if n > 1
+                @test trace(t) ≈ trace(resample(t, n=n))[1:Int(n):end] atol=1e-3
+            end
+            # Check that nothing is done if not needed
+            if n == 1
+                @test trace(resample(t, n=n)) == trace(t)
+                @test trace(resample!(t, n=n)) === trace(t)
+            end
+        end
+        @testset "delta = $delta" for delta in (1, 0.5, 0.25, 0.125, 0.05)
+            @test resample(t, delta=delta) == resample!(deepcopy(t), delta=delta)
+            @test resample(t, delta=delta).delta ≈ delta
+            # Check that nothing is done if not needed
+            if delta == t.delta
+                @test trace(resample(t, delta=delta)) == trace(t)
+                @test trace(resample!(t, delta=delta)) === trace(t)
+            end
+        end
+    end
+
     @testset "Normalisation" begin
         for (f, f!) in zip((normalise, normalize), (normalise!, normalize!))
             let t = Trace(0, 1, rand(5)), val=rand(1:20), t′ = deepcopy(t)

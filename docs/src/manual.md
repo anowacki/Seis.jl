@@ -284,6 +284,8 @@ copying version, without.
 - Normalise the data to a certain value with [`normalize`](@ref) or
   [`normalize!`](@ref) (or [`normalise`](@ref) for us Brits).
 - Take the envelope of a trace with [`envelope`](@ref) or [`envelope!`](@ref).
+- Change the trace sampling interval with [`resample`](@ref) or
+  [`resample!`](@ref)
 
 In addition, pairs of traces can be rotated:
 - [`rotate_through`](@ref) and [`rotate_through!`](@ref) rotate
@@ -506,13 +508,13 @@ Where it makes sense, certain accessor functions like [`distance_km`](@ref)
 are defined for these types, and these are necessarily different to
 those for geographic objects.
 
-For example, [`distance_km`](@ref) will calculate the straight-line
-distance between the event and station when in Cartesian coordinates:
+For example, [`distance_direct`](@ref) will calculate the straight-line
+distance in m between the event and station when in Cartesian coordinates:
 ```@repl example
 t = CartTrace(0, 1e-4, 1000)
 t.sta.x, t.sta.y, t.sta.z = 101, -35, 12
 t.evt.x, t.evt.y, t.evt.z = 12, 14, -100
-distance_km(t)
+distance_direct(t)
 ```
 
 ### Geometry type hierarchy and custom geometry types

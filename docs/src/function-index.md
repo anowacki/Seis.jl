@@ -46,6 +46,7 @@ origin_time
 azimuth
 backazimuth
 distance_deg
+distance_direct
 distance_km
 incidence
 ```
@@ -72,6 +73,8 @@ remove_mean!
 remove_mean
 remove_trend!
 remove_trend
+resample!
+resample
 taper!
 taper
 ```

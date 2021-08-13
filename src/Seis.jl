@@ -85,6 +85,8 @@ export
     remove_mean,
     remove_trend!,
     remove_trend,
+    resample!,
+    resample,
     taper!,
     taper,
     # Filtering
@@ -118,6 +120,7 @@ using Statistics: mean, covm, varm
 
 import Glob
 import DSP
+import DSP.resample
 
 import Geodesics
 
