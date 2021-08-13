@@ -76,7 +76,7 @@ function parse_seisio(::Type{T}, seisdata::SeisIO.SeisData, file=missing;
             append!(traces, ts)
         end
     end
-    traces.meta.mseed_file = file
+    !isempty(traces) && (traces.meta.mseed_file = file)
     traces
 end
 
