@@ -189,7 +189,7 @@ julia> section(t)
 
 produces:
 
-![Record section](docs/record_section.jpg)
+![Record section](docs/images/record_section.jpg)
 
 See the help for the `Seis.Plot` module for more information.
 
