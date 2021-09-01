@@ -37,6 +37,7 @@ export
     Station,
     Trace,
     # 'Getters'
+    are_orthogonal,
     dates,
     enddate,
     endtime,
@@ -116,13 +117,17 @@ export
 
 using Dates
 using LinearAlgebra
+using LinearAlgebra: ×, ⋅, norm
 using Statistics: mean, covm, varm
 
 import Glob
 import DSP
 import DSP.resample
+import StaticArrays
 
 import Geodesics
+
+include("compat.jl")
 
 # All basic types
 include("types.jl")

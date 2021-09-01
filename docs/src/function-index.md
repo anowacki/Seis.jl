@@ -15,6 +15,7 @@ CartStation
 
 ### Accessor functions
 ```@docs
+are_orthogonal
 channel_code
 dates
 enddate

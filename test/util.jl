@@ -1,5 +1,9 @@
 using Test, Dates
 using Seis
+using LinearAlgebra: ×, ⋅
+import Rotations
+
+using .TestHelpers
 
 @testset "Utility" begin
     @testset "Angle difference" begin
@@ -46,6 +50,85 @@ using Seis
         end
     end
 
+    @testset "_direction_vector" begin
+        for (azi, inc, correct) in ((0, 90, [0, 1, 0]), (45, 90, [√2/2, √2/2, 0]),
+                (0, 0, [0, 0, 1]))
+            @test Seis._direction_vector(azi, inc) ≈ correct
+            s = Station(azi=azi, inc=inc)
+            t = Trace(0, 1, 0)
+            t.sta = s
+            @test Seis._direction_vector(t) == Seis._direction_vector(s) ==
+                Seis._direction_vector(azi, inc)
+        end
+    end
+
+    @testset "_directions_are_orthogonal" begin
+        @testset "$T" for T in (Float16, Float32, Float64)
+            tol = Seis._angle_tol(T)
+            v, v′ = vector_and_deviated_vector(90)
+
+            @test !Seis._directions_are_orthogonal(v, v, 0)
+
+            @test Seis._directions_are_orthogonal(v, v′, tol)
+            @test Seis._directions_are_orthogonal(v, v′, 0.1)
+            @test Seis._directions_are_orthogonal(v, v′, tol)
+
+            w, w′ = vector_and_deviated_vector(91)
+            @test !Seis._directions_are_orthogonal(w, w′, tol)
+            @test Seis._directions_are_orthogonal(w, w′, 2)
+        end
+    end
+
+    @testset "_directions_are_parallel" begin
+        @testset "$T" for T in (Float16, Float32, Float64)
+            tol = Seis._angle_tol(T)
+            v, v′ = vector_and_deviated_vector(1)
+
+            @test Seis._directions_are_parallel(v, v, 0)
+            @test Seis._directions_are_parallel(v, v, tol)
+            @test !Seis._directions_are_parallel(v, v′, 0)
+            @test !Seis._directions_are_parallel(v, v′, tol)
+            @test Seis._directions_are_parallel(v, v′, 2)
+            @test !Seis._directions_are_parallel(v, -v, tol)
+        end
+    end
+
+    @testset "_directions_are_antiparallel" begin
+        @testset "$T" for T in (Float16, Float32, Float64)
+            tol = Seis._angle_tol(T)
+            v, v′ = vector_and_deviated_vector(179)
+
+            @test Seis._directions_are_antiparallel(v, -v, 0)
+            @test Seis._directions_are_antiparallel(v, -v, tol)
+            @test !Seis._directions_are_antiparallel(v, v′, tol)
+            @test !Seis._directions_are_antiparallel(v, v′, 0)
+            @test !Seis._directions_are_antiparallel(v, v′, tol)
+            @test Seis._directions_are_antiparallel(v, v′, 2)
+            @test !Seis._directions_are_antiparallel(v, -v′, tol)
+        end
+    end
+
+    @testset "_u_dot_v_and_theta" begin
+        @testset "Known" begin
+            udotv, θ = Seis._u_dot_v_and_theta([1, 0, 0], [0, -1, 0])
+            @test udotv ≈ 0
+            @test θ ≈ 90
+
+            udotv, θ = Seis._u_dot_v_and_theta([1, 0, 0], [-1, 0, 0])
+            @test udotv ≈ -1
+            @test θ ≈ 180
+        end
+
+        @testset "Random" begin
+            θ = 10
+            u, v = vector_and_deviated_vector(θ)
+            udotv = sum(x -> x[1]*x[2], zip(u, v))
+            udotv′, θ′ = Seis._u_dot_v_and_theta(u, v)
+            @test udotv ≈ udotv′
+            @test θ ≈ θ′
+        end
+    end
+
     @testset "'Get/Setters'" begin
         let b = rand(), delta = rand(), n = rand(1:1000), v = rand(n),
                 t = Trace(b, delta, v), t′ = deepcopy(t)
@@ -76,6 +159,55 @@ using Seis
             t.sta.azi = 360rand()
             t′.sta.azi = t.sta.azi - 90rand(1:2:100)
             @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
+
+            @testset "are_orthogonal" begin
+                @testset "Horizontals" begin
+                    @test are_orthogonal(t.sta, t′.sta)
+                    @test are_orthogonal(t′.sta, t.sta)
+                    @test are_orthogonal(t, t′)
+                    @test are_orthogonal(t′, t)
+                end
+
+                @testset "Random orientations" begin
+                    @testset "$T" for T in (Float16, Float32, Float64)
+                        x, y, z = random_basis_traces(T)
+                        # Component shifted 5° in azimuth and inclination
+                        x′ = deepcopy(x)
+                        x′.sta.inc += 5
+                        if x′.sta.inc > 180
+                            x′.sta.inc = 180 - x′.sta.inc
+                            x′.sta.azi = mod(x′.sta.azi, + 185, 360)
+                        else
+                            x′.sta.azi = mod(x′.sta.azi + 5, 360)
+                        end
+
+                        @testset "Pairs" begin
+                            @test are_orthogonal(x, y)
+                            @test are_orthogonal(y, x)
+                            @test are_orthogonal(y, z)
+                            @test are_orthogonal(z, y)
+                            @test are_orthogonal(z, x)
+                            @test are_orthogonal(x, z)
+
+                            # Different to default tolerance
+                            @test !are_orthogonal(x′, y)
+                            @test !are_orthogonal(x′, z)
+                            @test !are_orthogonal(y, x′)
+                            @test !are_orthogonal(z, x′)
+
+                            # Same within 10°
+                            @test are_orthogonal(x′, y, tol=10)
+                            @test are_orthogonal(x′, z, tol=10)
+                            @test are_orthogonal(y, x′, tol=10)
+                            @test are_orthogonal(z, x′, tol=10)
+                        end
+
+                        @testset "$([traces...].sta.cha)" for traces in trace_permutations(x, y, z)
+                            @test are_orthogonal(traces...)
+                        end
+                    end
+                end
+            end
 
             @testset "is_east" begin
                 @test is_east(Station(inc=90, azi=90))
