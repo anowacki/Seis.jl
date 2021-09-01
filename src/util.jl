@@ -19,11 +19,21 @@ end
 
 Return an appropriate tolerance for `x` (a floating point type, `AbstractTrace` or
 `Station`) to use in comparisons of angular quantities in °.  Angles which are `tol`°
-apart can be considered identical.
+or less apart can be considered identical.
 """
-_angle_tol(T::DataType) = √eps(T)
+_angle_tol(x) = throw(ArgumentError("must call _angle_tol with a type, Trace or Station"))
+# Numerical errors accumulate too fast for Float64, so make its tolerance larger
+_angle_tol(T::DataType) = T == Float64 ? 1000*√eps(T) : √eps(T)
 _angle_tol(::Station{T}) where T = _angle_tol(T)
 _angle_tol(t::AbstractTrace) = _angle_tol(t.sta)
+
+"""
+    _angle_tol(x, y...) -> tol
+
+Return an appropriate tolerance for a set of values or types `x` and `y...`,
+which is the maximum tolerance for all arguments.
+"""
+_angle_tol(x, y...) = max(_angle_tol(x), _angle_tol(y...))
 
 """
     dates(t) -> date_range

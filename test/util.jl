@@ -25,17 +25,24 @@ using Seis
     end
 
     @testset "_angle_tol" begin
+        @testset "Not values" begin
+            @test_throws ArgumentError Seis._angle_tol(1)
+        end
         @testset "Not ints" begin
-            @test_throws MethodError Seis._angle_tol(1)
             @test_throws MethodError Seis._angle_tol(Int)
         end
-        @testset "$T" for T in (Float32, Float64)
+        @testset "$T" for T in (Float16, Float32, Float64)
             t = Trace{T,Vector{T},Seis.Geographic{T}}(0, 1, 0)
             sta = Station{T}()
-            tol = √eps(T)
+            tol = T == Float64 ? 1000*√eps(T) : √eps(T)
             @test Seis._angle_tol(T) === tol
             @test Seis._angle_tol(t) === tol
             @test Seis._angle_tol(sta) === tol
+        end
+        @testset "Multiple arguments" begin
+            @test Seis._angle_tol(Float16) == Seis._angle_tol(Float32, Float64, Float16)
+            @test Seis._angle_tol(Trace{Float32}(0, 1, 0), Trace{Float64}(0, 1, 0)) ==
+                Seis._angle_tol(Float32)
         end
     end
 
