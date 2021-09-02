@@ -123,6 +123,8 @@ julia> t = sample_data(); t.evt.time
 julia> startdate(t)
 1981-03-29T10:39:06.66
 ```
+
+See also: [`enddate`](@ref).
 """
 startdate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b)
 
@@ -143,6 +145,8 @@ julia> t = sample_data(); t.evt.time
 julia> enddate(t)
 1981-03-29T10:39:16.65
 ```
+
+See also: [`startdate`](@ref).
 """
 enddate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b + (nsamples(t)-1)*delta)
 
@@ -176,6 +180,8 @@ julia> t = Trace(-3, 0.01, rand(20)) # Set start time to -3;
 julia> starttime(t)
 -3.0
 ```
+
+See also: [`endtime`](@ref).
 """
 starttime(t::AbstractTrace) = t.b
 
@@ -191,6 +197,8 @@ julia> t = Trace(5, 1, 3); # 3 samples at 1 Hz, starting at 5 s
 julia> endtime(t)
 7.0
 ```
+
+See also: [`starttime`](@ref).
 """
 endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
@@ -612,11 +620,7 @@ Return `true` if the two traces `t1` and `t2` have component azimuths
 
 !!! note
     This function simply compares component azimuths and ignores component
-    inclinations entirely.
-
-!!! note
-    This function will be removed in a future major version of the package;
-    use [`are_orthogonal`](@ref) instead.
+    inclinations entirely; use [`are_orthogonal`](@ref) instead.
 """
 traces_are_orthogonal(t1, t2; tol=_angle_tol(t1, t2)) =
     isapprox(abs(angle_difference(t1.sta.azi, t2.sta.azi)), 90, atol=tol)
