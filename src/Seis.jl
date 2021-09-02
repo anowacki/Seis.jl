@@ -112,8 +112,14 @@ export
     # Rotation
     rotate_through!,
     rotate_through,
+    rotate_to_azimuth_incidence!,
+    rotate_to_enz!,
+    rotate_to_enz,
     rotate_to_gcp!,
-    rotate_to_gcp
+    rotate_to_gcp,
+    rotate_to_lqt!,
+    rotate_to_lqt,
+    sort_traces_right_handed
 
 using Dates
 using LinearAlgebra

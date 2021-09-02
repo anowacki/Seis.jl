@@ -22,8 +22,11 @@ Return an appropriate tolerance for `x` (a floating point type, `AbstractTrace` 
 or less apart can be considered identical.
 """
 _angle_tol(x) = throw(ArgumentError("must call _angle_tol with a type, Trace or Station"))
-# Numerical errors accumulate too fast for Float64, so make its tolerance larger
-_angle_tol(T::DataType) = T == Float64 ? 1000*√eps(T) : √eps(T)
+# Numerical errors accumulate too fast for Float64, so make its tolerance larger,
+# whilst for Float16 errors are very large anyway
+_angle_tol(T::DataType) = T == Float64 ? 1000*√eps(T) : 
+                          T == Float16 ? 10*√eps(T) :
+                               √eps(T)
 _angle_tol(::Station{T}) where T = _angle_tol(T)
 _angle_tol(t::AbstractTrace) = _angle_tol(t.sta)
 

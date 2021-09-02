@@ -1,18 +1,23 @@
 # Test rotation to great circle path
 using Test
 using Seis
+using LinearAlgebra: ×
 
-@testset "Great circle path rotation" begin
-    let
+using .TestHelpers
+
+trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x, y), (z, y, x)
+
+@testset "Trace rotation" begin
+    @testset "rotate_to_gcp" begin
         # The azimuth and distance of the event
-        local az = rand(0:359) # degrees, approximate for now
-        local d = 0.1 # degrees
+        az = rand(0:359) # degrees, approximate for now
+        d = 0.1 # degrees
 
-        # Pair of SAC traces representing a spike arriving on the radial component
-        local b = 0
-        local npts = 10
-        local delta = 1
-        local s = Trace.([b,b], [delta,delta], [npts,npts])
+        # Pair of traces representing a spike arriving on the radial component
+        b = 0
+        npts = 10
+        delta = 1
+        s = Trace.([b,b], [delta,delta], [npts,npts])
         s.sta.lon = 0.0
         s.sta.lat = 0.0
         s.evt.lat = -d*cosd(az)
@@ -24,30 +29,30 @@ using Seis
             ss.t .= zeros(npts)
         end
         # Randomly swap the order of the components, which are in random orientations
-        local ne = rand(Bool)
-        local az1 = rand(0:359)
+        ne = rand(Bool)
+        az1 = rand(0:359)
         s.sta.azi = ne ? [az1, az1+90] : [az1+90, az1]
         s.sta.cha = ne ? ["1", "2"] : ["2", "1"]
         s.sta.inc = 90.0
-        local imax = npts÷2
+        imax = npts÷2
         s[1].t[imax], s[2].t[imax] = ne ? (cosd(az-az1), sind(az-az1)) :
                                           (sind(az-az1), cosd(az-az1))
 
         # Create all possible combinations of rotations
-        local (r, t) = rotate_to_gcp(s[1], s[2])
-        local (r′, t′) = rotate_to_gcp(s[2], s[1])
-        local rt = rotate_to_gcp(s)
-        local rt′ = rotate_to_gcp(s[[2,1]])
-        local (R, T) = rotate_to_gcp!(deepcopy(s[1]), deepcopy(s[2]))
-        local (R′, T′) = rotate_to_gcp!(deepcopy(s[2]), deepcopy(s[1]))
-        local RT = rotate_to_gcp!(deepcopy(s))
-        local RT′ = rotate_to_gcp!(deepcopy(s[[2,1]]))
+        (r, t) = rotate_to_gcp(s[1], s[2])
+        (r′, t′) = rotate_to_gcp(s[2], s[1])
+        rt = rotate_to_gcp(s)
+        rt′ = rotate_to_gcp(s[[2,1]])
+        (R, T) = rotate_to_gcp!(deepcopy(s[1]), deepcopy(s[2]))
+        (R′, T′) = rotate_to_gcp!(deepcopy(s[2]), deepcopy(s[1]))
+        RT = rotate_to_gcp!(deepcopy(s))
+        RT′ = rotate_to_gcp!(deepcopy(s[[2,1]]))
 
-        local list_of_radials = [r, r′, rt[1], rt′[1], R, R′, RT[1], RT′[1]]
-        local list_of_transverses = [t, t′, rt[2], rt′[2], T, T′, RT[2], RT′[2]]
+        list_of_radials = [r, r′, rt[1], rt′[1], R, R′, RT[1], RT′[1]]
+        list_of_transverses = [t, t′, rt[2], rt′[2], T, T′, RT[2], RT′[2]]
 
         # Test rotation has been done correctly
-        local atol = sqrt(eps(Float64))
+        atol = sqrt(eps(Float64))
         for (r1,t1) in zip(list_of_radials, list_of_transverses)
             @test r1.t[imax] ≈ 1
             @test all(isapprox.([r1.t[1:imax-1]; r1.t[imax+1:end]], 0, atol=atol))
@@ -75,5 +80,196 @@ using Seis
         r, t = rotate_to_gcp(s[1], s[2], reverse=true)
         @test r.sta.cha == "R"
         @test t.sta.cha == "-T"
+    end
+
+    @testset "sort_traces_right_handed" begin
+        x, y, z = random_basis_traces()
+
+        @testset "$([traces...].sta.cha)" for traces in trace_permutations(x, y, z)
+            @test are_orthogonal(traces..., tol=1)
+            x′, y′, z′ = sort_traces_right_handed(traces...)
+            ux′ = unit_vector(x′.sta.azi, x′.sta.inc)
+            uy′ = unit_vector(y′.sta.azi, y′.sta.inc)
+            uz′ = unit_vector(z′.sta.azi, z′.sta.inc)
+            @test ux′ × uy′ ≈ uz′
+        end
+    end
+
+    @testset "rotate_to_azimuth_incidence" begin
+        @testset "Arguments" begin
+            e, n, z = sample_data(:regional)[1:3]
+
+            @testset "Incidence" begin
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e, n, z, 0, -1)
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e, n, z, 0, 181)
+            end
+
+            @testset "Orthogonal" begin
+                e′ = deepcopy(e)
+                e′.sta.azi += 5
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+            end
+
+            @testset "Trace data" begin
+                e′ = deepcopy(e)
+                pop!(trace(e′))
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+            end
+
+            @testset "Eltype" begin
+                e′ = convert(Trace{Float32, Vector{Float64}, Seis.Geographic{Float32}}, e)
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+            end
+
+            @testset "Sampling interval" begin
+                e′ = deepcopy(e)
+                e′.delta *= 2
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+                e′.delta = e.delta
+                e′.b += 1
+                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+            end
+        end
+
+        @testset "Simple rotations" begin
+            @testset "$T" for T in (Float32, Float64)
+                e = Trace{T, Vector{Float64}}(0, 1, [0])
+                e.sta.azi, e.sta.inc = 90, 90
+                e.sta.cha = "E"
+                n = Trace{T, Vector{Float64}}(0, 1, [0])
+                n.sta.azi, n.sta.inc = 0, 90
+                n.sta.cha = "N"
+                z = Trace{T, Vector{Float64}}(0, 1, [1])
+                z.sta.azi, z.sta.inc = 0, 0
+                z.sta.cha = "Z"
+
+                atol = √eps(T)
+
+                @testset "Vertical" begin
+                    azimuth = 0
+                    incidence = 0
+                    @testset "$([traces...].sta.cha)" for traces in trace_permutations(e, n, z)
+                        l, q, t = rotate_to_azimuth_incidence!(deepcopy.(traces)...,
+                            azimuth, incidence)
+                        @test trace(l)[1] ≈ 1 atol=atol
+                        @test trace(q)[1] ≈ 0 atol=atol
+                        @test trace(t)[1] ≈ 0 atol=atol
+                        @test l.sta.azi == azimuth
+                        @test l.sta.inc == incidence
+                        @test q.sta.azi ≈ 180
+                        @test q.sta.inc ≈ 90
+                        @test t.sta.azi ≈ 90
+                        @test t.sta.azi == 90
+                    end
+                end
+
+                @testset "East" begin
+                    azimuth = 90
+                    incidence = 90
+                    @testset "$([traces...].sta.cha)" for traces in trace_permutations(e, n, z)
+                        l, q, t = rotate_to_azimuth_incidence!(deepcopy.(traces)...,
+                            azimuth, incidence)
+                        @test trace(l)[1] ≈ 0
+                        @test trace(q)[1] ≈ 1
+                        @test trace(t)[1] ≈ 0
+                    end
+                end
+
+                @testset "North" begin
+                    azimuth = 0
+                    incidence = 90
+                    @testset "$([traces...].sta.cha)" for traces in trace_permutations(e, n, z)
+                        l, q, t = rotate_to_azimuth_incidence!(deepcopy.((e, n, z))...,
+                            azimuth, incidence)
+                        @test trace(l)[1] ≈ 0
+                        @test trace(q)[1] ≈ 1
+                        @test trace(t)[1] ≈ 0
+                    end
+                end
+
+                @testset "Complex polarisation" begin
+                    azimuth = 360rand(T)
+                    incidence = 180rand(T)
+                    trace(e)[1] = sind(azimuth)*sind(incidence)
+                    trace(n)[1] = cosd(azimuth)*sind(incidence)
+                    trace(z)[1] = cosd(incidence)
+
+                    @testset "In line" begin
+                        @testset "$([traces...].sta.cha)" for traces in trace_permutations(e, n, z)
+                            l, q, t = rotate_to_azimuth_incidence!(deepcopy.(traces)...,
+                                azimuth, incidence)
+                            @test trace(l)[1] ≈ 1 atol=atol
+                            @test trace(q)[1] ≈ 0 atol=atol
+                            @test trace(t)[1] ≈ 0 atol=atol
+                            @test l.sta.azi == azimuth
+                            @test l.sta.inc == incidence
+                            @test q.sta.azi ≈ (incidence < 90 ? mod(azimuth + 180, 360) : azimuth)
+                            @test q.sta.inc ≈ (incidence >= 90 ? incidence - 90 : 90 - incidence)
+                            @test t.sta.azi ≈ mod(azimuth + 90, 360)
+                            @test t.sta.inc == 90
+                        end
+                    end
+
+                    @testset "Perpendicular on Q" begin
+                        trace(e)[1] = sind(azimuth)*sind(incidence - 90)
+                        trace(n)[1] = cosd(azimuth)*sind(incidence - 90)
+                        trace(z)[1] = cosd(incidence - 90)
+
+                        @testset "$([traces...].sta.cha)" for traces in trace_permutations(e, n, z)
+                            l, q, t = rotate_to_azimuth_incidence!(deepcopy.(traces)...,
+                                azimuth, incidence)
+                            @test trace(l)[1] ≈ 0 atol=atol
+                            @test trace(q)[1] ≈ 1 atol=atol
+                            @test trace(t)[1] ≈ 0 atol=atol
+                        end
+                    end
+
+                    @testset "Perpendicular on -T" begin
+                        trace(e)[1] = sind(azimuth - 90)*sind(90)
+                        trace(n)[1] = cosd(azimuth - 90)*sind(90)
+                        trace(z)[1] = cosd(90)
+
+                        @testset "$([traces...].sta.cha)" for traces in trace_permutations(e, n, z)
+                            l, q, t = rotate_to_azimuth_incidence!(deepcopy.(traces)...,
+                                azimuth, incidence)
+                            @test trace(l)[1] ≈ 0 atol=atol
+                            @test trace(q)[1] ≈ 0 atol=atol
+                            @test trace(t)[1] ≈ -1 atol=atol
+                        end
+                    end
+                end
+            end
+        end
+
+        @testset "Random trace orientation" begin
+            T = Float64
+            x, y, z = random_basis_traces(T)
+            # Add a single data point which we will modify
+            push!(trace(x), 0)
+            push!(trace(y), 0)
+            push!(trace(z), 0)
+
+            @testset "On L" begin
+                v = random_unit_vector(T)
+                azimuth, incidence = azimuth_inclination(v)
+                @info "TODO: Add tests for trace rotation"
+            end
+
+
+        end
+    end
+
+    @testset "rotate_to_lqt" begin
+        @testset "$T" for T in (Float32, Float64)
+            x, y, z = random_basis_traces(T)
+            @info "TODO: Add tests for `rotate_to_lqt` and implement for `CartTrace`"
+        end
+    end
+
+    @testset "rotate_to_enz" begin
+        @testset "$T" for T in (Float32, Float64)
+            x, y, z = random_basis_traces(T)
+            @info "TODO: Add tests for `rotate_to_enz`"
+        end
     end
 end
