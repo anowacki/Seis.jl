@@ -16,6 +16,7 @@ using .TestHelpers
     include("types.jl")
     include("spec.jl")
     include("util.jl")
+    include("spectrogram.jl")
 
     @testset "IO" begin
         include("io/sac.jl")
