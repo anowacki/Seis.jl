@@ -32,6 +32,12 @@ end
             time_now = now()
             t.evt.time = time_now
             @test cut(t, time_now, time_now + Second(1)) == cut(t, 0, 1)
+            t′ = deepcopy(t)
+            @test cut!(t′, time_now, time_now + Second(1)) ==
+                cut(t, time_now, time_now + Second(1))
+            @test t′.b == t.b
+            @test startdate(t′) == time_now
+            @test enddate(t′) == time_now + Second(1)
             add_pick!(t, 1, "Test pick")
             @test cut(t, "Test pick", 0, "Test pick", 0.5) == cut(t, 1, 1.5)
             @test cut(t, "Test pick", 0, 0.5) == cut(t, 1, 1.5)

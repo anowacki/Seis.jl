@@ -57,9 +57,36 @@ end
     cut!(t, start_date, end_date; kwargs...) -> t
 
 Cut a `Trace` `t` in place between dates `start_date` and `end_date`.
+
+# Example
+Create a trace starting at midnight on 1 January 3000, and cut to
+between 10 s and 1 minute after midnight:
+```
+julia> using Dates: DateTime
+
+julia> t = Trace(0, 1, 100); # 1 Hz sampling for 100 s;
+
+julia> t.evt.time = DateTime(3000, 1, 1); # The year 3000;
+
+julia> cut!(t, DateTime(3000, 1, 1, 0, 0, 10), DateTime(3000, 1, 1, 0, 1, 0))
+Seis.Trace{Float64,Vector{Float64},Seis.Geographic{Float64}}:
+            b: 10.0
+        delta: 1.0
+ GeogStation{Float64}:
+     sta.meta: Seis.SeisDict{Symbol, Any}()
+ GeogEvent{Float64}:
+     evt.time: 3000-01-01T00:00:00
+     evt.meta: Seis.SeisDict{Symbol, Any}()
+ Trace:
+        picks: 0
+         meta: 
+
+julia> startdate(t), enddate(t)
+(DateTime("3000-01-01T00:00:10"), DateTime("3000-01-01T00:01:00"))
+```
 """
 cut!(t::AbstractTrace, b::DateTime, e::DateTime; kwargs...) =
-    cut(t, Dates.value(Dates.Nanosecond(b - t.evt.time))/1e9,
+    cut!(t, Dates.value(Dates.Nanosecond(b - t.evt.time))/1e9,
         Dates.value(Dates.Nanosecond(e - t.evt.time))/1e9; kwargs...)
 
 """
