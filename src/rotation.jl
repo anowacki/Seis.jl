@@ -322,7 +322,7 @@ but they may not be returned in the same order as passed in if the original
 set of traces are not given as a right-handed set.
 """
 function rotate_to_enz!(t1, t2, t3; tol=_angle_tol(t1, t2, t3))
-    e, n, z = rotate_to_azimuth_incidence!(t1, t2, t3, 0, 90; tol=tol)
+    n, z, e = rotate_to_azimuth_incidence!(t1, t2, t3, 0, 90; tol=tol)
     for (t, cha) in zip((e, n, z), ("E", "N", "Z"))
         if _is_rotatable_seed_channel_name(t.sta.cha)
             t.sta.cha = t.sta.cha[1:2] * cha
