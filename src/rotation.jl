@@ -179,7 +179,7 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
     tx = trace(x)
     ty = trace(y)
     tz = trace(z)
-    @inbounds for i in eachindex(tx)    
+    @inbounds for i in eachindex(tx)
         tx[i], ty[i], tz[i] = rotation_matrix*StaticArrays.@SVector[tx[i], ty[i], tz[i]]
     end
 
@@ -248,7 +248,7 @@ between event and receiver.
     `              |
       `            |
         `
-          ∇ (station) 
+          ∇ (station)
          ⊙ `
       -  Q   `
     ↙          ↘
@@ -262,7 +262,7 @@ between event and receiver.
  Up               |
  ↑                 |
  |                  |      __ → L
- |      (station)  ∇ ⊙__--- 
+ |      (station)  ∇ ⊙__---
              .__--   T
         .__--
     __--
