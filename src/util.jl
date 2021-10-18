@@ -676,6 +676,7 @@ within an angle of `tol`°.
     hence `u` and `v` must already be normalised when passed in.
 """
 function _directions_are_parallel(u, v, tol)
+    u == v && return true
     _, θ = _u_dot_v_and_theta(u, v)
     θ <= tol
 end
@@ -691,6 +692,7 @@ within an angle of `tol`°.
     hence `u` and `v` must already be normalised when passed in.
 """
 function _directions_are_antiparallel(u, v, tol)
+    u == -v && return true
     _, θ = _u_dot_v_and_theta(u, v)
     abs(θ - 180) <= tol
 end
