@@ -5,7 +5,7 @@ If you are running individual tests, include this file and do `using .TestHelper
 """
 module TestHelpers
 
-using LinearAlgebra: ×
+using LinearAlgebra: ×, ⋅
 using Seis
 import Rotations
 using StaticArrays: SVector, @SVector
@@ -58,6 +58,39 @@ function random_basis_traces(T=Float64, P=Seis.Geographic{T})
 end
 random_basis_traces(::Type{Trace{T}}) where T = random_basis_traces(T, Seis.Geographic{T})
 random_basis_traces(::Type{CartTrace{T}}) where T = random_basis_traces(T, Seis.Cartesian{T})
+
+"""
+Fill the traces `t1`, `t2` and `t3` (an orthogonal set) with `data_l`, `data_q` and
+`data_t` (which must all be the same length), and which are defined to be
+respectively along the L, Q and T directions defined by `azimuth` and `inclination`.
+"""
+function project_onto_traces!(t1, t2, t3, azimuth, inclination, data_l, data_q, data_t)
+    @assert length(data_l) == length(data_q) == length(data_t)
+    npts = length(data_l)
+
+    # Get unit vector for each of L, Q and T
+    l⃗ = unit_vector(azimuth, inclination)
+    q⃗ = if inclination >= 90
+        unit_vector(azimuth, inclination - 90)
+    else
+        unit_vector(azimuth - 180, 90 - inclination)
+    end
+    t⃗ = unit_vector(azimuth + 90, 90)
+
+    for t in (t1, t2, t3)
+        resize!(trace(t), npts)
+        trace(t) .= 0
+        # Get unit vector for this trace
+        v = unit_vector(t.sta.azi, t.sta.inc)
+        # Project new data onto existing traces
+        for (data_vec, data) in zip((l⃗, q⃗, t⃗), (data_l, data_q, data_t))
+            for i in 1:npts
+                trace(t)[i] += data[i]*v⋅data_vec
+            end
+        end
+    end
+    t1, t2, t3
+end
 
 "Return a vector and one randomly deviated away from it by `θ`°."
 function vector_and_deviated_vector(T, θ)
