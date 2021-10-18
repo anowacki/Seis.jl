@@ -267,9 +267,41 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
     end
 
     @testset "rotate_to_enz" begin
-        @testset "$T" for T in (Float32, Float64)
-            x, y, z = random_basis_traces(T)
-            @info "TODO: Add tests for `rotate_to_enz`"
+        @testset "ENZ" begin
+            @testset "$T" for T in (Trace, CartTrace)
+                @testset "$(T{F})" for F in (Float16, Float32, Float64)
+                    e, n, z = t = [T{F}(0, 1, 0) for _ in 1:3]
+                    t.sta.azi = 90, 0, 0
+                    t.sta.inc = 90, 90, 0
+                    t.sta.cha = "E", "N", "Z"
+                    push!.(trace.(t), 1:3)
+                    @test rotate_to_enz(e, n, z) == (e, n, z)
+                    @test rotate_to_enz(n, e, z) == (e, n, z)
+                    @test rotate_to_enz(z, n, e) == (e, n, z)
+                    @test rotate_to_enz(z, e, n) == (e, n, z)
+                    e′, n′, z′ = t′ = deepcopy(t)
+                    @test rotate_to_enz(e′, n′, z′) == (e, n, z)
+                    @test rotate_to_enz(n′, e′, z′) == (e, n, z)
+                    @test rotate_to_enz(z′, n′, e′) == (e, n, z)
+                    @test rotate_to_enz(z′, e′, n′) == (e, n, z)
+                end
+            end
         end
+
+        @testset "Random" begin
+            @testset "$TR" for TR in (Trace, CartTrace)
+                @testset "$T" for T in (Float32, Float64)
+                    x, y, z = TestHelpers.random_basis_traces(TR{T})
+                    @info "TODO: Add tests for `rotate_to_enz`"
+                end
+            end
+        end
+    end
+
+    @testset "_is_rotatable_seed_channel_name" begin
+        @test Seis._is_rotatable_seed_channel_name("BH1") == true
+        @test Seis._is_rotatable_seed_channel_name("LXU") == true
+        @test Seis._is_rotatable_seed_channel_name("BHL") == false
+        @test Seis._is_rotatable_seed_channel_name(missing) == false
     end
 end
