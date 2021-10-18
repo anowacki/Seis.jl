@@ -3,7 +3,7 @@ using Test
 using Seis
 using LinearAlgebra: ×
 
-using .TestHelpers
+import .TestHelpers
 
 trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x, y), (z, y, x)
 
@@ -88,9 +88,9 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
         @testset "$([traces...].sta.cha)" for traces in trace_permutations(x, y, z)
             @test are_orthogonal(traces..., tol=1)
             x′, y′, z′ = sort_traces_right_handed(traces...)
-            ux′ = unit_vector(x′.sta.azi, x′.sta.inc)
-            uy′ = unit_vector(y′.sta.azi, y′.sta.inc)
-            uz′ = unit_vector(z′.sta.azi, z′.sta.inc)
+            ux′ = TestHelpers.unit_vector(x′.sta.azi, x′.sta.inc)
+            uy′ = TestHelpers.unit_vector(y′.sta.azi, y′.sta.inc)
+            uz′ = TestHelpers.unit_vector(z′.sta.azi, z′.sta.inc)
             @test ux′ × uy′ ≈ uz′
         end
     end
@@ -243,15 +243,15 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
 
         @testset "Random trace orientation" begin
             T = Float64
-            x, y, z = random_basis_traces(T)
+            x, y, z = TestHelpers.random_basis_traces(T)
             # Add a single data point which we will modify
             push!(trace(x), 0)
             push!(trace(y), 0)
             push!(trace(z), 0)
 
             @testset "On L" begin
-                v = random_unit_vector(T)
-                azimuth, incidence = azimuth_inclination(v)
+                v = TestHelpers.random_unit_vector(T)
+                azimuth, incidence = TestHelpers.azimuth_inclination(v)
                 @info "TODO: Add tests for trace rotation"
             end
 
@@ -261,7 +261,7 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
 
     @testset "rotate_to_lqt" begin
         @testset "$T" for T in (Float32, Float64)
-            x, y, z = random_basis_traces(T)
+            x, y, z = TestHelpers.random_basis_traces(T)
             @info "TODO: Add tests for `rotate_to_lqt` and implement for `CartTrace`"
         end
     end
