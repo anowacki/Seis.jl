@@ -304,11 +304,12 @@ function rotate_to_lqt!(t1, t2, t3, azimuth=backazimuth(t1)+180, incidence=incid
 end
 
 """
-    rotate_to_lqt(t1, t2, t3[; tol]) -> l, q, t
+    rotate_to_lqt(t1, t2, t3[, azimuth[, incidence]; tol) -> l, q, t
 
 Copying version of [`rotate_to_lqt!`](@ref).
 """
-rotate_to_lqt(t1, t2, t3; kwargs...) = rotate_to_lqt!(deepcopy.((t1, t2, t3))...; kwargs...)
+rotate_to_lqt(t1, t2, t3, args...; kwargs...) =
+    rotate_to_lqt!(deepcopy.((t1, t2, t3))..., args...; kwargs...)
 
 """
     rotate_to_enz!(t1, t2, t3[; tol]) -> e, n, z
