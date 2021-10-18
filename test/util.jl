@@ -38,7 +38,9 @@ using .TestHelpers
         @testset "$T" for T in (Float16, Float32, Float64)
             t = Trace{T,Vector{T},Seis.Geographic{T}}(0, 1, 0)
             sta = Station{T}()
-            tol = T == Float64 ? 1000*√eps(T) : √eps(T)
+            tol = T == Float64 ? 1000*√eps(T) :
+                  T == Float16 ? 10*√eps(T) :
+                  √eps(T)
             @test Seis._angle_tol(T) === tol
             @test Seis._angle_tol(t) === tol
             @test Seis._angle_tol(sta) === tol
