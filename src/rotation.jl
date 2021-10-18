@@ -389,10 +389,13 @@ end
 Return `true` if `s` is a string conforming to SEED channel naming conventions which
 describes a channel for which it makes sense to rotate a matching pair of these channels.
 
+Returns `false` if the above does not hold or `s` is `missing`.
+
 #### References
 - https://ds.iris.edu/ds/nodes/dmc/data/formats/seed-channel-naming/
 """
 _is_rotatable_seed_channel_name(s) = occursin(r"^[FGDCESHBMLVURPTQAO][HLGMNAFJPSXYZ][ZNEABCTR123UVW]$", s)
+_is_rotatable_seed_channel_name(::Missing) = false
 
 """
     _construct_rotation_matrix(uˣ, uʸ, uᶻ, uˣ′, uʸ′, uᶻ′) -> R
