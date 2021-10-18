@@ -139,7 +139,9 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
     0 <= incidence <= 180 ||
         throw(ArgumentError("incidence must be in the range 0 to 180"))
     # Check traces
-    if !are_orthogonal(t1, t2, t3)
+    if any(x -> x.sta.azi === missing || x.sta.inc === missing, (t1, t2, t3))
+        throw(ArgumentError("traces must contain station orientation information"))
+    elseif !are_orthogonal(t1, t2, t3)
         throw(ArgumentError("traces must be orthogonal"))
     elseif !(axes(trace(t1)) == axes(trace(t2)) == axes(trace(t3)))
         throw(ArgumentError("traces must all be the same length"))
