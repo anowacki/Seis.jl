@@ -2,6 +2,7 @@
 using Test
 using Seis
 using LinearAlgebra: ×
+using StaticArrays: SVector, @SVector
 
 import .TestHelpers
 
@@ -303,5 +304,15 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
         @test Seis._is_rotatable_seed_channel_name("LXU") == true
         @test Seis._is_rotatable_seed_channel_name("BHL") == false
         @test Seis._is_rotatable_seed_channel_name(missing) == false
+    end
+
+    @testset "_rotate_by_vector" begin
+        @test Seis._rotate_by_vector([0, 0, 1], [1, 0, 0], π/2) ≈ [0, -1, 0]
+        @test Seis._rotate_by_vector([0, 0, 1], [0, 1, 0], π/2) ≈ [1, 0, 0]
+        # No need to normalise the rotation vector
+        @test Seis._rotate_by_vector([0, 0, 1], [0, -10, 0], π/2) ≈ [-1, 0, 0]
+        v′ = Seis._rotate_by_vector(@SVector[0, 0, 1], @SVector[0, -10, 0], π/2)
+        @test v′ isa SVector
+        @test v′ ≈ @SVector[-1, 0, 0]
     end
 end

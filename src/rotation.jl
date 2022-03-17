@@ -420,3 +420,20 @@ function _construct_rotation_matrix(uˣ, uʸ, uᶻ, uˣ′, uʸ′, uᶻ′)
                                uˣ′[3] uʸ′[3] uᶻ′[3]]
     transpose(R²)*R¹
 end
+
+"""
+    _rotate_by_vector(v, k, θ) -> v′
+
+Rotate the vector `v` about the vector `k` by `θ` radians,
+following the right-hand rule.  `k` need not be a unit vector.
+
+This implements Rodrigues's formula.
+
+# References
+- https://en.wikipedia.org/wiki/Rodrigues%27_rotation_formula
+"""
+function _rotate_by_vector(v, k, θ)
+    k̂ = normalize(k)
+    cosθ = cos(θ)
+    u′ = v*cosθ + (k̂×v)*sin(θ) + k̂*(k̂⋅v)*(1 - cosθ)
+end
