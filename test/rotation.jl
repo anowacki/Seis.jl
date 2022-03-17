@@ -9,6 +9,74 @@ import .TestHelpers
 trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x, y), (z, y, x)
 
 @testset "Trace rotation" begin
+    @testset "rotate_through" begin
+        atol = 1e-6
+        @testset "Polarisation $pol" for pol in rand(0:359, 3)
+            @testset "Rotation $rot" for rot in rand(-180:180, 2)
+                @testset "Horizontals" begin
+                    n = Trace(0, 1, 1)
+                    e = deepcopy(n)
+                    n.sta.azi, e.sta.azi = 0, 90
+                    n.sta.inc, e.sta.inc = 90, 90
+                    # Initial polarisation
+                    @testset "N to E" begin
+                        # Try rotating from n -> e
+                        trace(n)[1], trace(e)[1] = cosd(pol), sind(pol)
+                        rotate_through!(deepcopy.((n, e))..., rot) == rotate_through(n, e, rot)
+                        rotate_through!(deepcopy.((n, e))..., rot) != (n, e)
+                        n′, e′ = rotate_through(n, e, rot)
+                        # Polarisation should now be as if the polarisation was
+                        # pol - rot
+                        @test all(isapprox.(
+                            (trace(n′)[1], trace(e′)[1]), (cosd(pol - rot), sind(pol - rot)), atol=atol))
+                        @test n′.sta.azi ≈ mod(rot, 360) atol=atol
+                        @test e′.sta.azi ≈ mod(rot + 90, 360) atol=atol
+                    end
+
+                    @testset "E to N" begin
+                        e′, n′ = rotate_through(e, n, rot)
+                        # Polarisation now as if pol + rot
+                        @test all(isapprox.(
+                            (trace(n′)[1], trace(e′)[1]), (cosd(pol + rot), sind(pol + rot)), atol=atol))
+                        @test n′.sta.azi ≈ mod(-rot, 360) atol=atol
+                        @test e′.sta.azi ≈ mod(90 - rot, 360) atol=atol
+                    end
+
+                    @testset "Reversible" begin
+                        @testset "Negative rotation" begin
+                            n″, e″ = rotate_through(
+                                rotate_through(n, e, rot)..., -rot)
+                            @test trace(n) ≈ trace(n″)
+                            @test trace(e) ≈ trace(e″)
+                            @test n.sta.azi ≈ n″.sta.azi atol=atol
+                            @test n.sta.inc ≈ n″.sta.inc atol=atol
+                            @test e.sta.azi ≈ e″.sta.azi atol=atol
+                            @test e.sta.inc ≈ e″.sta.inc atol=atol
+                        end
+
+                        @testset "Flip order" begin
+                            n″, e″ = rotate_through(
+                                rotate_through(n, e, rot)[[2,1]]..., rot)[[2,1]]
+                            @test trace(n) ≈ trace(n″)
+                            @test trace(e) ≈ trace(e″)
+                            @test n.sta.azi ≈ n″.sta.azi atol=atol
+                            @test n.sta.inc ≈ n″.sta.inc atol=atol
+                            @test e.sta.azi ≈ e″.sta.azi atol=atol
+                            @test e.sta.inc ≈ e″.sta.inc atol=atol 
+                        end
+                    end
+
+                    @testset "Arbitrary" begin
+                        t1 = Trace(0, 1, 1)
+                        t2 = deepcopy(t1)
+                        t1.sta.azi, t2.sta.azi = (45, 45)
+                        t1.sta.inc, t2.sta.inc = (45, 135)
+                    end
+                end
+            end
+        end
+    end
+
     @testset "rotate_to_gcp" begin
         # The azimuth and distance of the event
         az = rand(0:359) # degrees, approximate for now
