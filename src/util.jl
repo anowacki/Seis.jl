@@ -642,6 +642,19 @@ function _direction_vector(azi, inc)
 end
 
 """
+    _direction_to_azimuth_incidence(u) -> azi, inc
+
+Return the azimuth `azi` and incidence `inc` in the Seis frame
+defined by the vector `u`, which need not be normalised.
+Angles are in degrees.
+"""
+function _direction_to_azimuth_incidence(u)
+    azi = mod(atand(u[1], u[2]), 360)
+    inc = atand(sqrt(u[1]^2 + u[2]^2), u[3])
+    azi, inc
+end
+
+"""
     _direction_vector(station) -> [x, y, z]
     _direction_vector(trace) -> [x, y, z]
 

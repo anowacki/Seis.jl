@@ -64,6 +64,18 @@ using .TestHelpers
         end
     end
 
+    @testset "_direction_to_azimuth_incidence" begin
+        atol = 1e-6
+        azi, inc = Seis._direction_to_azimuth_incidence([1, 0, 0])
+        @test azi ≈ 90 atol=atol
+        @test inc ≈ 90 atol=atol
+        azi, inc = Seis._direction_to_azimuth_incidence([0, -1, 0])
+        @test azi ≈ 180 atol=atol
+        @test inc ≈ 90 atol=atol
+        azi, inc = Seis._direction_to_azimuth_incidence([0, 0, -10])
+        @test inc ≈ 180 atol=atol
+    end
+
     @testset "_directions_are_orthogonal" begin
         @testset "$T" for T in (Float16, Float32, Float64)
             tol = Seis._angle_tol(T)
