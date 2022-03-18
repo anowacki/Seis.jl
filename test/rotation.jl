@@ -8,6 +8,9 @@ import .TestHelpers
 
 trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x, y), (z, y, x)
 
+angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
+    abs(Seis.angle_difference(a, b)) < tol
+
 @testset "Trace rotation" begin
     @testset "rotate_through" begin
         atol = 1e-6
@@ -29,8 +32,8 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
                         # pol - rot
                         @test all(isapprox.(
                             (trace(n′)[1], trace(e′)[1]), (cosd(pol - rot), sind(pol - rot)), atol=atol))
-                        @test n′.sta.azi ≈ mod(rot, 360) atol=atol
-                        @test e′.sta.azi ≈ mod(rot + 90, 360) atol=atol
+                        @test angles_are_same(n′.sta.azi, mod(rot, 360))
+                        @test angles_are_same(e′.sta.azi, mod(rot + 90, 360))
                     end
 
                     @testset "E to N" begin
@@ -38,8 +41,8 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
                         # Polarisation now as if pol + rot
                         @test all(isapprox.(
                             (trace(n′)[1], trace(e′)[1]), (cosd(pol + rot), sind(pol + rot)), atol=atol))
-                        @test n′.sta.azi ≈ mod(-rot, 360) atol=atol
-                        @test e′.sta.azi ≈ mod(90 - rot, 360) atol=atol
+                        @test angles_are_same(n′.sta.azi, mod(-rot, 360), atol)
+                        @test angles_are_same(e′.sta.azi, mod(90 - rot, 360), atol)
                     end
 
                     @testset "Reversible" begin
@@ -48,9 +51,9 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
                                 rotate_through(n, e, rot)..., -rot)
                             @test trace(n) ≈ trace(n″)
                             @test trace(e) ≈ trace(e″)
-                            @test n.sta.azi ≈ n″.sta.azi atol=atol
+                            @test angles_are_same(n.sta.azi, n″.sta.azi, atol)
                             @test n.sta.inc ≈ n″.sta.inc atol=atol
-                            @test e.sta.azi ≈ e″.sta.azi atol=atol
+                            @test angles_are_same(e.sta.azi, e″.sta.azi, atol)
                             @test e.sta.inc ≈ e″.sta.inc atol=atol
                         end
 
@@ -59,10 +62,10 @@ trace_permutations(x, y, z) = (x, y, z), (x, z, y), (y, x, z), (y, z, x), (z, x,
                                 rotate_through(n, e, rot)[[2,1]]..., rot)[[2,1]]
                             @test trace(n) ≈ trace(n″)
                             @test trace(e) ≈ trace(e″)
-                            @test n.sta.azi ≈ n″.sta.azi atol=atol
+                            @test angles_are_same(n.sta.azi, n″.sta.azi, atol)
                             @test n.sta.inc ≈ n″.sta.inc atol=atol
-                            @test e.sta.azi ≈ e″.sta.azi atol=atol
-                            @test e.sta.inc ≈ e″.sta.inc atol=atol 
+                            @test angles_are_same(e.sta.azi, e″.sta.azi, atol)
+                            @test e.sta.inc ≈ e″.sta.inc atol=atol
                         end
                     end
 
