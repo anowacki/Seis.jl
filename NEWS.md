@@ -13,7 +13,11 @@
 ## New features
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
+- `rotate_to_lqt[!]` rotates triplets of orthogonal components to
+  LQT orientation.
+- `rotate_to_azimuth_incidence!` rotates triplets of orthogonal components
+  to arbitrary orientations.
 
 ## Notable bug fixes
 - `rotate_through[!]` behaved in an inconsistent way and has been fixed
-  (see 'Breaking changes'), but its new behavious is different.
+  (see 'Breaking changes'), but its new behaviour is different.
