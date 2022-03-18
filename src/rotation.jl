@@ -95,6 +95,7 @@ the traces must be orthogonal; see [`traces_are_orthogonal`](@ref).
 function rotate_to_gcp!(t1, t2; reverse::Bool=false, tol=_angle_tol(t1, t2))
     all(!ismissing, (t1.sta.azi, t1.sta.inc, t2.sta.azi, t2.sta.inc)) ||
         throw(ArgumentError("Traces must have sta.inc and sta.azi defined"))
+    all(is_horizontal, (t1, t2)) || throw(ArgumentError("traces must be horizontal"))
     t2_is_clockwise_of_t1 = angle_difference(t1.sta.azi, t2.sta.azi) > 0
     t2_is_clockwise_of_t1 && ((t1, t2) = (t2, t1))
     # Keep band and instrument codes only if the channel name is a valid SEED identifier and seems rotatable,
