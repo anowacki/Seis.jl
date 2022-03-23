@@ -252,6 +252,16 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
 end
 
 """
+    rotate_to_azimuth_incidence(t1, t2, t3, azimuth, incidence[; tol]) -> x, y, z
+
+Copying version of [`rotate_to_azimuth_incidence`](@ref).
+"""
+function rotate_to_azimuth_incidence(t1, t2, t3, azimuth=backazimuth(t1)+180,
+    incidence=incidence(t1); tol=_angle_tol(t1, t2, t3))
+    rotate_to_azimuth_incidence!(deepcopy.((t1, t2, t3))..., azimuth, incidence; tol=tol)
+end
+
+"""
     rotate_to_lqt!(t1, t2, t3[, azimuth, [incidence]]; [tol]) -> L, Q, T
 
 Rotate the three traces `t1`, `t2` and `t3` in place, and return them in the

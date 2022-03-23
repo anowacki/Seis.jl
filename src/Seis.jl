@@ -113,6 +113,7 @@ export
     rotate_through!,
     rotate_through,
     rotate_to_azimuth_incidence!,
+    rotate_to_azimuth_incidence,
     rotate_to_enz!,
     rotate_to_enz,
     rotate_to_gcp!,

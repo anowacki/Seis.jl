@@ -342,6 +342,17 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
                     end
                 end
             end
+
+            @testset "In-place v copying" begin
+                e, n, z = sample_data(:local)[1:3]
+                e′, n′, z′ = deepcopy.((e, n, z))
+                az, inc = 45, 10
+                @test rotate_to_azimuth_incidence(e, n, z, az, inc) ==
+                    rotate_to_azimuth_incidence!(e′, n′, z′, az, inc)
+                @test e′ != e
+                @test n′ != n
+                @test z′ != z
+            end
         end
 
         @testset "Random trace orientation" begin
