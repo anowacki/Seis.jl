@@ -16,7 +16,7 @@ Trace channel names are updated to contain the azimuth if both
 channels are horizontals.
 
 The optional keyword argument `tol` specifies the angle in ° by which
-the traces must be orthogonal; see [`traces_are_orthogonal`](@ref).
+the traces must be orthogonal; see [`are_orthogonal`](@ref).
 
 See also: [`rotate_through`](@ref), [`rotate_to_gcp!`](@ref),
 [`rotate_to_azimuth_incidence!`]
@@ -90,7 +90,7 @@ seems rotatable and matches for the traces; then the correct component name is u
 
 Traces must be orthogonal and horizontal.  The optional keyword argument
 `tol` specifies the angle in ° by which
-the traces must be orthogonal; see [`traces_are_orthogonal`](@ref).
+the traces must be orthogonal; see [`are_orthogonal`](@ref).
 """
 function rotate_to_gcp!(t1, t2; reverse::Bool=false, tol=_angle_tol(t1, t2))
     all(!ismissing, (t1.sta.azi, t1.sta.inc, t2.sta.azi, t2.sta.inc)) ||

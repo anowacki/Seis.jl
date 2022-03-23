@@ -48,7 +48,7 @@ if `sta1`, `sta2` and `sta3` form a mutually-orthogonal set.
 The comparison can also be performed on `Trace`s in the second form.
 
 Directions are considered orthogonal if they differ from 90° by less than
-`tol`°, with a default value given by [`_angle_tol`](@ref).
+`tol`°, with a default value given by [`Seis._angle_tol`](@ref).
 
 # Examples
 ```

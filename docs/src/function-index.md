@@ -103,6 +103,8 @@ rotate_to_gcp
 rotate_to_lqt!
 rotate_to_lqt
 rotate_to_azimuth_incidence!
+rotate_to_azimuth_incidence
+sort_traces_right_handed
 ```
 
 ### IO
