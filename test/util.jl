@@ -185,15 +185,15 @@ using .TestHelpers
                 @testset "Random orientations" begin
                     @testset "$T" for T in (Float16, Float32, Float64)
                         x, y, z = random_basis_traces(T)
-                        # Component shifted 5° in azimuth and inclination
+                        # x component rotated about vector between y and z by 5°
                         x′ = deepcopy(x)
-                        x′.sta.inc += 5
-                        if x′.sta.inc > 180
-                            x′.sta.inc = 180 - x′.sta.inc
-                            x′.sta.azi = mod(x′.sta.azi, + 185, 360)
-                        else
-                            x′.sta.azi = mod(x′.sta.azi + 5, 360)
-                        end
+                        x⃗ = Seis._direction_vector(x)
+                        y⃗ = Seis._direction_vector(y)
+                        z⃗ = Seis._direction_vector(z)
+                        k⃗ = normalize(y⃗ + z⃗)
+                        x⃗′ = Seis._rotate_by_vector(x⃗, k⃗, deg2rad(5))
+                        azi, inc = Seis._direction_to_azimuth_incidence(x⃗′)
+                        x′.sta.azi, x′.sta.inc = azi, inc
 
                         @testset "Pairs" begin
                             @test are_orthogonal(x, y)
