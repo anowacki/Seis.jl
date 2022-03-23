@@ -13,6 +13,22 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
 
 @testset "Trace rotation" begin
     @testset "rotate_through" begin
+        @testset "Argument checking" begin
+            @testset "Not orthogonal" begin
+                @test_throws ArgumentError rotate_through(sample_data(), sample_data(), 10)
+            end
+            @testset "Different samples" begin
+                e, n = sample_data(:local)[1:2]
+                pop!(trace(e))
+                @test_throws ArgumentError rotate_through(e, n, 1)
+            end
+            @testset "Different delta" begin
+                e, n = sample_data(:local)[1:2]
+                e.delta *= 2
+                @test_throws ArgumentError rotate_through(e, n, 1)
+            end
+        end
+
         atol = 1e-6
         @testset "Polarisation $pol" for pol in rand(0:359, 3)
             @testset "Rotation $rot" for rot in rand(-180:180, 2)
@@ -77,6 +93,13 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
                     end
                 end
             end
+        end
+
+        @testset "In-place v copying" begin
+            e, n = sample_data(:local)[1:2]
+            e′, n′ = deepcopy.((e, n))
+            @test rotate_through(e, n, 10) == rotate_through!(e′, n′, 10)
+            @test e′ != e
         end
     end
 
@@ -186,6 +209,14 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
                 e′ = deepcopy(e)
                 pop!(trace(e′))
                 @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+            end
+
+            @testset "Header info" begin
+                @testset "Missing $field" for field in (:azi, :inc)
+                    e′ = deepcopy(e)
+                    setproperty!(e′.sta, field, missing)
+                    @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+                end
             end
 
             @testset "Eltype" begin
