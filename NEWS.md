@@ -18,6 +18,11 @@
 - `rotate_to_azimuth_incidence!` rotates triplets of orthogonal components
   to arbitrary orientations.
 
+## Deprecated or removed
+- `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by
+  `are_orthogonal` which works for non-horizontal pairs.
+
+
 ## Notable bug fixes
 - `rotate_through[!]` behaved in an inconsistent way and has been fixed
   (see 'Breaking changes'), but its new behaviour is different.
