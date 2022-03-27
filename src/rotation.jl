@@ -257,7 +257,7 @@ end
 Copying version of [`rotate_to_azimuth_incidence`](@ref).
 """
 function rotate_to_azimuth_incidence(t1, t2, t3, azimuth=backazimuth(t1)+180,
-    incidence=incidence(t1); tol=_angle_tol(t1, t2, t3))
+        incidence=incidence(t1); tol=_angle_tol(t1, t2, t3))
     rotate_to_azimuth_incidence!(deepcopy.((t1, t2, t3))..., azimuth, incidence; tol=tol)
 end
 

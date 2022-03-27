@@ -15,7 +15,7 @@
   not just horizontal ones.
 - `rotate_to_lqt[!]` rotates triplets of orthogonal components to
   LQT orientation.
-- `rotate_to_azimuth_incidence!` rotates triplets of orthogonal components
+- `rotate_to_azimuth_incidence[!]` rotates triplets of orthogonal components
   to arbitrary orientations.
 
 ## Deprecated or removed
