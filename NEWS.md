@@ -13,6 +13,8 @@
 ## New features
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
+- `rotate_to_enz[!]` rotates triplets of orthogonal components to ENZ
+  orientation
 - `rotate_to_lqt[!]` rotates triplets of orthogonal components to
   LQT orientation.
 - `rotate_to_azimuth_incidence[!]` rotates triplets of orthogonal components
@@ -20,7 +22,7 @@
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by
-  `are_orthogonal` which works for non-horizontal pairs.
+  `are_orthogonal` which works for non-horizontal pairs as well.
 
 
 ## Notable bug fixes
