@@ -19,7 +19,7 @@ The optional keyword argument `tol` specifies the angle in ° by which
 the traces must be orthogonal; see [`are_orthogonal`](@ref).
 
 See also: [`rotate_through`](@ref), [`rotate_to_gcp!`](@ref),
-[`rotate_to_azimuth_incidence!`]
+[`rotate_to_azimuth_incidence!`](@ref)
 """
 function rotate_through!(t1::AbstractTrace, t2::AbstractTrace, phi; tol=_angle_tol(t1, t2))
     T = promote_type(eltype(t1), eltype(t2))
@@ -91,6 +91,9 @@ seems rotatable and matches for the traces; then the correct component name is u
 Traces must be orthogonal and horizontal.  The optional keyword argument
 `tol` specifies the angle in ° by which
 the traces must be orthogonal; see [`are_orthogonal`](@ref).
+
+See also: [`rotate_to_lqt!`](@ref), [`rotate_to_azimuth_incidence!`](@ref),
+[`rotate_to_enz!`](@ref)
 """
 function rotate_to_gcp!(t1, t2; reverse::Bool=false, tol=_angle_tol(t1, t2))
     all(!ismissing, (t1.sta.azi, t1.sta.inc, t2.sta.azi, t2.sta.inc)) ||
@@ -170,8 +173,8 @@ altered, and the returned traces point to the same data as the input traces, but
 possibly in a different order.  Use [`rotate_to_azimuth_incidence`](@ref) to return
 copies of the traces and leave the original traces unmodified.
 
-See also: [`rotate_to_azimuth_incidence`](@ref), [`rotate_to_gcp!`](@ref),
-[`rotate_to_lqt!`](@ref), [`rotate_through`](@ref)
+See also: [`rotate_to_azimuth_incidence!`](@ref), [`rotate_to_gcp!`](@ref),
+[`rotate_to_lqt!`](@ref), [`rotate_through!`](@ref)
 """
 function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::AbstractTrace,
         azimuth=backazimuth(t1)+180, incidence=incidence(t1);
@@ -344,6 +347,9 @@ julia> t.sta.cha
 julia> l == e, q == n, t == z # Original traces are modified and returned in a possibly different order
 (true, true, true)
 ```
+
+See also: [`rotate_through!`](@ref), [`rotate_to_azimuth_incidence!`](@ref),
+[`rotate_to_enz`](@ref)
 """
 function rotate_to_lqt!(t1, t2, t3, azimuth, incidence; tol=_angle_tol(t1, t2, t3))
     l, q, t = rotate_to_azimuth_incidence!(t1, t2, t3, azimuth, incidence; tol=tol)
@@ -378,6 +384,9 @@ east (`e`), north (`n`) and vertically (`z`).
 `e`, `n` and `z` are bindings to the same data as `t1`, `t2` and `t3`,
 but they may not be returned in the same order as passed in if the original
 set of traces are not given as a right-handed set.
+
+See also: [`rotate_through!`](@ref), [`rotate_to_gcp!`](@ref),
+[`rotate_to_lqt!`](@ref)
 """
 function rotate_to_enz!(t1, t2, t3; tol=_angle_tol(t1, t2, t3))
     n, z, e = rotate_to_azimuth_incidence!(t1, t2, t3, 0, 90; tol=tol)
