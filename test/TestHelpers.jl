@@ -65,7 +65,8 @@ Fill the traces `t1`, `t2` and `t3` (an orthogonal set) with `data_l`, `data_q` 
 respectively along the L, Q and T directions defined by `azimuth` and `inclination`.
 """
 function project_onto_traces!(t1, t2, t3, azimuth, inclination, data_l, data_q, data_t)
-    @assert length(data_l) == length(data_q) == length(data_t)
+    length(data_l) == length(data_q) == length(data_t) ||
+        throw(ArgumentError("all data vectors must be the same length"))
     npts = length(data_l)
 
     # Get unit vector for each of L, Q and T

@@ -3,6 +3,7 @@ using Test
 using Seis
 using LinearAlgebra: ×
 using StaticArrays: SVector, @SVector
+import Geodesics
 
 import .TestHelpers
 
@@ -354,29 +355,90 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
                 @test z′ != z
             end
         end
-
-        @testset "Random trace orientation" begin
-            T = Float64
-            x, y, z = TestHelpers.random_basis_traces(T)
-            # Add a single data point which we will modify
-            push!(trace(x), 0)
-            push!(trace(y), 0)
-            push!(trace(z), 0)
-
-            @testset "On L" begin
-                v = TestHelpers.random_unit_vector(T)
-                azimuth, incidence = TestHelpers.azimuth_inclination(v)
-                @info "TODO: Add tests for trace rotation"
-            end
-
-
-        end
     end
 
     @testset "rotate_to_lqt" begin
-        @testset "$T" for T in (Float32, Float64)
-            x, y, z = TestHelpers.random_basis_traces(T)
-            @info "TODO: Add tests for `rotate_to_lqt` and implement for `CartTrace`"
+        @testset "Random orientations" begin
+            @testset "$P" for P in (Seis.Geographic, Seis.Cartesian)
+                @testset "$T" for T in (Float32, Float64)
+                    x, y, z = TestHelpers.random_basis_traces(T, P{T})
+                    azi, inc = 45, 90
+                    TestHelpers.project_onto_traces!(x, y, z, azi, inc, [1], [2], [3])
+                    l, q, t = rotate_to_lqt(x, y, z, azi, inc)
+                    @test trace(l)[1] ≈ 1
+                    @test trace(q)[1] ≈ 2
+                    @test trace(t)[1] ≈ 3
+                    @test angles_are_same(l.sta.azi, azi)
+                    @test angles_are_same(l.sta.inc, 90)
+                    # Q is vertical so azimuth not important, but it will be azi
+                    @test angles_are_same(q.sta.azi, azi)
+                    @test angles_are_same(q.sta.inc, 0)
+                    @test angles_are_same(t.sta.azi, azi + 90)
+                    @test angles_are_same(t.sta.inc, 90)
+                end
+            end
+        end
+
+        @testset "Using trace headers" begin
+            @testset "$P" for P in (Seis.Geographic, Seis.Cartesian)
+                @testset "$T" for T in (Float32, Float64)
+                    x, y, z = TestHelpers.random_basis_traces(T, P{T})
+                    azi = 360rand(T)
+                    inc = 180rand(T)
+                    TestHelpers.project_onto_traces!(x, y, z, azi, inc, [1], [2], [3])
+                    # Helpful array of traces
+                    t = [x, y, z]
+                    # Define headers appropriately for geometry
+                    if P <: Seis.Geographic
+                        t.sta.lon = t.sta.lat = t.sta.elev = 0
+                        # Approximate location of event
+                        Δ = 0.01
+                        lon, lat = Geodesics.angular_step(x.sta.lon, x.sta.lat, azi + 180, Δ)
+                        t.evt.lon = lon
+                        t.evt.lat = lat
+                        t.evt.dep = 20
+                        # Refined azimuth at station
+                        azi = backazimuth(x) + 180
+                        l, q, t = rotate_to_lqt(x, y, z, inc)
+                    else
+                        t.sta.x = t.sta.y = t.sta.z = 0
+                        # Compute position which gives correct azimuth and incidence
+                        t.evt.x = 0 - sind(azi)*sind(inc)
+                        t.evt.y = 0 - cosd(azi)*sind(inc)
+                        t.evt.z = 0 - cosd(inc)
+                        l, q, t = rotate_to_lqt(x, y, z)
+                    end
+                    # Reference traces, possibly using updated azimuth above
+                    lqt_test = rotate_to_lqt(x, y, z, azi, inc)
+
+                    @test angles_are_same(l.sta.azi, lqt_test[1].sta.azi)
+                    @test angles_are_same(l.sta.inc, lqt_test[1].sta.inc)
+                    @test angles_are_same(q.sta.azi, lqt_test[2].sta.azi)
+                    @test angles_are_same(q.sta.inc, lqt_test[2].sta.inc)
+                    @test angles_are_same(t.sta.azi, lqt_test[3].sta.azi)
+                    @test angles_are_same(t.sta.inc, lqt_test[3].sta.inc)
+                    @test trace(l)[1] ≈ 1
+                    @test trace(q)[1] ≈ 2
+                    @test trace(t)[1] ≈ 3
+                end
+            end
+        end
+
+        @testset "In-place v copying" begin
+            @testset "$T" for T in (Float32, Float64)
+                x, y, z = TestHelpers.random_basis_traces(T)
+                for t in (x, y, z)
+                    push!(trace(t), rand())
+                end
+                x′, y′, z′ = deepcopy.((x, y, z))
+                azi = 360rand()
+                inc = 180rand()
+                @test rotate_to_lqt!(x′, y′, z′, azi, inc) ==
+                    rotate_to_lqt(x, y, z, azi, inc)
+                @test x != x′
+                @test y != y′
+                @test z != z′
+            end
         end
     end
 
@@ -405,11 +467,51 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
         @testset "Random" begin
             @testset "$TR" for TR in (Trace, CartTrace)
                 @testset "$T" for T in (Float32, Float64)
-                    x, y, z = TestHelpers.random_basis_traces(TR{T})
-                    @info "TODO: Add tests for `rotate_to_enz`"
+                    t1, t2, t3 = TestHelpers.random_basis_traces(TR{T})
+                    t1.sta.cha = "HH1"
+                    t2.sta.cha = "HH2"
+                    t3.sta.cha = "HH3"
+                    azi = 360rand()
+                    inc = 90rand()
+                    # With these angles, 1->Z, 2->-N, 3->E and rotate_to_enz
+                    # returns in the order E, N, Z, so we assign numbers which
+                    # will end up as E=1, N=2, Z=3.
+                    TestHelpers.project_onto_traces!(t1, t2, t3, 0, 0, [3], [-2], [1])
+                    e, n, z = rotate_to_enz(t1, t2, t3)
+
+                    @testset "Station angles" begin
+                        @test angles_are_same(e.sta.azi, 90)
+                        @test angles_are_same(e.sta.inc, 90)
+                        @test angles_are_same(n.sta.azi, 0)
+                        @test angles_are_same(n.sta.inc, 90)
+                        @test angles_are_same(z.sta.azi, 0)
+                        @test angles_are_same(z.sta.inc, 0)
+                    end
+
+                    @testset "Data" begin
+                        @test trace(e)[1] ≈ 1
+                        @test trace(n)[1] ≈ 2
+                        @test trace(z)[1] ≈ 3
+                    end
+
+                    @testset "Channel names" begin
+                        @test e.sta.cha == "HHE"
+                        @test n.sta.cha == "HHN"
+                        @test z.sta.cha == "HHZ"                        
+                    end
+
+                    @testset "In-place versus copying" begin
+                        t1′, t2′, t3′ = deepcopy.((t1, t2, t3))
+                        e′, n′, z′ = rotate_to_enz!(t1′, t2′, t3′)
+                        @test (e, n, z) == (e′, n′, z′)
+                        @test t1 != t1′
+                        @test t2 != t2′
+                        @test t3 != t3′
+                    end
                 end
             end
         end
+
     end
 
     @testset "_is_rotatable_seed_channel_name" begin
