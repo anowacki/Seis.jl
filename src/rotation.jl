@@ -230,11 +230,11 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
     z.sta.azi, z.sta.inc = azᶻ, incᶻ
 
     for (i, t) in enumerate((x, y, z))
-        code = if isapprox(t.sta.inc, 0, atol=tol)
+        code = if is_vertical(t.sta; tol=tol)
             "Z"
-        elseif isapprox(t.sta.inc, 90, atol=tol) && isapprox(t.sta.azi, 0, atol=tol)
+        elseif is_north(t; tol=tol)
             "N"
-        elseif isapprox(t.sta.inc, 90, atol=tol) && isapprox(t.sta.azi, 90, atol=tol)
+        elseif is_east(t; tol=tol)
             "E"
         else
             string(i)
