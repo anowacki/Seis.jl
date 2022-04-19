@@ -262,7 +262,9 @@ function rotate_to_azimuth_incidence(t1, t2, t3, azimuth=backazimuth(t1)+180,
 end
 
 """
-    rotate_to_lqt!(t1, t2, t3[, azimuth, [incidence]]; [tol]) -> L, Q, T
+    rotate_to_lqt!(t1, t2, t3; [tol]) -> L, Q, T
+    rotate_to_lqt!(t1, t2, t3, incidence; [tol]) -> L, Q, T
+    rotate_to_lqt!(t1, t2, t3, azimuth, incidence; [tol]) -> L, Q, T
 
 Rotate the three traces `t1`, `t2` and `t3` in place, and return them in the
 order `L`, `Q` and `T`, forming a right-handed set.
@@ -278,9 +280,10 @@ The `Q` direction is perpendicular to both, lying in the saggital plane, with
 some component in the vertical direction.
 
 If `azimuth` and `inclination` are not passed in explicitly, then they are
-determined using the event-station geometry.  This is only possible for
+determined using the event-station geometry.  This is only possible for both for
 `Trace`s in Cartesian geometry, since `inclination` is not well-determined in
-a geographic system.  For the Cartesian case, we assume straight-line paths
+a geographic system.  Geographic-system traces (the default) must pass at least
+the `inclination`.  For the Cartesian case, we assume straight-line paths
 between event and receiver.
 
 `tol` specifies the angle in ° by which the traces must be orthogonal; see
@@ -342,8 +345,7 @@ julia> l == e, q == n, t == z # Original traces are modified and returned in a p
 (true, true, true)
 ```
 """
-function rotate_to_lqt!(t1, t2, t3, azimuth=backazimuth(t1)+180, incidence=incidence(t1);
-        tol=_angle_tol(t1, t2, t3))
+function rotate_to_lqt!(t1, t2, t3, azimuth, incidence; tol=_angle_tol(t1, t2, t3))
     l, q, t = rotate_to_azimuth_incidence!(t1, t2, t3, azimuth, incidence; tol=tol)
     if _is_rotatable_seed_channel_name(l.sta.cha)
         cha = l.sta.cha
@@ -353,6 +355,11 @@ function rotate_to_lqt!(t1, t2, t3, azimuth=backazimuth(t1)+180, incidence=incid
     end
     l, q, t
 end
+
+rotate_to_lqt!(t1, t2, t3, incidence; kwargs...) =
+    rotate_to_lqt!(t1, t2, t3, backazimuth(t1)+180, incidence; kwargs...)
+rotate_to_lqt!(t1, t2, t3; kwargs...) =
+    rotate_to_lqt!(t1, t2, t3, backazimuth(t1)+180, incidence(t1); kwargs...)
 
 """
     rotate_to_lqt(t1, t2, t3[, azimuth[, incidence]; tol) -> l, q, t
