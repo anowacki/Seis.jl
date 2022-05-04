@@ -15,6 +15,7 @@ CartStation
 
 ### Accessor functions
 ```@docs
+are_orthogonal
 channel_code
 dates
 enddate
@@ -95,8 +96,15 @@ lowpass
 ```@docs
 rotate_through!
 rotate_through
+rotate_to_enz!
+rotate_to_enz
 rotate_to_gcp!
 rotate_to_gcp
+rotate_to_lqt!
+rotate_to_lqt
+rotate_to_azimuth_incidence!
+rotate_to_azimuth_incidence
+sort_traces_right_handed
 ```
 
 ### IO

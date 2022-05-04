@@ -22,3 +22,9 @@ Seis.Geographic
 Seis.Cartesian
 ```
 
+### Private functions
+
+#### 'Getters'
+```@docs
+Seis._angle_tol
+```

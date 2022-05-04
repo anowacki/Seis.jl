@@ -287,12 +287,22 @@ copying version, without.
 - Change the trace sampling interval with [`resample`](@ref) or
   [`resample!`](@ref)
 
-In addition, pairs of traces can be rotated:
+In addition, sets of traces can be rotated:
 - [`rotate_through`](@ref) and [`rotate_through!`](@ref) rotate
-  a pair of horizontal traces by a certain angle.
+  a pair of traces by a certain angle.
 - [`rotate_to_gcp`](@ref) and [`rotate_to_gcp!`](@ref) rotate pairs
   to radial (pointing away from the source at the station)
   and transverse (90° clockwise from this) components.
+- [`rotate_to_lqt`](@ref) and [`rotate_to_lqt!`](@ref) rotate triplets
+  of orthogonal compontents to longitudinal (L), transverse (T) and
+  Q (orthogonal to the others) orientations.
+- [`rotate_to_azimuth_incidence`](@ref) and
+  [`rotate_to_azimuth_incidence!`](@ref) rotate triplets of orthogonal
+  traces to arbitrary orientations.
+
+All of the above will use trace header information (coordinate of the
+event and station, and channel orientations) to automatically compute
+the directions if possible.
 
 
 ## Accessing raw trace data

@@ -1,5 +1,9 @@
 using Test, Dates
 using Seis
+using LinearAlgebra: ×, ⋅
+import Rotations
+
+using .TestHelpers
 
 @testset "Utility" begin
     @testset "Angle difference" begin
@@ -25,17 +29,117 @@ using Seis
     end
 
     @testset "_angle_tol" begin
+        @testset "Not values" begin
+            @test_throws ArgumentError Seis._angle_tol(1)
+        end
         @testset "Not ints" begin
-            @test_throws MethodError Seis._angle_tol(1)
             @test_throws MethodError Seis._angle_tol(Int)
         end
-        @testset "$T" for T in (Float32, Float64)
+        @testset "$T" for T in (Float16, Float32, Float64)
             t = Trace{T,Vector{T},Seis.Geographic{T}}(0, 1, 0)
             sta = Station{T}()
-            tol = √eps(T)
+            tol = T == Float64 ? 1000*√eps(T) :
+                  T == Float16 ? 10*√eps(T) :
+                  √eps(T)
             @test Seis._angle_tol(T) === tol
             @test Seis._angle_tol(t) === tol
             @test Seis._angle_tol(sta) === tol
+        end
+        @testset "Multiple arguments" begin
+            @test Seis._angle_tol(Float16) == Seis._angle_tol(Float32, Float64, Float16)
+            @test Seis._angle_tol(Trace{Float32}(0, 1, 0), Trace{Float64}(0, 1, 0)) ==
+                Seis._angle_tol(Float32)
+        end
+    end
+
+    @testset "_direction_vector" begin
+        for (azi, inc, correct) in ((0, 90, [0, 1, 0]), (45, 90, [√2/2, √2/2, 0]),
+                (0, 0, [0, 0, 1]))
+            @test Seis._direction_vector(azi, inc) ≈ correct
+            s = Station(azi=azi, inc=inc)
+            t = Trace(0, 1, 0)
+            t.sta = s
+            @test Seis._direction_vector(t) == Seis._direction_vector(s) ==
+                Seis._direction_vector(azi, inc)
+        end
+    end
+
+    @testset "_direction_to_azimuth_incidence" begin
+        atol = 1e-6
+        azi, inc = Seis._direction_to_azimuth_incidence([1, 0, 0])
+        @test azi ≈ 90 atol=atol
+        @test inc ≈ 90 atol=atol
+        azi, inc = Seis._direction_to_azimuth_incidence([0, -1, 0])
+        @test azi ≈ 180 atol=atol
+        @test inc ≈ 90 atol=atol
+        azi, inc = Seis._direction_to_azimuth_incidence([0, 0, -10])
+        @test inc ≈ 180 atol=atol
+    end
+
+    @testset "_directions_are_orthogonal" begin
+        @testset "$T" for T in (Float16, Float32, Float64)
+            tol = Seis._angle_tol(T)
+            v, v′ = vector_and_deviated_vector(90)
+
+            @test !Seis._directions_are_orthogonal(v, v, 0)
+
+            @test Seis._directions_are_orthogonal(v, v′, tol)
+            @test Seis._directions_are_orthogonal(v, v′, 0.1)
+            @test Seis._directions_are_orthogonal(v, v′, tol)
+
+            w, w′ = vector_and_deviated_vector(91)
+            @test !Seis._directions_are_orthogonal(w, w′, tol)
+            @test Seis._directions_are_orthogonal(w, w′, 2)
+        end
+    end
+
+    @testset "_directions_are_parallel" begin
+        @testset "$T" for T in (Float16, Float32, Float64)
+            tol = Seis._angle_tol(T)
+            v, v′ = vector_and_deviated_vector(1)
+
+            @test Seis._directions_are_parallel(v, v, 0)
+            @test Seis._directions_are_parallel(v, v, tol)
+            @test !Seis._directions_are_parallel(v, v′, 0)
+            @test !Seis._directions_are_parallel(v, v′, tol)
+            @test Seis._directions_are_parallel(v, v′, 2)
+            @test !Seis._directions_are_parallel(v, -v, tol)
+        end
+    end
+
+    @testset "_directions_are_antiparallel" begin
+        @testset "$T" for T in (Float16, Float32, Float64)
+            tol = Seis._angle_tol(T)
+            v, v′ = vector_and_deviated_vector(179)
+
+            @test Seis._directions_are_antiparallel(v, -v, 0)
+            @test Seis._directions_are_antiparallel(v, -v, tol)
+            @test !Seis._directions_are_antiparallel(v, v′, tol)
+            @test !Seis._directions_are_antiparallel(v, v′, 0)
+            @test !Seis._directions_are_antiparallel(v, v′, tol)
+            @test Seis._directions_are_antiparallel(v, v′, 2)
+            @test !Seis._directions_are_antiparallel(v, -v′, tol)
+        end
+    end
+
+    @testset "_u_dot_v_and_theta" begin
+        @testset "Known" begin
+            udotv, θ = Seis._u_dot_v_and_theta([1, 0, 0], [0, -1, 0])
+            @test udotv ≈ 0
+            @test θ ≈ 90
+
+            udotv, θ = Seis._u_dot_v_and_theta([1, 0, 0], [-1, 0, 0])
+            @test udotv ≈ -1
+            @test θ ≈ 180
+        end
+
+        @testset "Random" begin
+            θ = 10
+            u, v = vector_and_deviated_vector(θ)
+            udotv = sum(x -> x[1]*x[2], zip(u, v))
+            udotv′, θ′ = Seis._u_dot_v_and_theta(u, v)
+            @test udotv ≈ udotv′
+            @test θ ≈ θ′
         end
     end
 
@@ -69,6 +173,55 @@ using Seis
             t.sta.azi = 360rand()
             t′.sta.azi = t.sta.azi - 90rand(1:2:100)
             @test Seis.traces_are_orthogonal(t, t′) && Seis.traces_are_orthogonal(t′, t)
+
+            @testset "are_orthogonal" begin
+                @testset "Horizontals" begin
+                    @test are_orthogonal(t.sta, t′.sta)
+                    @test are_orthogonal(t′.sta, t.sta)
+                    @test are_orthogonal(t, t′)
+                    @test are_orthogonal(t′, t)
+                end
+
+                @testset "Random orientations" begin
+                    @testset "$T" for T in (Float16, Float32, Float64)
+                        x, y, z = random_basis_traces(T)
+                        # x component rotated about vector between y and z by 5°
+                        x′ = deepcopy(x)
+                        x⃗ = Seis._direction_vector(x)
+                        y⃗ = Seis._direction_vector(y)
+                        z⃗ = Seis._direction_vector(z)
+                        k⃗ = normalize(y⃗ + z⃗)
+                        x⃗′ = Seis._rotate_by_vector(x⃗, k⃗, deg2rad(5))
+                        azi, inc = Seis._direction_to_azimuth_incidence(x⃗′)
+                        x′.sta.azi, x′.sta.inc = azi, inc
+
+                        @testset "Pairs" begin
+                            @test are_orthogonal(x, y)
+                            @test are_orthogonal(y, x)
+                            @test are_orthogonal(y, z)
+                            @test are_orthogonal(z, y)
+                            @test are_orthogonal(z, x)
+                            @test are_orthogonal(x, z)
+
+                            # Different to default tolerance
+                            @test !are_orthogonal(x′, y)
+                            @test !are_orthogonal(x′, z)
+                            @test !are_orthogonal(y, x′)
+                            @test !are_orthogonal(z, x′)
+
+                            # Same within 10°
+                            @test are_orthogonal(x′, y, tol=10)
+                            @test are_orthogonal(x′, z, tol=10)
+                            @test are_orthogonal(y, x′, tol=10)
+                            @test are_orthogonal(z, x′, tol=10)
+                        end
+
+                        @testset "$([traces...].sta.cha)" for traces in trace_permutations(x, y, z)
+                            @test are_orthogonal(traces...)
+                        end
+                    end
+                end
+            end
 
             @testset "is_east" begin
                 @test is_east(Station(inc=90, azi=90))

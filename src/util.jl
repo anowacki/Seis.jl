@@ -19,11 +19,70 @@ end
 
 Return an appropriate tolerance for `x` (a floating point type, `AbstractTrace` or
 `Station`) to use in comparisons of angular quantities in °.  Angles which are `tol`°
-apart can be considered identical.
+or less apart can be considered identical.
 """
-_angle_tol(T::DataType) = √eps(T)
+_angle_tol(x) = throw(ArgumentError("must call _angle_tol with a type, Trace or Station"))
+# Numerical errors accumulate too fast for Float64, so make its tolerance larger,
+# whilst for Float16 errors are very large anyway
+_angle_tol(T::DataType) = T == Float64 ? 1000*√eps(T) : 
+                          T == Float16 ? 10*√eps(T) :
+                               √eps(T)
 _angle_tol(::Station{T}) where T = _angle_tol(T)
 _angle_tol(t::AbstractTrace) = _angle_tol(t.sta)
+
+"""
+    _angle_tol(x, y...) -> tol
+
+Return an appropriate tolerance for a set of values or types `x` and `y...`,
+which is the maximum tolerance for all arguments.
+"""
+_angle_tol(x, y...) = max(_angle_tol(x), _angle_tol(y...))
+
+"""
+    are_orthogonal(sta1, sta2[, sta3]; tol) -> ::Bool
+    are_orthogonal(t1, t2[, t3]; tol) -> ::Bool
+
+Return `true` if `Station`s `sta1` and `sta2` are orthogonal to each other, or
+if `sta1`, `sta2` and `sta3` form a mutually-orthogonal set.
+
+The comparison can also be performed on `Trace`s in the second form.
+
+Directions are considered orthogonal if they differ from 90° by less than
+`tol`°, with a default value given by [`Seis._angle_tol`](@ref).
+
+# Examples
+```
+julia> e, n, z = sample_data(:regional)[1:3];
+
+julia> are_orthogonal(e, n)
+true
+
+julia> are_orthogonal(e, n, z)
+true
+
+julia> are_orthogonal(Station(azi=0, inc=90), Station(azi=91, inc=90))
+false
+```
+"""
+function are_orthogonal(s1::Station, s2::Station; tol=_angle_tol(s1, s2))
+    u1, u2 = _direction_vector.((s1, s2))
+    _directions_are_orthogonal(u1, u2, tol)
+end
+
+are_orthogonal(t1::AbstractTrace, t2::AbstractTrace; tol=_angle_tol(t1, t2)) =
+    are_orthogonal(t1.sta, t2.sta; tol=tol)
+
+function are_orthogonal(s1::Station, s2::Station, s3::Station;
+        tol=_angle_tol(s1, s2, s3))
+    u1, u2, u3 = _direction_vector.((s1, s2, s3))
+    for (u, v) in ((u1, u2), (u2, u3), (u3, u1))
+        _directions_are_orthogonal(u, v, tol) || return false
+    end
+    true
+end
+
+are_orthogonal(t1::AbstractTrace, t2::AbstractTrace, t3::AbstractTrace; kwargs...) =
+    are_orthogonal(t1.sta, t2.sta, t3.sta; kwargs...)
 
 """
     dates(t) -> date_range
@@ -67,6 +126,8 @@ julia> t = sample_data(); t.evt.time
 julia> startdate(t)
 1981-03-29T10:39:06.66
 ```
+
+See also: [`enddate`](@ref).
 """
 startdate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b)
 
@@ -87,6 +148,8 @@ julia> t = sample_data(); t.evt.time
 julia> enddate(t)
 1981-03-29T10:39:16.65
 ```
+
+See also: [`startdate`](@ref).
 """
 enddate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b + (nsamples(t)-1)*delta)
 
@@ -120,6 +183,8 @@ julia> t = Trace(-3, 0.01, rand(20)) # Set start time to -3;
 julia> starttime(t)
 -3.0
 ```
+
+See also: [`endtime`](@ref).
 """
 starttime(t::AbstractTrace) = t.b
 
@@ -135,6 +200,8 @@ julia> t = Trace(5, 1, 3); # 3 samples at 1 Hz, starting at 5 s
 julia> endtime(t)
 7.0
 ```
+
+See also: [`starttime`](@ref).
 """
 endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
@@ -549,11 +616,115 @@ julia> trace(t)
 trace(t::AbstractTrace) = t.t
 
 """
-    traces_are_orthogonal(t1::Trace, t2::Trace; tol=eps()) -> ::Bool
+    traces_are_orthogonal(t1, t2[; tol] -> ::Bool
 
 Return `true` if the two traces `t1` and `t2` have component azimuths
 90° apart.  Set the tolerance of the comparison with `tol`.
+
+!!! note
+    This function simply compares component azimuths and ignores component
+    inclinations entirely; use [`are_orthogonal`](@ref) instead.
 """
-traces_are_orthogonal(t1::AbstractTrace, t2::AbstractTrace;
-                      tol=max(_angle_tol(t1), _angle_tol(t1))) =
+traces_are_orthogonal(t1, t2; tol=_angle_tol(t1, t2)) =
     isapprox(abs(angle_difference(t1.sta.azi, t2.sta.azi)), 90, atol=tol)
+
+"""
+    _direction_vector(azi, inc) -> [x, y, z]
+
+Return a vector containing the components of a vector pointing along azimuth `azi`
+and inclination `inc`.  Azimuth is measured from north (y) towards east (x), whilst
+inclination is measured downwards from upwards (z).  All angles in degrees.
+"""
+function _direction_vector(azi, inc)
+    sina, cosa = sincosd(azi)
+    sini, cosi = sincosd(inc)
+    StaticArrays.@SVector[sina*sini, cosa*sini, cosi]
+end
+
+"""
+    _direction_to_azimuth_incidence(u) -> azi, inc
+
+Return the azimuth `azi` and incidence `inc` in the Seis frame
+defined by the vector `u`, which need not be normalised.
+Angles are in degrees.
+"""
+function _direction_to_azimuth_incidence(u)
+    azi = mod(atand(u[1], u[2]), 360)
+    inc = atand(sqrt(u[1]^2 + u[2]^2), u[3])
+    azi, inc
+end
+
+"""
+    _direction_vector(station) -> [x, y, z]
+    _direction_vector(trace) -> [x, y, z]
+
+Return the components of a vector pointing along the channel orientation for
+a `station` or `trace`.
+"""
+_direction_vector(s::Station) = _direction_vector(s.azi, s.inc)
+_direction_vector(t::AbstractTrace) = _direction_vector(t.sta)
+
+"""
+    _directions_are_orthogonal(u, v, tol) -> ::Bool
+
+Return `true` if unit vectors `u` and `v` are orthogonal within tolerance `tol`°.
+
+!!! note
+    No check is made that `u` and `v` are normalised, nor any normalisation performed,
+    hence `u` and `v` must already be normalised when passed in.
+"""
+function _directions_are_orthogonal(u, v, tol)
+    _, θ = _u_dot_v_and_theta(u, v)
+    abs(θ - 90) <= tol
+end
+
+"""
+    _directions_are_parallel(u, v, tol) -> ::Bool
+
+Return `true` if direction unit vectors `u` and `v` point in the same direction
+within an angle of `tol`°.
+
+!!! note
+    No check is made that `u` and `v` are normalised, nor any normalisation performed,
+    hence `u` and `v` must already be normalised when passed in.
+"""
+function _directions_are_parallel(u, v, tol)
+    u == v && return true
+    _, θ = _u_dot_v_and_theta(u, v)
+    θ <= tol
+end
+
+"""
+    _directions_are_antiparallel(u, v, tol) -> ::Bool
+
+Return `true` if direction unit vectors `u` and `v` point in the opposite direction
+within an angle of `tol`°.
+
+!!! note
+    No check is made that `u` and `v` are normalised, nor any normalisation performed,
+    hence `u` and `v` must already be normalised when passed in.
+"""
+function _directions_are_antiparallel(u, v, tol)
+    u == -v && return true
+    _, θ = _u_dot_v_and_theta(u, v)
+    abs(θ - 180) <= tol
+end
+
+"""
+    _u_dot_v_and_theta(u, v) -> u⋅v, θ
+
+Return the dot product between vectors `u` and `v`, `u⋅v`, and the angle between them
+`θ` in degrees.
+
+!!! note
+    No check is made that `u` and `v` are normalised, nor any normalisation performed,
+    hence `u` and `v` must already be normalised when passed in.
+"""
+function _u_dot_v_and_theta(u, v)
+    u_dot_v = u ⋅ v
+    # Return θ in degrees since angle tolerances in degrees may be very small and
+    # lose precision in conversion to radians.
+    # Enforce u⋅v to be in range (-1, 1) to avoid errors in acos due to round-off.
+    θ = acosd(clamp(u_dot_v, -1, 1))
+    u_dot_v, θ
+end
