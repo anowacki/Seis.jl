@@ -290,7 +290,7 @@ the `inclination`.  For the Cartesian case, we assume straight-line paths
 between event and receiver.
 
 `tol` specifies the angle in ° by which the traces must be orthogonal; see
-[`traces_are_orthogonal`](@ref)
+[`are_orthogonal`](@ref)
 
 !!! note
     If `incidence` is 0° or 90° (the direction is vertical), then the choice
