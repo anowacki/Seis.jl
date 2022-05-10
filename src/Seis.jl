@@ -106,6 +106,7 @@ export
     channel_code,
     read_mseed,
     read_sac,
+    write_mseed,
     write_sac,
     # Sample data
     sample_data,
@@ -141,8 +142,6 @@ include("types.jl")
 include("conversion.jl")
 
 # File formats submodules
-include("io/SeisIOIO.jl")
-using .SeisIOIO
 include("io/SAC/SAC.jl")
 using .SAC
 include("io/Miniseed/Miniseed.jl")

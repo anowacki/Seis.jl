@@ -298,6 +298,7 @@ using .TestHelpers
                         time′ = time + Second(rand(-100:100))
                     t.evt.time = time
                     t.picks.A = (1, "A")
+                    @test origin_time(t) == time
                     @test origin_time(t, time′) == origin_time!(deepcopy(t), time′)
                     @test origin_time(t, time′, picks=false) ==
                         origin_time!(deepcopy(t), time′, picks=false)

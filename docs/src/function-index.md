@@ -111,6 +111,7 @@ sort_traces_right_handed
 ```@docs
 read_mseed
 read_sac
+write_mseed
 write_sac
 Seis.SAC.SACTrace
 ```

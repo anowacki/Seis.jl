@@ -246,15 +246,16 @@ _sacmissing(s::SAC.SACTrace, x) = _sacmissing(s[x])
 
 """
     read_mseed(file; kwargs...) -> traces
-    read_mseed(T, file; kwargs...) -> traces::Vector{T}
+    read_mseed(file, T; kwargs...) -> traces::Vector{T}
 
 Read a single miniseed file from disk and return a set of `Trace`s.
 
 The `meta.mseed_file` field of each trace contains the file name. 
 
 Optionally specify the type of trace `T <: AbstractTrace` to read.  By default,
-`T` is `Trace{Float32, Vector{Float32}, Geographic{Float32}}`, since almost all
-seismic data stored in Miniseed format is single-precision.
+`T` is `$(Miniseed.DEFAULT_TRACE)`, since almost all
+seismic data stored in Miniseed format is single-precision, and because
+the sampling rate is stored at a 64-bit float in miniSEED files.
 
 # Example
 Read a single file:
@@ -264,14 +265,8 @@ julia> read_mseed("data.mseed")
 
 Read a single file assuming a Cartesian geometry:
 ```
-julia> read_mseed(CartTrace{Float32, Vector{Float32}}, "data.mseed")
+julia> read_mseed(CartTrace{Float64, Vector{Float32}}, "data.mseed")
 ```
-
-!!! note
-    Using a float type of `Float64` for `T`  (e.g.,
-    `Trace{Float64, Vector{Float64}, Seis.Geographic{Float32}}}`)
-    will not increase the precision of data read, since the current implementation
-    of Miniseed reading converts 64-bit data into 32-bit data.
 
 
 # Handling gapped/overlapped data
@@ -281,47 +276,46 @@ split into multiple `Trace`s as each `Trace` must be continuous and evenly
 sampled.  However, data quite often contain single-sample offsets which
 are later corrected, and so these are ignored by default.
 
-Use the keyword arguments `maximum_gap` and `maximum_offset` to control
+Use the keyword argument `maximum_gap` to control
 whether or not gaps cause new traces to be created.  See below for more details.
 
 
 # Keyword arguments
 
 The following keyword arguments can be passed to `read_mseed`:
+
 - `maximum_gap`: The maximum absolute gap length in s beyond which gaps are
   no longer tolerated in a single trace.  By default this is the sampling
   interval of the trace being read.
 
   !!! note
-      Set `maximum_gap` to 0 to always split
-      miniseed files into separate traces at all gaps.
+      Set `maximum_gap` to 0 to always split miniseed files into separate
+      traces at all gaps.
 
-- `maximum_offset`: The maximum sum of all gaps beyond which gaps are no
-  longer tolerated in a single trace.  This is calculated by simply adding
-  all the gaps together.  By default this is the sampling interval.
+- `verbose`: An integer starting from 0 upwards indicating how much
+  information about the reding process should be printed to the screen.
+  The default (`0`) only produces output for errors and warnings.
 
 ---
 
-    read_mseed([T,] data::Vector{UInt8}; kwargs...) -> traces
+    read_mseed(data::Vector{UInt8}[, T]; kwargs...) -> traces
 
 Read Miniseed `data` from memory, held as a set of bytes, optionally specifying
 the type `T` of traces to return.  Keyword arguments are the same as for
 reading from a file on disk.
 """
-read_mseed(T::Type, file; kwargs...) = Miniseed.read(T, file; kwargs...)
-read_mseed(file; kwargs...) = Miniseed.read(file; kwargs...)
+read_mseed(file, T::Type=Miniseed.DEFAULT_TRACE; kwargs...) =
+    Miniseed.read(file, T; kwargs...)
 
 """
     read_mseed(pattern, dir) -> ::Vector{<:Trace}
-    read_mseed(T, pattern, dir) -> Vector{T}
+    read_mseed(pattern, dir, T) -> Vector{T}
 
 Read all files matching `pattern` in directory `dir`.
 
 See `Glob.glob` for details of pattern matching.
 
-Optionally specify the type of trace `T <: AbstractTrace` to read.  By default,
-`T` is `Trace{Float32, Vector{Float32}, Geographic{Float32}}`, since almost all
-seismic data stored in Miniseed format is single-precision.
+Optionally specify the type of trace `T <: AbstractTrace` to read.
 
 # Example
 Read all files matching `"TA.*.BHZ.mseed"` in all directories within
@@ -330,16 +324,46 @@ Read all files matching `"TA.*.BHZ.mseed"` in all directories within
 julia> read_mseed("Event_??/TA.*.BHZ.mseed", "DATA")
 ```
 """
-function read_mseed(T::Type, pattern, dir; kwargs...)
+function read_mseed(pattern, dir, T::Type=Miniseed.DEFAULT_TRACE; kwargs...)
     files = Glob.glob(pattern, dir)
     if isempty(files)
         T[]
     else
-        reduce(vcat, [read_mseed(T, file; kwargs...) for file in files])
+        reduce(vcat, [read_mseed(file, T; kwargs...) for file in files])
     end
 end
-read_mseed(pattern, dir; kwargs...) =
-    read_mseed(Miniseed.DEFAULT_TRACE, pattern, dir; kwargs...)
+
+"""
+    write_mseed(file, t; append=false, verbose=0, pubversion=1, record_length=nothing, version=2)
+
+Write the data contained in the`t` to `file` on disk
+in miniSEED format.
+
+`t` may be either a single `AbstractTrace`, or an array of `AbstractTrace`s.
+
+miniSEED files can contain data in (amongst others) in `Float32`, `Float64`
+and `Int32` format.  This function will use whatever precision or type the
+data in `t` have and attempt to write.  If for example you want to write
+a trace with a `Float64` element type to a miniSEED file with element
+type `Float32`, you should first convert the trace using [`convert`](@ref).
+(Note that since Seis does not support integer-valued trace data, it will
+not write 32-bit integer miniSEED files.)
+
+If the trace does not have an origin time set, an error is thrown.
+
+# Keyword arguments
+
+- `append::Bool`: If `true`, add the data in `t` to the end of any data already
+  existing in `file`.  miniSEED files can contain multiples traces.
+- `verbose::Integer`: Controls the verbosity of the miniSEED conversion and writing
+  process.  Larger values of `verbose` cause more output to be produced.
+- `pubversion::Integer`: The publication version of data describes whether a
+  set of data has been updated since being initially published.  Higher numbers
+  correspond to records which supercede lower versions, which start at 1 (the default).
+- `record_length::Integer`: The number of bytes used to write each miniSEED record.
+- `version`: The miniSEED file version to write.  Can be `2` (the default) or `3`.
+"""
+write_mseed(file, t; kwargs...) = Miniseed.write(file, t; kwargs...)
 
 """
     channel_code(t::Trace) -> code
