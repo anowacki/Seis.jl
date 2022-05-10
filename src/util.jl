@@ -517,8 +517,8 @@ function nsamples(t::AbstractTrace, b, e)
     e < tb && return 0
     b > te && return 0
     delta = t.delta
-    ib = b == -Inf ? 1 : clamp(ceil(Int, (b - tb)/delta) + 1, 1, n)
-    ie = e == Inf ? n : clamp(floor(Int, (e - tb)/delta) + 1, 1, n)
+    ib = b == -Inf ? 1 : clamp(ceil(Int64, (b - tb)/delta) + 1, 1, n)
+    ie = e == Inf ? n : clamp(floor(Int64, (e - tb)/delta) + 1, 1, n)
     max(0, ie - ib + 1)
 end
 
