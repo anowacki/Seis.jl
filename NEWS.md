@@ -1,5 +1,9 @@
 # Seis.jl v0.4 release notes
 
+## Julia compatibility
+- Seis.jl now supports Julia v1.6 (long-term support release) upwards.
+  Versions older than this are not supported.
+
 ## Breaking changes
 - `rotate_through[!]` now explicitly implements the partial de-facto
   previous behaviour: that the direction of the rotation is defined
@@ -9,9 +13,15 @@
   depending on the trace input order,
   and so this is technically a breaking change.  However the new
   behaviour is correct, so can now be relied upon.
-- `read_mseed` no longer supports the `maximum_offset` keyword argument.
+- `read_mseed`:
+  - no longer supports the `maximum_offset` keyword argument;
+  - moves the positional argument `T` specifying the trace type to the
+    end to better match up with `Base.read`; and
+  - now returns a `Trace{Float64, Vector{Float32}, Seis.Geographic{Float64}}`
+    by default.
 
 ## New features
+- You can now write miniSEED files with `write_mseed`.
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
 - `rotate_to_enz[!]` rotates triplets of orthogonal components to ENZ
@@ -20,12 +30,12 @@
   LQT orientation.
 - `rotate_to_azimuth_incidence[!]` rotates triplets of orthogonal components
   to arbitrary orientations.
-- You can now write miniSEED files with `write_mseed`.
+- The new single-argument `origin_time` method returns the origin time of
+  the trace (like `.evt.time` but nicer-looking).
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by
   `are_orthogonal` which works for non-horizontal pairs as well.
-
 
 ## Notable bug fixes
 - `rotate_through[!]` behaved in an inconsistent way and has been fixed
