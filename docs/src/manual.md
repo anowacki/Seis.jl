@@ -243,13 +243,32 @@ t = Trace(b, delta, data) # Fill trace with data already available
 
 ## Writing data out
 
-Seis currently supports writing in SAC format, using the [`write_sac`](@ref)
-function.
+Seis currently supports writing in SAC and miniSEED format,
+using respectively the [`write_sac`](@ref) and [`write_mseed`](@ref) functions.
 
 ```@repl example
 t = sample_data()
 write_sac(t, "outfile.sac")
+write_mseed(t, "outfile.mseed")
 ```
+
+Note that miniSEED files can contain several traces, and so you can also
+pass an array of traces to `write_mseed`:
+
+```@repl example
+t = sample_data(:local)
+write_mseed(t, "local_data.mseed")
+```
+
+!!! note
+    `Trace`s written in miniSEED format must have their `.evt.time` field
+    set, since this is required in the file format.
+
+!!! note
+    miniSEED files do not contain any information about the station or
+    event.  The only information saved is the station network, station,
+    location and channel codes and the start date of the first sample.
+
 
 
 ## Basic processing

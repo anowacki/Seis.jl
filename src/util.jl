@@ -269,6 +269,23 @@ origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
     origin_time!(deepcopy(t), time; kwargs...)
 
 """
+    origin_time(t) -> ::Dates.DateTime
+
+Return the origin time of the trace `t`, which is the point in time to
+which samples are referenced.  In this single-argument method, the trace
+`t` is unchanged.
+
+# Example
+```
+julia> t = sample_data();
+
+julia> origin_time(t)
+1981-03-29T10:38:14
+```
+"""
+origin_time(t::AbstractTrace) = t.evt.time
+
+"""
     _has_azimuth(s::Station{T}, azi; tol=_angle_tol(T)) where T -> ::Bool
 
 Return `true` if the azimuth of station `s` is within `tol` of `azi`.

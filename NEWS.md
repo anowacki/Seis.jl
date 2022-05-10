@@ -9,6 +9,7 @@
   depending on the trace input order,
   and so this is technically a breaking change.  However the new
   behaviour is correct, so can now be relied upon.
+- `read_mseed` no longer supports the `maximum_offset` keyword argument.
 
 ## New features
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
@@ -19,6 +20,7 @@
   LQT orientation.
 - `rotate_to_azimuth_incidence[!]` rotates triplets of orthogonal components
   to arbitrary orientations.
+- You can now write miniSEED files with `write_mseed`.
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by
