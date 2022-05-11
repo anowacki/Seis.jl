@@ -19,6 +19,8 @@
     end to better match up with `Base.read`; and
   - now returns a `Trace{Float64, Vector{Float32}, Seis.Geographic{Float64}}`
     by default.
+- `plot`: The deprecated `picks` keyword argument has been removed in
+  favour of `show_picks`.
 
 ## New features
 - You can now write miniSEED files with `write_mseed`.
