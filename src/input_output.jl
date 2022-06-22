@@ -6,20 +6,82 @@
     read_sac(file; terse=false, header_only=true) → ::Trace
 
 Read a single evenly-sampled SAC file and return a Trace.  If `terse` is
-`true`, then warn when auto-byteswapping files.  To read only SAC
-headers from files, returning an empty trace, set `header_only` to `true.
+`true`, then warn when auto-byteswapping files.
+
+# Example
+```
+julia> file = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac");
+
+julia> t = read_sac(file)
+Seis.Trace{Float32,Vector{Float32},Seis.Geographic{Float32}}:
+            b: 52.66
+        delta: 0.01
+ GeogStation{Float32}:
+      sta.lon: -120.0
+      sta.lat: 48.0
+      sta.sta: CDV
+      sta.azi: 0.0
+      sta.inc: 0.0
+     sta.meta: Seis.SeisDict{Symbol, Any}()
+ GeogEvent{Float32}:
+      evt.lon: -125.0
+      evt.lat: 48.0
+      evt.dep: 0.0
+     evt.time: 1981-03-29T10:38:14
+       evt.id: K8108838
+     evt.meta: Seis.SeisDict{Symbol, Any}()
+ Trace:
+        picks: 2
+         meta: SAC_lpspol => true
+               SAC_nevid => 0
+               SAC_iftype => 1
+               file => "src/../data/seis.sac"
+               SAC_idep => 50
+               SAC_iztype => 9
+               SAC_lcalda => true
+               SAC_unused18 => false
+               SAC_lovrok => true
+               SAC_norid => 0
+               SAC_ievtyp => 42
+```
+
+# Reading only headers
+To read only the headers from a SAC file, returning an empty trace, set
+`header_only` to `true`.  In this case, the trace's `meta` dictionary
+contains a pair `:SAC_npts => npts`, where `npts` is the number of
+data points as held in the SAC file's header.  Traces read from
+SAC files with `header_only` can used to overwrite the headers of
+files on disk, so long as `npts` is consistent.
 
 ---
 
-    read_sac(glob, dir; echo=true, header_only=false) → ::Vector{Trace}
+    read_sac(glob, dir; echo=false, header_only=false) → ::Vector{Trace}
 
 Read SAC files which match the patern `glob` in directory `dir` and return
 a set of `Traces`.  Add the file names to `t.meta.file`.  These are relative
 paths.
 
-File names matching the pattern are shown unless `echo` is `false`.
+File names matching the pattern are shown if `echo` is `true`.
 
+# Example
+```
+julia> dir = joinpath(dirname(pathof(Seis)), "..", "data", "local");
+
+julia> t = read_sac("*.z", dir)
+9-element Vector{Trace{Float32, Vector{Float32}, Seis.Geographic{Float32}}}:
+ Seis.Trace(.CALZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CAOZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CDAZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CDVZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CMNZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CPSZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CVAZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CVLZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+ Seis.Trace(.CVYZ..: delta=0.01017683, b=-7.690632, nsamples=3933)
+```
 ---
+
+# SAC header conventions
 
 When reading SAC files, the following conventions are observed:
 
@@ -34,27 +96,32 @@ When reading SAC files, the following conventions are observed:
 SAC headers which don't directly translate to `Trace` attributes are placed in the
 `.meta` field and have names prefixed by `"SAC_"`.
 """
-function read_sac(glob, dir; kwargs...)
-    s, f = SAC.read_wild(glob, dir; kwargs...)
+function read_sac(glob, dir; header_only=false, echo=false, kwargs...)
+    s, f = SAC.read_wild(glob, dir; header_only=header_only, echo=echo, kwargs...)
     length(s) == 0 && return Trace{Float32, Vector{Float32}, Geographic{Float32}}[]
-    t = Trace.(s)
+    t = Trace.(s; header_only=header_only)
     t.meta.file = f
     t
 end
 
-function read_sac(file; kwargs...)
-    t = Trace(SAC.read(file; kwargs...))
+function read_sac(file; header_only=false, kwargs...)
+    t = Trace(SAC.read(file; header_only=header_only, kwargs...); header_only=header_only)
     t.meta.file = file
     t
 end
 
 """
-    Trace(s::SAC.SACTrace) -> t
+    Trace(s::SAC.SACTrace; header_only=false) -> t
 
 Construct the `Trace` `t` from the `SACtr` `s`.  See [read_sac](@ref) for details
 of which headers are transferred to which fields in `t`.
+
+If `header_only` is `true`, then only the header part of the `SACTrace`
+is transferred and no data is filled in.  In this case, the `NPTS` SAC
+header will be stored in `t.meta.SAC_npts`.  (By default it is not
+stored.)
 """
-function Trace(s::SAC.SACTrace)
+function Trace(s::SAC.SACTrace; header_only=false)
     sac_trace_hdr = (:b, :e, :o, :npts, :delta, :depmin, :depmax, :depmen, :nvhdr, :leven)
     sac_evt_hdr = (:evlo, :evla, :evdp, :kevnm)
     sac_sta_hdr = (:stlo, :stla, :stel, :kstnm, :knetwk, :khole)
@@ -111,6 +178,11 @@ function Trace(s::SAC.SACTrace)
 
     # Other headers
     for sacfield in SAC.SAC_ALL_HDR
+        # Support reading NPTS when only reading the header
+        if sacfield === :npts && header_only
+            t.meta[:SAC_npts] = s[:npts]
+        end
+
         sacfield in sac_hdr && continue
         SAC.isundefined(s, sacfield) && continue
         metafield = Symbol("SAC_" * String(sacfield))

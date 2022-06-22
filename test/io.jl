@@ -24,6 +24,7 @@ import Seis.SAC
             @test t.meta.SAC_lovrok   == true
             @test t.meta.SAC_norid    == 0
             @test t.meta.SAC_ievtyp   == 42
+            @test !haskey(t.meta, :SAC_npts)
             # Origin time shifting
             @test t.b ≈ s.b - s.o
             @test t.picks.A.time ≈ s.a - s.o
@@ -35,7 +36,7 @@ import Seis.SAC
             @test length(t′) == 1
             @test t[1].t == t′[1].t
             @test t.meta.file == fmatch
-            t = read_sac("pattern which should match nothing", dir)
+            t = (@test_logs (:info,) read_sac("pattern which should match nothing", dir))
             @test isempty(t)
             @test eltype(t) == Trace{Float32, Vector{Float32}, Seis.Geographic{Float32}}
 
@@ -83,14 +84,22 @@ import Seis.SAC
             # Reading only headers
             let t = read_sac(filepath, header_only=true),
                     t2 = read_sac(filepath)
+                @test haskey(t.meta, :SAC_npts)
+                @test !haskey(t2.meta, :SAC_npts)
+                @test t.meta.SAC_npts == nsamples(t2)
                 empty!(trace(t2))
+                t.meta.SAC_npts = missing
                 @test isempty(trace(t))
                 @test t == t2
             end
             let ts = read_sac("*.sac", dirname(filepath),
                         header_only=true, echo=false),
                     t2s = read_sac("*.sac", dirname(filepath), echo=false)
+                @test all(x -> haskey(x.meta, :SAC_npts), ts)
+                @test all(x -> !haskey(x.meta, :SAC_npts), t2s)
+                @test all(x -> x[1].meta.SAC_npts == nsamples(x[2]), zip(ts, t2s))
                 empty!(trace(t2s[1]))
+                ts.meta.SAC_npts = missing
                 @test length(ts) == 1
                 @test isempty(trace(ts[1]))
                 @test ts == t2s

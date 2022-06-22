@@ -168,6 +168,21 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
                     end
                 end
             end
+
+            @testset "check_npts" begin
+                t = Trace(0, 1, [1,2,3])
+                mktempdir() do dir
+                    file = joinpath(dir, "test.sac")
+                    # Write as SAC file with three points
+                    write_sac(t, file)
+                    # Remove one point from end
+                    data = read(file)
+                    write(file, data[1:end-4])
+                    @test_throws ErrorException SAC.read(file)
+                    t′ = SAC.read(file, check_npts=false)
+                    @test t′.t == [1.f0, 2.f0]
+                end
+            end
         end
     end
 
