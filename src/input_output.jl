@@ -106,7 +106,7 @@ end
 
 function read_sac(file; header_only=false, kwargs...)
     t = Trace(SAC.read(file; header_only=header_only, kwargs...); header_only=header_only)
-    t.meta.file = file
+    file isa AbstractString && (t.meta.file = file)
     t
 end
 
@@ -193,8 +193,9 @@ end
 
 """
     write_sac(t, file; littleendian=false)
+    write_sac(t, io::IO; littleendian=false)
 
-Write the `Trace` `t` to `file` in SAC format.
+Write the `Trace` `t` to a `file` on disk or an `IO` object in SAC format.
 
 Keys in the `t.meta` field which begin with `SAC_` have their values written to
 the corresponding SAC field (e.g., `t.meta.SAC_kuser0` is written to the `KUSER0`
@@ -223,9 +224,90 @@ overwrite this data.
 By default, files are written to disk in bigendian format (MacSAC or SAC/BRIS
 convention).  Use `littleendian=true` to write in littleendian byte order
 (SAC/IRIS or SAC2000 convention).
+
+See also: [`read_sac`](@ref)
 """
 write_sac(t::AbstractTrace, file; littleendian=false) =
     SAC.write(SAC.SACTrace(t), file; byteswap=!littleendian)
+
+"""
+    write_sac_header(t, file; check=true, littleendian=false)
+
+Overwrite the equivalent SAC headers in the `Trace` `t` to `file` on disk or an IO
+object in SAC format.  This is especially useful to update the headers of files
+which have been read with `read_sac(file; header_only=true)`; see [`read_sac`](@ref).
+
+When `check` is `true` (the default), `write_sac_header` checks that
+`file` is an existing SAC trace with the correct number of points
+in the data trace, and will determine the file endianness in order
+to write the headers correctly.  However, if `check` is `false`,
+then no checks are made.  In this case, the header will be written
+in bigendian endianness (MacSAC or SAC/BRIS format) unless
+`littleendian` is `true`.  `littleendian` has no effect if `check` is `true`.
+
+This function is useful for updating headers for files on disk
+without having to read and write the entire trace from and to
+the disk.
+
+!!! warning
+    With the option `check=false`, no check is made that the header
+    written to disk matches the trace on disk in any way.  Take
+    care in particular to write a value of NPTS to the header
+    which matches the number of points in the pre-existing SAC file.
+
+    `overwrite_header` will happily overwrite the first bytes of **ANY**
+    file you point it at if `check` is `false`, making no check that
+    `file` is actually a SAC file.
+
+!!! note
+    The number of points stated in the header is taken from `t.meta.SAC_npts` if
+    it is set, in which case the length of the trace in memory is ignored.
+    If `t.meta` does not contain a `.SAC_npts` entry, then the number of data
+    points is used to fill the NPTS SAC header.
+
+See [`write_sac`](@ref) for more information on how headers are transferred from
+`Trace`s to SAC headers.
+
+# Example
+```
+julia> t = Trace(0, 1, [1, 2, 3]);
+
+julia> file, _ = mktemp();
+
+julia> write_sac(t, file);
+
+julia> t.sta.lon, t.sta.lat = 15, 20; # Update coordindates
+
+julia> trace(t2) .= 0; # Change data
+
+julia> write_sac_header(t, file);
+
+julia> t2 = read_sac(file);
+
+julia> t2.sta
+Seis.Station{Float32,Seis.Geographic{Float32}}:
+             lon: 15.0
+             lat: 20.0
+             dep: missing
+             net: missing
+             sta: missing
+             loc: missing
+             cha: missing
+            elev: missing
+             azi: missing
+             inc: missing
+            meta: 
+
+julia> trace(t2) # Data on disk are not touched
+3-element Vector{Float32}:
+ 1.0
+ 2.0
+ 3.0
+```
+"""
+function write_sac_header(t::AbstractTrace, file::AbstractString; check=true, littleendian=false)
+    SAC.overwrite_header(SAC.SACTrace(t), file; check=check, byteswap=!littleendian)
+end
 
 """
     SACTrace(t::Trace) -> s
@@ -408,7 +490,7 @@ end
 """
     write_mseed(file, t; append=false, verbose=0, pubversion=1, record_length=nothing, version=2)
 
-Write the data contained in the`t` to `file` on disk
+Write the data contained in the trace(s) `t` to `file` on disk
 in miniSEED format.
 
 `t` may be either a single `AbstractTrace`, or an array of `AbstractTrace`s.

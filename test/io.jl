@@ -104,6 +104,62 @@ import Seis.SAC
                 @test isempty(trace(ts[1]))
                 @test ts == t2s
             end
+
+            # Writing only headers
+            @testset "write_sac_header" begin
+                mktemp() do file, io
+                    t = Trace(0, 1, Float32[1,2,3])
+                    write_sac(t, file)
+                    t.sta.lon = 1
+                    write_sac_header(t, file)
+                    t′ = read_sac(file)
+                    
+                    @test trace(t) == trace(t′)
+                    @test t.sta.lon == t′.sta.lon
+
+                    push!(trace(t), 4)
+                    @test_throws ErrorException write_sac_header(t, file)
+
+                    # Wrong number of trace points
+                    write_sac_header(t, file; check=false)
+                    @test_throws ErrorException read_sac(file)
+
+                    t.meta.SAC_npts = 3
+                    write_sac_header(t, file)
+                    t″ = read_sac(file)
+                    t″.meta.file = missing
+
+                    # Trace is not written, only headers
+                    @test trace(t″) == Float32[1, 2, 3]
+                end
+
+                @testset "New file" begin
+                    file = tempname()
+                    t = sample_data()
+                    t_nodata = deepcopy(t)
+                    t_nodata.meta.SAC_npts = nsamples(t)
+                    t_nodata.meta.file = file
+                    empty!(trace(t_nodata))
+
+                    @test_throws ErrorException write_sac_header(t, file)
+
+                    @testset "Littleendian $littleendian" for littleendian in (true, false, nothing)
+                        if isnothing(littleendian)
+                            write_sac_header(t, file; check=false)
+                            @test SAC.MACHINE_IS_LITTLE_ENDIAN != SAC.file_is_native_endian(file)
+                        else
+                            write_sac_header(t, file; check=false, littleendian=littleendian)
+                            @test if SAC.MACHINE_IS_LITTLE_ENDIAN
+                                littleendian == SAC.file_is_native_endian(file)
+                            else
+                                littleendian != SAC.file_is_native_endian(file)
+                            end
+                        end
+                        t′ = read_sac(file; header_only=true)
+                        @test t′ == t_nodata
+                    end
+                end
+            end
         end
 
         # Removing null bytes from strings on read
@@ -129,6 +185,22 @@ import Seis.SAC
             # Write littleendian
             write_sac(t, file, littleendian=true)
             @test SAC.MACHINE_IS_LITTLE_ENDIAN == SAC.file_is_native_endian(file)
+        end
+
+        @testset "IOBuffer" begin
+            t = sample_data()
+            @testset "Littleendian: $littleendian" for littleendian in (true, false, nothing)
+                io = IOBuffer()
+                if isnothing(littleendian)
+                    write_sac(t, io)
+                else
+                    write_sac(t, io; littleendian=littleendian)
+                end
+                seekstart(io)
+                t′ = read_sac(io)
+                t.meta.file = missing
+                @test t == t′
+            end
         end
     end
 
