@@ -140,6 +140,10 @@ import Seis.SAC
             t.sta.cha = "IJK"
             @test channel_code(t) == "AB.CDEF.GH.IJK"
             @test channel_code(t.sta) == "AB.CDEF.GH.IJK"
+            t.sta.sta = missing
+            @test channel_code(t) == "AB..GH.IJK"
+            t.sta.net = missing
+            @test channel_code(t) == "..GH.IJK"
         end
     end
 end
