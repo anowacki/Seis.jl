@@ -14,6 +14,7 @@ using .TestHelpers
     include("synth.jl")
     include("traveltimes.jl")
     include("types.jl")
+    include("spec.jl")
     include("util.jl")
 
     @testset "IO" begin

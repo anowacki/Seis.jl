@@ -27,11 +27,13 @@ module Seis
 
 export
     # Types
+    AbstractFourierTrace,
     AbstractTrace,
     CartEvent,
     CartStation,
     CartTrace,
     Event,
+    FourierTrace,
     GeogEvent,
     GeogStation,
     Station,
@@ -41,11 +43,13 @@ export
     dates,
     enddate,
     endtime,
+    frequencies,
     is_east,
     is_north,
     is_horizontal,
     is_vertical,
     nearest_sample,
+    nfrequencies,
     nsamples,
     picks,
     startdate,
@@ -74,8 +78,10 @@ export
     differentiate,
     envelope!,
     envelope,
+    fft,
     flip!,
     flip,
+    ifft,
     integrate!,
     integrate,
     normalise!,
@@ -131,6 +137,8 @@ using Statistics: mean, covm, varm
 import Glob
 import DSP
 import DSP.resample
+import FFTW
+import FFTW: fft, ifft
 import StaticArrays
 
 import Geodesics
@@ -139,6 +147,7 @@ include("compat.jl")
 
 # All basic types
 include("types.jl")
+include("spec.jl")
 include("conversion.jl")
 
 # File formats submodules

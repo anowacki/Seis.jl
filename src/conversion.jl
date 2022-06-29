@@ -26,5 +26,12 @@ for Geom in (Cartesian, Geographic)
                 ) where {Tin,Vin,Tout,Vout}
             Trace{Tout,Vout,$geom{Tout}}($([:(getfield(t, $i)) for i in 1:fieldcount(Trace)]...))
         end
+
+        Base.convert(::Type{FourierTrace{T,V,$geom{T}}}, f::FourierTrace{T,V,$geom{T}}) where {T,V} = f
+        function Base.convert(::Type{FourierTrace{Tout,Vout,$geom{Tout}}},
+                f::FourierTrace{Tin,Vin,$geom{Tin}}
+                ) where {Tin,Tout,Vin,Vout}
+            FourierTrace{Tout,Vout,$geom{Tout}}($([:(getfield(f, $i)) for i in 1:fieldcount(FourierTrace)]...))
+        end
     end
 end

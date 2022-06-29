@@ -9,6 +9,8 @@ AbstractTrace
 CartTrace
 Event
 CartEvent
+FourierTrace
+AbstractFourierTrace
 Station
 CartStation
 ```
@@ -20,11 +22,13 @@ channel_code
 dates
 enddate
 endtime
+frequencies
 is_east
 is_north
 is_horizontal
 is_vertical
 nearest_sample
+nfrequencies
 nsamples
 picks
 startdate
@@ -62,8 +66,10 @@ differentiate!
 differentiate
 envelope!
 envelope
+fft(::Trace)
 flip!
 flip
+ifft(::FourierTrace)
 integrate!
 integrate
 normalise!

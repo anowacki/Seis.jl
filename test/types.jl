@@ -1,10 +1,7 @@
 using Test
 using Dates
 using Seis
-
-@static if VERSION < v"1.2"
-    hasproperty(d, k) = k in propertynames(d)
-end
+import FFTW
 
 @testset "Types" begin
     @testset "SeisDict" begin
@@ -338,6 +335,171 @@ end
             trace(t) .= -1
             @test all(x->all(trace(x) .== -1), ts)
         end
+        let t = Trace{Float32,Vector{Float32}}(rand(), rand(), rand(3))
+            @test t isa Trace{Float32,Vector{Float32},Seis.Geographic{Float32}}
+        end
+        @test Trace{Float32}(0, 1, 100) isa Trace{Float32,Vector{Float32},Seis.Geographic{Float32}}
+
+        @test_throws TypeError Trace{Int,Vector{Int}}(1, 1, rand(1:3, 3))
+    end
+
+    @testset "FourierTrace" begin
+        @testset "Explicit constructor" begin
+            @testset "T = $T" for T in (Float32, Float64)
+                @testset "V = Vector{Complex{$V}}" for V in (Float32, Float64)
+                    @testset "Geom = $P" for P in (Seis.Geographic{T}, Seis.Cartesian{T})
+                        b = rand(T)
+                        delta = rand(T)
+                        n = rand(1:100)
+                        tr = rand(Complex{V}, n)
+                        f = FourierTrace{T,Vector{Complex{V}},P}(;
+                            b=b, delta=delta, data=tr)
+                        @test f isa FourierTrace{T,Vector{Complex{V}},P}
+                        @test nfrequencies(f) == n
+                        @test nsamples(f) == 2*nfrequencies(f) - 1
+                        @test all(tr .== trace(f))
+                        @test f.b == b
+                        @test f.delta == delta
+                        @test f.evt isa Event{T,P}
+                        @test f.sta isa Station{T,P}
+                    end
+                end
+            end
+
+            @testset "Errors" begin
+                @test_throws UndefKeywordError FourierTrace()
+                @test_throws UndefKeywordError FourierTrace(; b=1)
+                @test_throws UndefKeywordError FourierTrace(; b=1, delta=0.1)
+                @test_throws ArgumentError FourierTrace(;
+                    b=1, delta=-0.1, data=rand(Complex{Float64}, 10))
+                @test_throws ArgumentError FourierTrace(;
+                    b=1, delta=0.1, data=rand(Complex{Float64}, 10), nsamples=-1)
+                @test_throws MethodError FourierTrace(; b=1, delta=0.1, data=1)
+            end
+
+            @testset "Default parameters" begin
+                b = 0
+                delta = 1
+                data = rand(Complex{Float32}, 10)
+                @test (FourierTrace(; b=b, delta=delta, data=data)
+                    isa FourierTrace{Float64,Vector{Complex{Float64}},Seis.Geographic{Float64}})
+
+                @testset "T = $T" for T in (Float32, Float64)
+                    @test (FourierTrace{T}(; b=0, delta=1, data=data) isa
+                        FourierTrace{T,Vector{Complex{T}},Seis.Geographic{T}})
+
+                    @testset "V = Vector{Complex{$V}}" for V in (Float32, Float64)
+                        @test (FourierTrace{T,Vector{Complex{V}}}(; b, delta, data)
+                            isa FourierTrace{T,Vector{Complex{V}},Seis.Geographic{T}})
+                    end
+                end
+            end
+        end
+
+        @testset "fft constructor" begin
+            b = rand()
+            delta = rand()
+            n = rand(1:100)
+            data = rand(n)
+            t = Trace(b, delta, data)
+            f = fft(t)
+            fdelta = 1/(n*delta)
+            @test f == FourierTrace(; b=b, nsamples=n, delta=fdelta, data=FFTW.rfft(data))
+        end
+
+        @testset "ifft constructor" begin
+            @testset "Original number of points" begin
+                f = fft(Trace(0, 1, rand(3)))
+                @test nsamples(ifft(f)) == 3
+                @test nsamples(ifft(f, 3)) == 3
+                @test nsamples(ifft(f, 2)) == 3
+            end
+
+            @testset "Modified trace length" begin
+                f = fft(Trace(0, 1, rand(12)))
+                foreach(_ -> pop!(trace(f)), 1:3)
+                @test nsamples(ifft(f)) == 6
+                @test nsamples(ifft(f, 6)) == 6
+                @test nsamples(ifft(f, 7)) == 7
+            end
+        end
+
+        @testset "Accessors" begin
+            @testset "$T" for T in (Float32, Float64)
+                @testset "Vector{$V}" for V in (Float32, Float64)
+                    b = rand(T)
+                    delta = rand(T)
+                    n = rand(5:100)
+                    data = rand(V, n)
+                    t = Trace{T,Vector{V}}(b, delta, data)
+                    f = fft(t)
+                    @test f isa FourierTrace{T,Vector{Complex{V}},Seis.Geographic{T}}
+                    @test nsamples(f) == n
+                    @test trace(f) == FFTW.rfft(data)
+                    @test nfrequencies(f) == length(trace(f)) == (n÷2) + 1
+                    @test frequencies(f) == (0:(length(trace(f)) - 1)).*f.delta
+                    @test starttime(f) == b
+                    @test eltype(f) == Complex{V}
+                end
+            end
+
+            @testset "nsamples" begin
+                @test nsamples(fft(Trace(0, 1, rand(3)))) == 3
+                @test nsamples(fft(Trace(0, 1, rand(3))), even=true) == 2
+                @test nsamples(fft(Trace(0, 1, rand(3))), even=false) == 3
+
+                @test nsamples(FourierTrace(
+                    b=0, delta=1, data=complex.(rand(3)))) == 5
+                @test nsamples(FourierTrace(
+                    b=0, delta=1, data=complex.(rand(3))), even=true) == 4
+                @test nsamples(FourierTrace(
+                    b=0, delta=1, data=complex.(rand(3))), even=false) == 5
+            end
+        end
+
+        @testset "Type" begin
+            let b = 1, delta = 1, data = complex.(rand(1:3, 100), 0)
+                f = FourierTrace(; b, delta, data)
+                @test f isa FourierTrace
+                @test typeof(f) <: Seis.AbstractFourierTrace
+                @test typeof(f) <: FourierTrace
+                @test typeof(f) == FourierTrace{Float64,Vector{Complex{Float64}},Seis.Geographic{Float64}}
+            end
+        end
+
+        @testset "Arrays" begin
+            @testset "Broadcasting as scalar" begin
+                @test nsamples.(Trace(0, 1, rand(2))) == 2
+            end
+
+            @testset "getproperty/setproperty!" begin
+                b = rand()
+                t = FourierTrace(; b=b, delta=rand(), data=complex.(rand(3)))
+                ts = [deepcopy(t) for _ in 1:3]
+                @test ts isa Vector{typeof(t)}
+                @test length(ts.b) == 3
+                @test ts.b == [b, b, b]
+                ts.delta = [1, 2, 3]
+                @test ts.delta == [1, 2, 3]
+                ts.delta = 2
+                @test ts.delta == [2, 2, 2]
+                @test ts.evt isa Vector{Event{Float64,Seis.Geographic{Float64}}}
+                ts′ = deepcopy(ts)
+                for tt in ts
+                    tt.evt.id = "A"
+                end
+                @test ts.evt.id == ["A", "A", "A"]
+                ts′.evt.id = "A"
+                @test ts == ts′
+                ts.evt = t.evt
+                @test all(x->x===t.evt, ts.evt)
+                ts .= t
+                @test all(x->x==t, ts)
+                # Test for aliasing
+                trace(t) .= -1
+                @test all(x->all(trace(x) .== -1), ts)
+            end
+        end
     end
 
     # Conversion tests for Picks are in traveltimes.jl
@@ -382,14 +544,22 @@ end
                     end
                 end
 
-                @testset "Trace $Geom" begin
-                    Vs = [Vector{TT} for TT in Ts]
+                @testset "$Tr $Geom" for Tr in (Trace, FourierTrace)
+                    Vs = if Tr == FourierTrace
+                        [Vector{Complex{TT}} for TT in Ts]
+                    else
+                        [Vector{TT} for TT in Ts]
+                    end
                     @testset "Data type $Vin -> $Vout" for Vin in Vs, Vout in Vs
-                        intype = Trace{Tin, Vin, Geom{Tin}}
-                        outtype = Trace{Tout, Vout, Geom{Tout}}
+                        intype = Tr{Tin, Vin, Geom{Tin}}
+                        outtype = Tr{Tout, Vout, Geom{Tout}}
                         vtype = eltype(Vout)
                         data = vtype[1, 2, 3]
-                        tin = intype(0, 1, data)
+                        tin = if Tr == FourierTrace
+                            intype(; b=0, delta=1, data=data)
+                        else
+                            intype(0, 1, data)
+                        end
                         tout = convert(outtype, tin)
                         @test tout isa outtype
                         @test trace(tout) isa Vout
@@ -433,6 +603,13 @@ end
             tv = view(ts, 2:3)
             @test tv.b == ts[2:3].b
             @test tv[1] == ts[2]
+        end
+
+        @testset "FourierTrace" begin
+            fs = [fft(Trace(rand(), 1, [1, 2, 3])) for _ in 1:3]
+            fv = view(fs, 2:3)
+            @test fv.b == fs[2:3].b
+            @test fv[1] == fs[2]
         end
     end
 
@@ -480,6 +657,23 @@ end
             t[3].evt.time = missing
             t[3].meta.a = 1
             test_hash_isequal(t...)
+        end
+        @testset "FourierTrace" begin
+            f = fft.([Trace(0, 1, [1,2,3]) for _ in 1:3])
+            push!(trace(f[3]), 0)
+            test_hash_isequal(f...)
+            pop!(trace(f[3]))
+            f[3].b = 1
+            test_hash_isequal(f...)
+            f[3].b = f[1].b
+            f[3].sta.lon = 1
+            test_hash_isequal(f...)
+            f[3].sta.lon = missing
+            f[3].evt.time = now()
+            test_hash_isequal(f...)
+            f[3].evt.time = missing
+            f[3].meta.a = 1
+            test_hash_isequal(f...)
         end
     end
 end
