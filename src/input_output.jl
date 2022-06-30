@@ -345,7 +345,7 @@ miniSEED files can contain data in (amongst others) in `Float32`, `Float64`
 and `Int32` format.  This function will use whatever precision or type the
 data in `t` have and attempt to write.  If for example you want to write
 a trace with a `Float64` element type to a miniSEED file with element
-type `Float32`, you should first convert the trace using [`convert`](@ref).
+type `Float32`, you should first convert the trace using `convert`.
 (Note that since Seis does not support integer-valued trace data, it will
 not write 32-bit integer miniSEED files.)
 

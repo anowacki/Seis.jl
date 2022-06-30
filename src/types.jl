@@ -563,9 +563,23 @@ function Base.getproperty(p::AbstractArray{<:Pick}, field::Symbol)
 end
 
 """
-    AbstractTrace
+    AbstractData
+
+Abstract supertype of all single-channel datatypes in Seis.jl.  An
+`AbstractData` represents some data acquired at a point where it
+makes sense to associate that recording with a channel, and where the
+recording is limited to some period of time.  However, the recording
+may be in the time or frequency domain, and need not be stationary or
+evenly-sampled.
+"""
+abstract type AbstractData end
+
+"""
+    AbstractTrace <: AbstractData
 
 Abstract type from which you should subtype if creating new types of traces.
+`AbstractTrace`s are time-domain recordings (or synthetics) at a single
+channel.
 
 # Interface
 
@@ -573,13 +587,16 @@ Abstract type from which you should subtype if creating new types of traces.
     The formal interface for `AbstractTrace`s is still a work in progress and may change with
     a minor version increment.
 
-The following methods should be defined for all `AbstractTrace`s:
+The following methods should be defined for all `AbstractTrace`s `t`:
 
 - `trace(t)`: Return the data for the trace.
 - `times(t)`: Return the time at each sample of `t`.
 - `starttime(t)`: The time of the first sample.
 - `nsamples(t)`: The number of samples in `t`.
 - `Base.eltype(t)`: The element type of the data samples.
+- `t.evt`: Return the `Event` associated with this trace.
+- `t.sta`: Return the `Station` at which this trace was recorded.
+- `t.meta`: Return a `SeisDict{Symbol,Any}` into which metadata may be placed.
 """
 abstract type AbstractTrace end
 
@@ -724,7 +741,7 @@ for T in (Cartesian, Geographic, Event, Station, Trace)
 end
 
 # Treat single objects as scalars in broadcasting
-Base.broadcastable(t::Union{AbstractTrace,Event,Station,Position,Pick}) = Ref(t)
+Base.broadcastable(t::Union{Trace,Event,Station,Position,Pick}) = Ref(t)
 
 # Element type of trace
 Base.eltype(::Trace{T,V,P}) where {T,V,P} = eltype(V)

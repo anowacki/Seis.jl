@@ -19,10 +19,11 @@ for details.
 
 ## Types
 Working with Seis requires understanding a little bit about the types
-it uses.  Fundamentally, there are three important types:
+it uses.  Fundamentally, there are four important types:
 - [`Trace`](@ref)s, which contain
 - [`Station`](@ref)s and
-- [`Event`](@ref)s.
+- [`Event`](@ref)s; and also
+- [`FourierTrace`](@ref)s, which a frequency-domain `Trace`s.
 
 Each of these types have fields which either must contain data,
 or allow data to be [`missing`](https://docs.julialang.org/en/v1/manual/missing/#missing-1).
@@ -150,6 +151,36 @@ time of a section of data with no energy source implied.
   - `mag` holds an event magnitude;
   - `quakeml` holds information about an event in QuakeML form, if any;
   - `catalog` gives the name of the catalogue for this event.
+
+### `FourierTrace`s
+
+A `FourierTrace` is a frequency-domain version of its corresponding `Trace`.
+Usually you convert an existing `Trace` to the time domain by calling
+[`fft`](@ref fft(::Trace)), and then call [`ifft`](@ref ifft(::FourierTrace))
+to convert it back.  Because `Trace`s have to have real-valued data, a
+`FourierTrace`'s data is a one-sided Fourier transform.  You access the underlying
+data in the same way as for `Traces`, with [`trace`](@ref).
+
+A `FourierTrace`'s public fields are:
+
+- `delta`, giving the frequency spacing of the data;
+- `evt`, giving the event associated with the recording;
+- `sta`, giving station information; and
+- `meta` holding other things.
+
+`evt`, `sta` and `meta` are brought across from a `FourierTrace`'s
+originating `Trace` when constructed in the usual way with `fft`,
+and they are passed back to the new trace when calling `ifft`.
+
+`FourierTrace`s have the following accessor methods of their own:
+
+- [`frequencies`](@ref) gives the frequencies of each data point;
+- [`nfrequencies`](@ref) gives the number of data points; and
+- [`nsamples`](@ref) gives the number of data points in the equivalent
+  time-domain `Trace`.
+
+Because a `FourierTrace` retains enough information about the starting
+trace to turn it back, you can also call [`starttime`](@ref) on a `FourierTrace`.
 
 
 ## Getting data in

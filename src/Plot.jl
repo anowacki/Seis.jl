@@ -77,9 +77,6 @@ function plot end
         max_samples=MAX_SAMPLES,
         show_picks=true,
         sort=nothing,
-        # TODO: Remove this when minor version bumped or a major version released.
-        # Deprecated
-        pick=nothing,
     )
 
     # Make single trace into a vector
@@ -183,7 +180,6 @@ function plot end
     end
 
     # Picks
-    show_picks = _deprecated_pick(pick, show_picks)
     if show_picks
         pick_times, pick_names = _picks_in_window(t, xlims[1], xlims[end])
         # Pick lines
@@ -277,9 +273,6 @@ section
         fill_down=nothing, fill_up=nothing,
         max_samples=MAX_SAMPLES,
         show_picks=false, zoom=1.0, absscale=nothing,
-        # TODO: Remove this when minor version bumped or a major version released.
-        # Deprecated
-        pick=nothing
     )
     # Arguments
     t = sec.args[1]
@@ -370,7 +363,6 @@ section
 
     # Picks
     ptime, py, names = Float64[], Float64[], String[]
-    show_picks = _deprecated_pick(pick, show_picks)
     if show_picks
         for (i, tt) in enumerate(t)
             for (key, (time, name)) in tt.picks
@@ -649,27 +641,6 @@ function _intercept(x1, y1, x2, y2, level)
     dy = y2 - y1
     ∇ = dy/dx
     x1 + (level - y1)/∇
-end
-
-# TODO: Remove this when minor version bumped or a major version released.
-"""
-    _deprecated_pick(pick, show_picks) -> showpicks′
-
-Obtain the value of the `picks` keyword argument, warning the user if
-`pick` is not `nothing` the first time this is called.  If `pick` is
-not unset, then return that value; otherwise use the input `picks`
-"""
-function _deprecated_pick(pick, show_picks)
-    if pick != nothing
-        if !HAVE_CALLED_PICK[]
-            @warn("The `pick` option to `plot` and `section` has been deprecated " *
-                  "in favour of `show_picks`, and will be removed in a future version.")
-            HAVE_CALLED_PICK[] = true
-        end
-        return pick
-    else
-        return show_picks
-    end
 end
 
 """
