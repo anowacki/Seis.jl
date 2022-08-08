@@ -123,7 +123,7 @@ function SACTrace(data::Vector{UInt8}, file=""; swap::Bool=true, terse::Bool=fal
     @assert off == SAC_HEADER_LEN
     if check_npts
         npts_in_file != trace.npts &&
-            error("Number of points is not as expected: have $npts_in_file" *
+            error("Number of points is not as expected: have $npts_in_file " *
                 "versus npts = $(trace.npts) in header" *
                 (file!="" ? " for file '$file'." : "."))
     end

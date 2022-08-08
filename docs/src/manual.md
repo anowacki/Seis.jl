@@ -300,6 +300,9 @@ write_mseed(t, "local_data.mseed")
     event.  The only information saved is the station network, station,
     location and channel codes and the start date of the first sample.
 
+Seis supports reading and writing only the header part of SAC files:
+- To read just headers, use `read_sac(file; header_only=true)`.
+- To write just headers, use [`write_sac_header`](@ref).
 
 
 ## Basic processing

@@ -22,8 +22,17 @@
 - `plot`: The deprecated `picks` keyword argument has been removed in
   favour of `show_picks`.
 
-## New features
+## New features and non-breaking changes
 - You can now write miniSEED files with `write_mseed`.
+- `read_sac` and `write_sac` will accept an `IO` object (like an
+  `IOBuffer`) to read and write to.
+- The `echo` keyword argument to `read_sac(glob, dir)` now defaults to
+  `false`, meaning matching files are no longer written to stdout
+  unless specifically requested.
+- `write_sac_header` will write just the header part of a `Trace` to a
+  SAC file.  This is useful when reading just the headers to update
+  header information on disk without reading and writing the whole
+  trace data.
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
 - `rotate_to_enz[!]` rotates triplets of orthogonal components to ENZ

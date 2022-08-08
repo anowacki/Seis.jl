@@ -114,6 +114,7 @@ export
     read_sac,
     write_mseed,
     write_sac,
+    write_sac_header,
     # Sample data
     sample_data,
     # Rotation

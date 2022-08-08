@@ -153,6 +153,17 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
                 @test_throws ErrorException SAC.read(tempfile)
             end
 
+            @testset "IOBuffer" begin
+                let s = SAC.SACTrace(rand(5), 1), io = IOBuffer()
+                    SAC.write(s, io)
+                    seekstart(io)
+                    s′ = SAC.SACTrace(read(io))
+                    @test s == s′
+                    seekstart(io)
+                    @test SAC.read(io) == s
+                end
+            end
+
             @testset "Headers only" begin
                 s1 = SAC.read(sample_data_path, header_only=true)
                 @test isempty(s1.t)
@@ -166,6 +177,69 @@ sample_data_path = joinpath(dirname(pathof(Seis)), "..", "data", "seis.sac")
                     else
                         @test s1[f] == s2[f]
                     end
+                end
+            end
+
+            @testset "check_npts" begin
+                t = Trace(0, 1, [1,2,3])
+                mktempdir() do dir
+                    file = joinpath(dir, "test.sac")
+                    # Write as SAC file with three points
+                    write_sac(t, file)
+                    # Remove one point from end
+                    data = read(file)
+                    write(file, data[1:end-4])
+                    @test_throws ErrorException SAC.read(file)
+                    t′ = SAC.read(file, check_npts=false)
+                    @test t′.t == [1.f0, 2.f0]
+                end
+            end
+
+            @testset "overwrite_header" begin
+                s = SAC.SACTrace([1,2,3], 1)
+                mktempdir() do dir
+                    file = joinpath(dir, "test.sac")
+                    nofile = joinpath(dir, "test2.sac")
+                    SAC.write(s, file)
+                    # Error trying to overwrite nonexistent file
+                    @test_throws ErrorException SAC.overwrite_header(s, nofile)
+                    # Error if npts does not agree with file on disk
+                    s[:npts] = 2
+                    @test_throws ErrorException SAC.overwrite_header(s, file)
+                    # New header is properly written
+                    s[:npts] = 3
+                    s[:kstnm] = "XXX"
+                    SAC.overwrite_header(s, file)
+                    @test s == SAC.read(file)
+                    # Overwriting with incorrect header is allowed when `check` is `false`
+                    s[:npts] = 2
+                    SAC.overwrite_header(s, file, check=false)
+                    @test_throws ErrorException SAC.read(file)
+                    s′ = SAC.read(file, check_npts=false)
+                    @test s′[:npts] == s[:npts]
+                    @test length(s′.t) == 3
+
+                    # Endianness
+                    file_swapped = joinpath(dir, "swapped.sac")
+                    file_native = joinpath(dir, "native.sac")
+                    s = SAC.SACTrace([1,2,3], 1)
+                    SAC.write(s, file_swapped, byteswap=true)
+                    SAC.write(s, file_native, byteswap=false)
+                    SAC.overwrite_header(s, file_swapped)
+                    s_swapped = SAC.read(file_swapped; terse=true)
+                    @test s_swapped.t == [1,2,3]
+                    @test s_swapped.npts == 3
+                    SAC.overwrite_header(s, file_native)
+                    s_native = SAC.read(file_native; terse=true)
+                    @test s_native.t == [1,2,3]
+                    @test s_native.npts == 3
+
+                    # Writing wrong endianness gives byteswapped trace; headers
+                    # are correctly detected
+                    SAC.overwrite_header(s_native, file_native; check=false, byteswap=true)
+                    s_wrong = SAC.read(file_native, terse=true)
+                    @test s_wrong.npts == 3
+                    @test s_wrong.t == bswap.(Float32[1,2,3])
                 end
             end
         end

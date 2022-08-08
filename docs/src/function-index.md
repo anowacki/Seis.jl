@@ -30,6 +30,7 @@ is_vertical
 nearest_sample
 nfrequencies
 nsamples
+origin_time
 picks
 startdate
 starttime
@@ -43,7 +44,6 @@ add_pick!
 add_picks!
 clear_picks!
 origin_time!
-origin_time
 ```
 
 ### Geometry functions
@@ -119,6 +119,7 @@ read_mseed
 read_sac
 write_mseed
 write_sac
+write_sac_header
 Seis.SAC.SACTrace
 ```
 

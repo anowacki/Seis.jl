@@ -24,6 +24,7 @@ import Seis.SAC
             @test t.meta.SAC_lovrok   == true
             @test t.meta.SAC_norid    == 0
             @test t.meta.SAC_ievtyp   == 42
+            @test !haskey(t.meta, :SAC_npts)
             # Origin time shifting
             @test t.b ≈ s.b - s.o
             @test t.picks.A.time ≈ s.a - s.o
@@ -35,7 +36,7 @@ import Seis.SAC
             @test length(t′) == 1
             @test t[1].t == t′[1].t
             @test t.meta.file == fmatch
-            t = read_sac("pattern which should match nothing", dir)
+            t = (@test_logs (:info,) read_sac("pattern which should match nothing", dir))
             @test isempty(t)
             @test eltype(t) == Trace{Float32, Vector{Float32}, Seis.Geographic{Float32}}
 
@@ -83,17 +84,81 @@ import Seis.SAC
             # Reading only headers
             let t = read_sac(filepath, header_only=true),
                     t2 = read_sac(filepath)
+                @test haskey(t.meta, :SAC_npts)
+                @test !haskey(t2.meta, :SAC_npts)
+                @test t.meta.SAC_npts == nsamples(t2)
                 empty!(trace(t2))
+                t.meta.SAC_npts = missing
                 @test isempty(trace(t))
                 @test t == t2
             end
             let ts = read_sac("*.sac", dirname(filepath),
                         header_only=true, echo=false),
                     t2s = read_sac("*.sac", dirname(filepath), echo=false)
+                @test all(x -> haskey(x.meta, :SAC_npts), ts)
+                @test all(x -> !haskey(x.meta, :SAC_npts), t2s)
+                @test all(x -> x[1].meta.SAC_npts == nsamples(x[2]), zip(ts, t2s))
                 empty!(trace(t2s[1]))
+                ts.meta.SAC_npts = missing
                 @test length(ts) == 1
                 @test isempty(trace(ts[1]))
                 @test ts == t2s
+            end
+
+            # Writing only headers
+            @testset "write_sac_header" begin
+                mktemp() do file, io
+                    t = Trace(0, 1, Float32[1,2,3])
+                    write_sac(t, file)
+                    t.sta.lon = 1
+                    write_sac_header(t, file)
+                    t′ = read_sac(file)
+                    
+                    @test trace(t) == trace(t′)
+                    @test t.sta.lon == t′.sta.lon
+
+                    push!(trace(t), 4)
+                    @test_throws ErrorException write_sac_header(t, file)
+
+                    # Wrong number of trace points
+                    write_sac_header(t, file; check=false)
+                    @test_throws ErrorException read_sac(file)
+
+                    t.meta.SAC_npts = 3
+                    write_sac_header(t, file)
+                    t″ = read_sac(file)
+                    t″.meta.file = missing
+
+                    # Trace is not written, only headers
+                    @test trace(t″) == Float32[1, 2, 3]
+                end
+
+                @testset "New file" begin
+                    file = tempname()
+                    t = sample_data()
+                    t_nodata = deepcopy(t)
+                    t_nodata.meta.SAC_npts = nsamples(t)
+                    t_nodata.meta.file = file
+                    empty!(trace(t_nodata))
+
+                    @test_throws ErrorException write_sac_header(t, file)
+
+                    @testset "Littleendian $littleendian" for littleendian in (true, false, nothing)
+                        if isnothing(littleendian)
+                            write_sac_header(t, file; check=false)
+                            @test SAC.MACHINE_IS_LITTLE_ENDIAN != SAC.file_is_native_endian(file)
+                        else
+                            write_sac_header(t, file; check=false, littleendian=littleendian)
+                            @test if SAC.MACHINE_IS_LITTLE_ENDIAN
+                                littleendian == SAC.file_is_native_endian(file)
+                            else
+                                littleendian != SAC.file_is_native_endian(file)
+                            end
+                        end
+                        t′ = read_sac(file; header_only=true)
+                        @test t′ == t_nodata
+                    end
+                end
             end
         end
 
@@ -121,6 +186,22 @@ import Seis.SAC
             write_sac(t, file, littleendian=true)
             @test SAC.MACHINE_IS_LITTLE_ENDIAN == SAC.file_is_native_endian(file)
         end
+
+        @testset "IOBuffer" begin
+            t = sample_data()
+            @testset "Littleendian: $littleendian" for littleendian in (true, false, nothing)
+                io = IOBuffer()
+                if isnothing(littleendian)
+                    write_sac(t, io)
+                else
+                    write_sac(t, io; littleendian=littleendian)
+                end
+                seekstart(io)
+                t′ = read_sac(io)
+                t.meta.file = missing
+                @test t == t′
+            end
+        end
     end
 
     @testset "Channel code" begin
@@ -131,6 +212,10 @@ import Seis.SAC
             t.sta.cha = "IJK"
             @test channel_code(t) == "AB.CDEF.GH.IJK"
             @test channel_code(t.sta) == "AB.CDEF.GH.IJK"
+            t.sta.sta = missing
+            @test channel_code(t) == "AB..GH.IJK"
+            t.sta.net = missing
+            @test channel_code(t) == "..GH.IJK"
         end
     end
 end
