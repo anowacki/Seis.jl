@@ -147,7 +147,17 @@ import Geodesics
 include("compat.jl")
 
 # All basic types
-include("types.jl")
+include("types/constants.jl")
+include("types/dict.jl")
+include("types/position.jl")
+include("types/event.jl")
+include("types/station.jl")
+include("types/pick.jl")
+include("types/abstractdata.jl")
+include("types/trace.jl")
+include("types/fouriertrace.jl")
+include("types/common.jl")
+
 include("spec.jl")
 include("conversion.jl")
 
