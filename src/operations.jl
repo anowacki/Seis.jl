@@ -579,12 +579,15 @@ DSP.resample(t::AbstractTrace; kwargs...) = resample!(deepcopy(t); kwargs...)
 
 
 """
-    taper!(t::AbstractTrace, width=0.05, form=:hanning) -> t
-    taper(t::AbstractTrace, width=0.05, form=:hamming) -> t′
+    taper!(t::AbstractTrace, width=0.05; form=:hanning, time=nothing) -> t
+    taper(t::AbstractTrace, width=0.05; form=:hamming, time=nothing) -> t′
 
 Apply a symmetric taper to each end of the data in trace `t`.
 `form` may be one of `:hanning`, `:hamming` or `:cosine`.
 `width` represents the fraction (at both ends) of the trace tapered, up to 0.5.
+
+Optionally, specify `time` as an absolute length in time for the tapering
+period (at both ends), in which case `width` is ignored.
 
 In the first form, update the trace in place and return it.  In the second form,
 return an updated copy.
@@ -601,12 +604,32 @@ julia> trace(taper(t))
   1.0
  -0.49999999999999994
   0.0
+
+julia> trace(taper(t; time=0.25))
+6-element Vector{Float64}:
+ -0.0
+  0.49999999999999994
+ -1.0
+  1.0
+ -0.49999999999999994
+  0.0
 ```
 """
-function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning)
+function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning, time=nothing)
     form in (:hamming, :hanning, :cosine) ||
         throw(ArgumentError("`form` must be one of `:hamming`, `:hanning` or `:cosine`"))
-    0 < width <= 0.5 || throw(ArgumentError("SAC.taper!: width must be between 0 and 0.5"))
+    if time !== nothing
+        iszero(time) && return t
+        times = Seis.times(t)
+        trace_length = last(times) - first(times)
+        width = time/trace_length
+        0 < width <= 0.5 ||
+            throw(ArgumentError("time must be between 0 s and half the trace length"))
+    else
+        iszero(width) && return t
+        0 < width <= 0.5 || throw(ArgumentError("width must be between 0 and 0.5"))
+    end
+
     n = max(2, floor(Int, (nsamples(t) + 1)*width))
 
     T = eltype(trace(t))

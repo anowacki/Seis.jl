@@ -57,6 +57,8 @@
 ### Convenience functions
 - The new single-argument `origin_time` method returns the origin time of
   the trace (like `.evt.time` but nicer-looking).
+- `taper[!]` optionally takes a taper length in absolute time (i.e., in
+  seconds) via the new `time` keyword argument.
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by

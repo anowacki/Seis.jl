@@ -245,9 +245,12 @@ end
             @test_throws ArgumentError taper(t, 0.6)
             @test_throws ArgumentError taper(t, -0.1)
             @test_throws ArgumentError taper(t, form=:random_symbol)
+            @test_throws ArgumentError taper(t, time=-1)
+            @test_throws ArgumentError taper(t, time=t.delta*100)
             @test trace(taper(t))[1] == trace(taper(t))[end] == 0.0
             for form in (:hamming, :hanning, :cosine)
                 @test trace(taper(t))[end÷2] == trace(t)[end÷2]
+                @test taper(t, 0.01) == taper(t, time=0.01*nsamples(t)*t.delta)
             end
             taper!(t, 0.3)
             @test t == taper(t′, 0.3)
