@@ -250,6 +250,9 @@ end
             @test trace(taper(t))[1] == trace(taper(t))[end] == 0.0
             for form in (:hamming, :hanning, :cosine)
                 @test trace(taper(t))[end÷2] == trace(t)[end÷2]
+                @test trace(taper(t, left=false))[1:end÷2] == trace(t)[1:end÷2]
+                @test trace(taper(t, right=false))[end÷2:end] == trace(t)[end÷2:end]
+                @test trace(taper(t, left=false, right=false)) == trace(t)
                 @test taper(t, 0.01) == taper(t, time=0.01*nsamples(t)*t.delta)
             end
             taper!(t, 0.3)

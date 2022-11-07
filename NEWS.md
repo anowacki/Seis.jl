@@ -59,6 +59,8 @@
   the trace (like `.evt.time` but nicer-looking).
 - `taper[!]` optionally takes a taper length in absolute time (i.e., in
   seconds) via the new `time` keyword argument.
+- A one-sided (or no-sided) taper can be applied using the new keywords
+  arguments to `taper[!]` `left` and `right`.
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by

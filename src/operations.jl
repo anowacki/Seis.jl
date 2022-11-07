@@ -579,15 +579,18 @@ DSP.resample(t::AbstractTrace; kwargs...) = resample!(deepcopy(t); kwargs...)
 
 
 """
-    taper!(t::AbstractTrace, width=0.05; form=:hanning, time=nothing) -> t
-    taper(t::AbstractTrace, width=0.05; form=:hamming, time=nothing) -> t′
+    taper!(t::AbstractTrace, width=0.05; left=true, right=true, form=:hanning, time=nothing) -> t
+    taper(t::AbstractTrace, width=0.05; left=true, right=true, form=:hamming, time=nothing) -> t′
 
-Apply a symmetric taper to each end of the data in trace `t`.
+Apply a taper to the ends of the data in trace `t`.
 `form` may be one of `:hanning`, `:hamming` or `:cosine`.
 `width` represents the fraction (at both ends) of the trace tapered, up to 0.5.
 
 Optionally, specify `time` as an absolute length in time for the tapering
 period (at both ends), in which case `width` is ignored.
+
+By default, tapering is applied to both ends.  If `left` is `false`, then only
+the 'right' end (later in time part) of the trace is tapered; and vice versa.
 
 In the first form, update the trace in place and return it.  In the second form,
 return an updated copy.
@@ -613,11 +616,24 @@ julia> trace(taper(t; time=0.25))
   1.0
  -0.49999999999999994
   0.0
+
+julia> trace(taper(t; right=false))
+6-element Vector{Float64}:
+ -0.0
+  0.49999999999999994
+ -1.0
+  1.0
+ -1.0
+  1.0
 ```
 """
-function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning, time=nothing)
+function taper!(t::AbstractTrace, width=0.05;
+        left::Bool=true, right::Bool=true, form::Symbol=:hanning, time=nothing)
     form in (:hamming, :hanning, :cosine) ||
         throw(ArgumentError("`form` must be one of `:hamming`, `:hanning` or `:cosine`"))
+
+    left == right == false && return t
+
     if time !== nothing
         iszero(time) && return t
         times = Seis.times(t)
@@ -647,8 +663,8 @@ function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning, time=nothin
         @inbounds for i in 0:n-1
             amp = f0 - f1*cos(omega*T(i))
             j = npts - i
-            t.t[i+1] *= amp
-            t.t[j] *= amp
+            t.t[i+1] *= left ? amp : one(T)
+            t.t[j] *= right ? amp : one(T)
         end
     end
 
@@ -657,8 +673,8 @@ function taper!(t::AbstractTrace, width=0.05; form::Symbol=:hanning, time=nothin
         @inbounds for i in 0:n-1
             amp = sin(omega*i)
             j = npts - i
-            t.t[i+1] *= amp
-            t.t[j] *= amp
+            t.t[i+1] *= left ? amp : one(T)
+            t.t[j] *= right ? amp : one(T)
         end
     end
 
