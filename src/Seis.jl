@@ -128,7 +128,9 @@ export
     rotate_to_gcp,
     rotate_to_lqt!,
     rotate_to_lqt,
-    sort_traces_right_handed
+    sort_traces_right_handed,
+    # Analysis
+    spectrogram
 
 using Dates
 using LinearAlgebra
@@ -137,7 +139,7 @@ using Statistics: mean, covm, varm
 
 import Glob
 import DSP
-import DSP.resample
+import DSP: resample, spectrogram
 import FFTW
 import FFTW: fft, ifft
 import StaticArrays
@@ -166,6 +168,7 @@ include("operations.jl")
 include("rotation.jl")
 include("filtering.jl")
 include("sample_data.jl")
+include("spectrogram.jl")
 
 # Functionality submodules
 include("Synth.jl")
