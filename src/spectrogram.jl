@@ -1,15 +1,22 @@
 """
-    spectrogram(trace; length=(endtime(t) - starttime(t))/20, overlap=0.5, window=nothing) -> spec
+    spectrogram(trace::AbstractTrace; length=(endtime(t) - starttime(t))/20, overlap=0.5, window=nothing, pad=nothing) -> spec
 
 Calculate the spectrogram for the data in `trace`.  Each segment is `length` s
 long, and overlaps with the next by a fraction of `overlap` (i.e., `overlap`
 must be 0 s or greater, and less than 1).  Note that these values are rounded
 to an integer number of samples in both cases.
 
+Windows are by default padded to the next length which allows for fast FFT
+computation.  Setting `pad` to a number larger than 1 pads the trace with
+zeroes to the nearest integer length which is `pad` times the trace length.
+This allows for finer sampling in frequency space.
+
 By default, no windowing of each segment (of `length` s) is performed;
 pass a windowing function or vector of amplitudes to `window` to window each
-segment before the periodogram is computed.  See [`DSP.periodogram`](@ref)
-for more details of the kind of windowing which is possible.
+segment before the periodogram is computed.  See `DSP.periodogram`
+for more details of the kind of windowing which is possible.  (The spectorgram
+calculation is performed by `DSP.spectrogram` and returns a
+`DSP.Periodograms.Spectrogram` object.)
 
 # Examples
 ```
