@@ -153,6 +153,25 @@ cut!.(t, 50, 70)
 hodogram(e, n, backazimuth=true, linecolor=[:red :black])
 ```
 
+#### Full docstring
 ```@docs
 Seis.Plot.hodogram
+```
+
+
+### `plot_spectrogram`: Spectrogram plots
+Spectrograms show the variation of frequency content with time for a
+trace.  Spectrograms can be calculated with `spectrogram`, then plotted
+using `plot_spectrogram`.
+
+#### Example
+```@example plotting
+t = sample_data()
+spec = spectrogram(t)
+plot_spectrogram(spec)
+```
+
+#### Full docstring
+```@docs
+Seis.Plot.plot_spectrogram
 ```

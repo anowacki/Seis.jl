@@ -34,15 +34,13 @@ module Plot
 
 using ..Seis
 using RecipesBase
+import DSP
 
 "Default maximum number of samples to plot at one time"
 const MAX_SAMPLES = 30_000
 "Default decimation behaviour.  May be useful to change if using a Plots backend which
 does its own decimation or doesn't suffer performance issues."
 const DECIMATE = Ref(true)
-
-"Whether or not the deprecated `pick` option has been previously used"
-const HAVE_CALLED_PICK = Ref(false)
 
 """
     plot(traces::AbstractArray{<:Seis.Trace}; kwargs...) -> ::Plots.Plot
@@ -434,6 +432,78 @@ hodogram
             linecolor --> :red
             [0, xβ], [0, yβ]
         end
+    end
+end
+
+"""
+    plot_spectrogram(trace; powscale=:linear, normalize=true, normalise=normalize, kwargs...) -> ::Plots.Plot
+
+Plot a spectrogram calculated with [`spectrogram`](@ref spectrogram(::AbstractTrace)).
+
+`powscale` determines how power is scaled before plotting.  It may take one of
+the following values:
+- `:linear`: No scaling is performed
+- `:log10`: Base-10 logarithm is taken
+- `dB`: Decibels relative to the maximum power
+
+In addition, if `powscale` is a subtype of `Function`, then that function is
+applied elementwise on the matrix of power values before plotting.
+
+If `normalize` or `normalise` are `true` (the default), power is scaled such
+that the maximum power is 1 before any further scaling is performed.
+
+Other keyword arguments are passed to Plots.
+
+See also: [`spectorgram`](@ref spectrogram(::AbstractTrace))
+"""
+plot_spectrogram
+
+@userplot Plot_spectrogram
+
+@recipe function f(plot_spec::Plot_spectrogram; normalize=nothing, normalise=nothing, powscale=:linear)
+    length(plot_spec.args) == 1 && plot_spec.args[1] isa DSP.Periodograms.Spectrogram ||
+        throw(ArgumentError("first argument must be a spectrogram"))
+    spec = only(plot_spec.args)
+
+    normalise = if isnothing(normalize) && isnothing(normalise)
+        true
+    elseif !isnothing(normalise)
+        normalise
+    elseif !isnothing(normalize)
+        normalize
+    elseif normalize != normalise
+        throw(ArgumentError("cannot supply both normalise and normalize"))
+    end
+
+    spec_times = DSP.time(spec)
+    spec_freqs = DSP.freq(spec)
+    spec_power = let power = DSP.power(spec)
+        max_power = maximum(power)
+        scale = normalise ? max_power : 1
+
+        if powscale === :linear
+            power./scale
+        elseif powscale === :log10
+            log10.(power./scale)
+        elseif powscale === :dB
+            10 .* log10.(power./max_power)
+        elseif powscale isa Function
+            powscale.(power./scale)
+        else
+            throw(ArgumentError("value of powscale not recognised"))
+        end
+    end
+
+    xlims --> extrema(DSP.time(spec))
+    ylims --> extrema(DSP.freq(spec))
+
+    xguide --> "Time / s"
+    yguide --> "Frequency / Hz"
+
+    @series begin
+        seriestype := :heatmap
+        colormap --> :turbo
+        spec_times, spec_freqs, spec_power
     end
 end
 
