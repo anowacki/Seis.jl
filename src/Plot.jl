@@ -41,9 +41,6 @@ const MAX_SAMPLES = 30_000
 does its own decimation or doesn't suffer performance issues."
 const DECIMATE = Ref(true)
 
-"Whether or not the deprecated `pick` option has been previously used"
-const HAVE_CALLED_PICK = Ref(false)
-
 """
     plot(traces::AbstractArray{<:Seis.Trace}; kwargs...) -> ::Plots.Plot
     plot(trace::AbstractTrace; kwargs...) -> ::Plots.Plot
