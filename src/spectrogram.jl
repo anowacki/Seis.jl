@@ -14,7 +14,7 @@ This allows for finer sampling in frequency space.
 By default, no windowing of each segment (of `length` s) is performed;
 pass a windowing function or vector of amplitudes to `window` to window each
 segment before the periodogram is computed.  See `DSP.periodogram`
-for more details of the kind of windowing which is possible.  (The spectorgram
+for more details of the kind of windowing which is possible.  (The spectrogram
 calculation is performed by `DSP.spectrogram` and returns a
 `DSP.Periodograms.Spectrogram` object.)
 
