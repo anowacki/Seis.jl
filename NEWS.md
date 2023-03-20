@@ -34,6 +34,8 @@
   to arbitrary orientations.
 - The new single-argument `origin_time` method returns the origin time of
   the trace (like `.evt.time` but nicer-looking).
+- Spectrograms can be calculated with `spectrogram`, and can be plotted
+  with `Seis.Plot.plot_spectrogram`.
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by
