@@ -1,7 +1,6 @@
 # Function index
 
-## Public types and functions
-### Types
+## Types
 
 ```@docs
 Trace
@@ -15,7 +14,7 @@ Station
 CartStation
 ```
 
-### Accessor functions
+## Accessor functions
 ```@docs
 are_orthogonal
 channel_code
@@ -37,7 +36,7 @@ times
 trace
 ```
 
-### Setter functions
+## Setter functions
 ```@docs
 add_pick!
 add_picks!
@@ -46,7 +45,7 @@ origin_time!
 origin_time
 ```
 
-### Geometry functions
+## Geometry functions
 ```@docs
 azimuth
 backazimuth
@@ -56,7 +55,7 @@ distance_km
 incidence
 ```
 
-### Trace operations
+## Trace operations
 ```@docs
 cut!
 cut
@@ -82,11 +81,12 @@ remove_trend!
 remove_trend
 resample!
 resample
+spectrogram(::Seis.AbstractTrace)
 taper!
 taper
 ```
 
-### Filtering
+## Filtering
 ```@docs
 bandstop!
 bandstop
@@ -98,7 +98,7 @@ lowpass!
 lowpass
 ```
 
-### Trace rotation
+## Trace rotation
 ```@docs
 rotate_through!
 rotate_through
@@ -113,7 +113,7 @@ rotate_to_azimuth_incidence
 sort_traces_right_handed
 ```
 
-### IO
+## IO
 ```@docs
 read_mseed
 read_sac
@@ -122,7 +122,7 @@ write_sac
 Seis.SAC.SACTrace
 ```
 
-### Example data sets
+## Example data sets
 ```@docs
 sample_data
 ```
