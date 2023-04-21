@@ -23,37 +23,7 @@ julia> trace(cut!(t, 2, 4))
  3.0
  4.0
 ```
-"""
-function cut!(t::AbstractTrace, b, e; allowempty=false, warn=true)
-    (b === missing || e === missing) && throw(ArgumentError("Start or end cut time is `missing`"))
-    e < b && throw(ArgumentError("End cut time ($e) is before start cut ($b)"))
-    if b > endtime(t) || e < starttime(t)
-        if !allowempty
-            b > endtime(t) &&
-                throw(ArgumentError("Beginning cut time $b is later than end of trace ($(endtime(t)))."))
-            e < starttime(t) &&
-                throw(ArgumentError("End cut time $e is earlier than start of trace (t.b)."))
-        end
-        empty!(t.t)
-        t.b = b
-        return t
-    end
-    if b < t.b
-        warn && @warn("Beginning cut time $b is before start of trace.  Setting to $(t.b).")
-        b = t.b
-    end
-    if e > endtime(t)
-        warn && @warn("End cut time $e is after end of trace.  Setting to $(endtime(t)).")
-        e = endtime(t)
-    end
-    ib = round(Int, (b - t.b)/t.delta) + 1
-    ie = nsamples(t) - round(Int, (endtime(t) - e)/t.delta)
-    t.t = t.t[ib:ie]
-    t.b += (ib - 1)*t.delta
-    t
-end
-
-"""
+---
     cut!(t, start_date, end_date; kwargs...) -> t
 
 Cut a `Trace` `t` in place between dates `start_date` and `end_date`.
@@ -85,9 +55,16 @@ julia> startdate(t), enddate(t)
 (DateTime("3000-01-01T00:00:10"), DateTime("3000-01-01T00:01:00"))
 ```
 """
-cut!(t::AbstractTrace, b::DateTime, e::DateTime; kwargs...) =
-    cut!(t, Dates.value(Dates.Nanosecond(b - t.evt.time))/1e9,
-        Dates.value(Dates.Nanosecond(e - t.evt.time))/1e9; kwargs...)
+function cut!(t::AbstractTrace, b, e; allowempty=false, warn=true)
+    ib, ie, b′, empty = _cut_time_indices(t, b, e; allowempty=allowempty, warn=warn)
+    if empty
+        empty!(trace(t))
+    else
+        t.t = t.t[ib:ie]
+    end
+    t.b = b′
+    t
+end
 
 """
     cut!(t, pick1, offset1, pick2, offset; kwargs...) -> t
@@ -141,6 +118,75 @@ times may also be specified relative to one `pick`.
 See also: [`cut!`](@ref), [`picks`](@ref).
 """
 cut(t::AbstractTrace, args...; kwargs...) = cut!(deepcopy(t), args...; kwargs...)
+
+"""
+    _cut_time_indices(t::AbstractTraceArray, b, e; warn, allowempty) -> ib, ie, b′, empty
+
+Compute the start index `ib` and end index `ie` which cuts the trace array
+`t` in time between `b` and `e`.  If the trace is empty, `empty` is `false`.
+It is otherwise `true`.  Also return the adjusted trace start time, b′.
+
+`b` and `e` may be both either time in s relative to the trace array
+event time (if any), or absolute `DateTime`s.  In the latter case,
+`t.evt.time` must be set.
+
+!!! note
+    Users implementing methods of [`cut`](@ref) and [`cut!`](@ref)
+    can make use of this function, but note that it is subject to
+    change.  [`nearest_sample`](@ref) can be used to implement the
+    logic if absolute stability is required.
+"""
+function _cut_time_indices(t::AbstractTrace, b, e; warn=true, allowempty=false)
+    (b === missing || e === missing) && throw(ArgumentError("Start or end cut time is `missing`"))
+    e < b && throw(ArgumentError("End cut time ($e) is before start cut ($b)"))
+
+    # Start and end times of trace before cutting
+    old_start = starttime(t)
+    old_end = endtime(t)
+
+    # First and last samples of data
+    istart = first(first(axes(trace(t))))
+    iend = last(first(axes(trace(t))))
+
+    # Samples at which to cut
+    ib = round(Int, (b - old_start)/t.delta) + 1
+    ib = max(ib, istart)
+    ie = iend - round(Int, (old_end - e)/t.delta)
+    ie = min(ie, iend)
+
+    new_start = old_start + (ib - istart)*t.delta
+
+    if b > endtime(t) || e < starttime(t)
+        empty = true
+        if !allowempty
+            b > endtime(t) &&
+                throw(ArgumentError("Beginning cut time $b is later than end of trace ($old_end)."))
+            e < starttime(t) &&
+                throw(ArgumentError("End cut time $e is earlier than start of trace ($old_start)."))
+        end
+        new_start = b
+    else
+        empty = false
+        if b < starttime(t)
+            warn && @warn("Beginning cut time $b is before start of trace.  Setting to $old_start.")
+            new_start = old_start
+        end
+        if e > endtime(t)
+            warn && @warn("End cut time $e is after end of trace.  Setting to $old_end.")
+        end
+    end
+
+    ib, ie, new_start, empty
+end
+
+function _cut_time_indices(t::AbstractTrace, b::DateTime, e::DateTime; warn=true, allowempty=true)
+    t.evt.time === missing && throw(ArgumentError("no event time defined for trace array"))
+    b_ms::Dates.Millisecond = b - startdate(t)
+    e_ms::Dates.Millisecond = e - startdate(t)
+    b = Dates.value(b_ms)/1000
+    e = Dates.value(e_ms)/1000
+    _cut_time_indices(t, b, e; warn, allowempty)
+end
 
 """
     decimate!(t, n; antialias=true) -> t
