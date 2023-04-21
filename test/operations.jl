@@ -15,39 +15,56 @@ end
 @testset "Operations" begin
     @testset "Cut" begin
         let t = Trace(0, 0.01, rand(200)), t′ = deepcopy(t), b = rand(), e = b+rand()
-            @test_throws ArgumentError cut(t, e, b)
-            @test_throws ArgumentError cut(t, missing, e)
-            @test cut(t, t.b, endtime(t)) == t
-            @test cut(t, t.b-1, endtime(t)+1, warn=false) == t
-            @test_logs (:warn,
-                "Beginning cut time -1.0 is before start of trace.  Setting to 0.0.")
-                (:warn,
-                "End cut time 2.99 is after end of trace.  Setting to 1.99.")
-                cut(t, t.b-1, endtime(t)+1)
-            @test_logs cut(t, t.b-1, endtime(t)+1, warn=false)
-            @test cut!(t′, b, e) == cut(t, b, e)
-            @test t′ == cut(t, b, e)
-            @test t′.b ≈ b atol=t.delta/2
-            @test endtime(t′) ≈ e atol=t.delta/2
-            time_now = now()
-            t.evt.time = time_now
-            @test cut(t, time_now, time_now + Second(1)) == cut(t, 0, 1)
-            t′ = deepcopy(t)
-            @test cut!(t′, time_now, time_now + Second(1)) ==
-                cut(t, time_now, time_now + Second(1))
-            @test t′.b == t.b
-            @test startdate(t′) == time_now
-            @test enddate(t′) == time_now + Second(1)
-            add_pick!(t, 1, "Test pick")
-            @test cut(t, "Test pick", 0, "Test pick", 0.5) == cut(t, 1, 1.5)
-            @test cut(t, "Test pick", 0, 0.5) == cut(t, 1, 1.5)
-            # Empty traces
-            @test_throws ArgumentError cut(t, endtime(t)+1, endtime(t)+2)
-            @test_throws ArgumentError cut(t, starttime(t)-2, starttime(t)-1)
-            @test nsamples(cut(t, endtime(t)+1, endtime(t)+2, allowempty=true)) == 0
-            t′ = cut(t, -2, -1, allowempty=true)
-            @test starttime(t′) == -2
-            @test endtime(t′) == -2 - t.delta
+            @testset "Missing arguments $f" for f in (cut, cut!)
+                @test_throws ArgumentError f(t, e, b)
+                @test_throws ArgumentError f(t, missing, e)
+                @test_throws ArgumentError f(t, b, missing)
+                @test_throws ArgumentError f(t, missing, missing)
+            end
+
+            @testset "Times" begin
+                @test cut(t, t.b, endtime(t)) == t
+                @test cut(t, t.b-1, endtime(t)+1, warn=false) == t
+                @test_logs(
+                    (:warn,
+                    "Beginning cut time -1.0 is before start of trace.  Setting to 0.0."),
+                    (:warn,
+                    "End cut time 2.99 is after end of trace.  Setting to 1.99."),
+                    cut(t, t.b-1, endtime(t)+1)
+                )
+                @test_logs cut(t, t.b-1, endtime(t)+1, warn=false)
+                @test cut!(t′, b, e) == cut(t, b, e)
+                @test t′ == cut(t, b, e)
+                @test t′.b ≈ b atol=t.delta/2
+                @test endtime(t′) ≈ e atol=t.delta/2
+            end
+
+            @testset "Dates" begin
+                time_now = now()
+                t.evt.time = time_now
+                @test cut(t, time_now, time_now + Second(1)) == cut(t, 0, 1)
+                t′ = deepcopy(t)
+                @test cut!(t′, time_now, time_now + Second(1)) ==
+                    cut(t, time_now, time_now + Second(1))
+                @test t′.b == t.b
+                @test startdate(t′) == time_now
+                @test enddate(t′) == time_now + Second(1)
+            end
+
+            @testset "Picks" begin
+                add_pick!(t, 1, "Test pick")
+                @test cut(t, "Test pick", 0, "Test pick", 0.5) == cut(t, 1, 1.5)
+                @test cut(t, "Test pick", 0, 0.5) == cut(t, 1, 1.5)
+            end
+
+            @testset "Empty traces" begin
+                @test_throws ArgumentError cut(t, endtime(t)+1, endtime(t)+2)
+                @test_throws ArgumentError cut(t, starttime(t)-2, starttime(t)-1)
+                @test nsamples(cut(t, endtime(t)+1, endtime(t)+2, allowempty=true)) == 0
+                t′ = cut(t, -2, -1, allowempty=true)
+                @test starttime(t′) == -2
+                @test endtime(t′) == -2 - t.delta
+            end
         end
 
         # Fail gracefully when no picks match
