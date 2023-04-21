@@ -38,6 +38,8 @@ export
     GeogStation,
     Station,
     Trace,
+    # Response types
+    PolesZerosResponse,
     # 'Getters'
     are_orthogonal,
     dates,
@@ -128,7 +130,9 @@ export
     rotate_to_gcp,
     rotate_to_lqt!,
     rotate_to_lqt,
-    sort_traces_right_handed
+    sort_traces_right_handed,
+    # Response
+    frequency_response
 
 using Dates
 using LinearAlgebra
@@ -147,6 +151,7 @@ import Geodesics
 include("compat.jl")
 
 # All basic types
+include("response.jl")
 include("types.jl")
 include("spec.jl")
 include("conversion.jl")
