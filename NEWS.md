@@ -23,6 +23,12 @@
   favour of `show_picks`.
 
 ## New features and non-breaking changes
+### New types
+- There is a new `FourierTrace` type, which contains trace data
+  in the frequency domain.  Most operations work on this type as for
+  time-series `Trace` data.  Get a `FourierTrace` from a `Trace` by calling
+  `fft` on it, and go back with `ifft`.
+### IO
 - You can now write miniSEED files with `write_mseed`.
 - `read_sac` and `write_sac` will accept an `IO` object (like an
   `IOBuffer`) to read and write to.
@@ -33,6 +39,8 @@
   SAC file.  This is useful when reading just the headers to update
   header information on disk without reading and writing the whole
   trace data.
+### Trace operations
+- `resample[!]` can resample traces to arbitrary sampling intervals.
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
 - `rotate_to_enz[!]` rotates triplets of orthogonal components to ENZ
@@ -41,10 +49,11 @@
   LQT orientation.
 - `rotate_to_azimuth_incidence[!]` rotates triplets of orthogonal components
   to arbitrary orientations.
-- The new single-argument `origin_time` method returns the origin time of
-  the trace (like `.evt.time` but nicer-looking).
 - Spectrograms can be calculated with `spectrogram`, and can be plotted
   with `Seis.Plot.plot_spectrogram`.
+### Convenience functions
+- The new single-argument `origin_time` method returns the origin time of
+  the trace (like `.evt.time` but nicer-looking).
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by
