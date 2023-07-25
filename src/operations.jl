@@ -472,11 +472,11 @@ normalise(t::AbstractTrace, args...; kwargs...) =
     normalise!(deepcopy(t), args...; kwargs...)
 @doc (@doc normalise!) normalise
 
-LinearAlgebra.normalize!(t::AbstractTrace, args...; kwargs...) =
-    normalise!(t, args..., kwargs...)
+LinearAlgebra.normalize!(t::AbstractTrace, val::Real=1) =
+    normalise!(t, val)
 @doc (@doc normalise!) normalize!
-LinearAlgebra.normalize(t::AbstractTrace, args...; kwargs...) =
-    normalise(t, args...; kwargs...)
+LinearAlgebra.normalize(t::AbstractTrace, val::Real=1) =
+    normalise(t, val)
 @doc (@doc normalise) normalize
 
 """
