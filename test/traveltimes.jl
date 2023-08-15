@@ -162,24 +162,39 @@ using Seis
     end
 
     @testset "add_pick!" begin
-        let t = Trace(0, 1, 1), p = Seis.Pick(1, "A")
-            add_pick!(t, p)
-            @test haskey(t.picks, :A)
-            @test t.picks.A == p
-            add_pick!(t, p)
-            @test haskey(t.picks, :A_1)
-            @test t.picks.A_1 == p
+        @testset "Relative time" begin
+            let t = Trace(0, 1, 1), p = Seis.Pick(1, "A")
+                add_pick!(t, p)
+                @test haskey(t.picks, :A)
+                @test t.picks.A == p
+                add_pick!(t, p)
+                @test haskey(t.picks, :A_1)
+                @test t.picks.A_1 == p
 
-            add_pick!(t, p, "B")
-            @test haskey(t.picks, :B)
-            @test t.picks.B == Seis.Pick(p.time, "B")
-            add_pick!(t, p, missing)
+                add_pick!(t, p, "B")
+                @test haskey(t.picks, :B)
+                @test t.picks.B == Seis.Pick(p.time, "B")
+                add_pick!(t, p, missing)
+                @test haskey(t.picks, 1)
+                @test t.picks[1] == Seis.Pick(p.time)
+
+                add_pick!(t, p, missing)
+                @test haskey(t.picks, 2)
+                @test t.picks[2] == t.picks[1]
+            end
+        end
+
+        @testset "DateTime" begin
+            t = Trace(0, 1, 0)
+            t.evt.time = DateTime(3000)
+            @test add_pick!(t, DateTime(3000, 1, 1, 0, 0, 1, 360)) == Seis.Pick(time=1.36, name=missing)
             @test haskey(t.picks, 1)
-            @test t.picks[1] == Seis.Pick(p.time)
+            @test t.picks[1] == Seis.Pick(time=1.36, name=missing)
 
-            add_pick!(t, p, missing)
-            @test haskey(t.picks, 2)
-            @test t.picks[2] == t.picks[1]
+            @test add_pick!(t, DateTime(2999, 12, 31, 23, 59, 50), "B") == Seis.Pick(time=-10, name="B")
+            @test t.picks[:B] == Seis.Pick(time=-10.0, name="B")
+
+            @test picks(t) == [Seis.Pick(-10.0, "B"), Seis.Pick(1.36)]
         end
     end
 end
