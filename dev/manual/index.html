@@ -104,26 +104,26 @@ julia&gt; t = get_data(code=&quot;IU.ANMO.00.BH?&quot;, starttime=&quot;2018-02-
  Seis.Trace(IU.ANMO.00.BH1: delta=0.05, b=0.0, nsamples=72000)
  Seis.Trace(IU.ANMO.00.BH2: delta=0.05, b=0.0, nsamples=72000)
  Seis.Trace(IU.ANMO.00.BHZ: delta=0.05, b=0.0, nsamples=72000)</code></pre></li></ul><h2 id="Creating-data-from-scratch"><a class="docs-heading-anchor" href="#Creating-data-from-scratch">Creating data from scratch</a><a id="Creating-data-from-scratch-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-data-from-scratch" title="Permalink"></a></h2><p><a href="../function-index/#Seis.Trace"><code>Trace</code></a>s can be constructed using the constructors.  For example:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; b = 0</code><code class="nohighlight hljs ansi" style="display:block;">0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; delta = 0.01</code><code class="nohighlight hljs ansi" style="display:block;">0.01</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; data = randn(1000)</code><code class="nohighlight hljs ansi" style="display:block;">1000-element Vector{Float64}:
-  0.2522385615631127
- -0.9548588474811861
-  1.319063128387311
-  0.1232359124346126
-  0.5900341034492437
- -0.05530230977467155
- -1.9950296644784058
- -0.8948965777353448
- -1.105876388233998
-  0.10726755181788661
+ -0.8750544047108882
+  0.2563604303227022
+ -0.09573346194312406
+ -1.5139926510716168
+ -0.31265665353746547
+ -1.2119162966573738
+ -1.3486657117569993
+  0.15880110231983752
+  0.2592300134607166
+ -0.698552073573102
   ⋮
-  0.7117198828839384
- -1.1113984295643888
- -1.0157412710220777
- -0.14860204514123698
-  1.95813256297974
-  1.8341442934890357
- -0.3797627591726425
- -0.0564915461210068
-  2.876648223742317</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t = Trace(b, delta, data) # Fill trace with data already available</code><code class="nohighlight hljs ansi" style="display:block;">Seis.Trace{Float64,Vector{Float64},Seis.Geographic{Float64}}:
+  0.47305672891096023
+ -0.2526571282718428
+  1.1906429718918528
+  2.203941174821913
+ -2.925453468376778
+ -1.8402436969162586
+ -0.19731860622668426
+  0.050828150233657596
+  0.24457619425221808</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t = Trace(b, delta, data) # Fill trace with data already available</code><code class="nohighlight hljs ansi" style="display:block;">Seis.Trace{Float64,Vector{Float64},Seis.Geographic{Float64}}:
             b: 0.0
         delta: 0.01
  GeogStation{Float64}:
@@ -276,4 +276,4 @@ Closest candidates are:
      evt.meta: Seis.SeisDict{Symbol, Any}()
  Trace:
         picks: 0
-         meta:</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t.sta.x, t.sta.y, t.sta.z = 101, -35, 12</code><code class="nohighlight hljs ansi" style="display:block;">(101, -35, 12)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t.evt.x, t.evt.y, t.evt.z = 12, 14, -100</code><code class="nohighlight hljs ansi" style="display:block;">(12, 14, -100)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; distance_direct(t)</code><code class="nohighlight hljs ansi" style="display:block;">151.21507861321237</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types">Geometry type hierarchy and custom geometry types</a><a id="Geometry-type-hierarchy-and-custom-geometry-types-1"></a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a id="[Seis.Geographic](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a id="[Seis.Cartesian](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 25 July 2023 10:45">Tuesday 25 July 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+         meta:</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t.sta.x, t.sta.y, t.sta.z = 101, -35, 12</code><code class="nohighlight hljs ansi" style="display:block;">(101, -35, 12)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t.evt.x, t.evt.y, t.evt.z = 12, 14, -100</code><code class="nohighlight hljs ansi" style="display:block;">(12, 14, -100)</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; distance_direct(t)</code><code class="nohighlight hljs ansi" style="display:block;">151.21507861321237</code></pre><h3 id="Geometry-type-hierarchy-and-custom-geometry-types"><a class="docs-heading-anchor" href="#Geometry-type-hierarchy-and-custom-geometry-types">Geometry type hierarchy and custom geometry types</a><a id="Geometry-type-hierarchy-and-custom-geometry-types-1"></a><a class="docs-heading-anchor-permalink" href="#Geometry-type-hierarchy-and-custom-geometry-types" title="Permalink"></a></h3><p><code>Geographic</code> and <code>Cartesian</code> are subtypes of <a href="../internal-index/#Seis.Position"><code>Seis.Position</code></a>. This means that if you want to define your own coordinate system, you are able to do so by subtyping <code>Seis.Position</code> and you can then write methods taking a <code>Trace{T, V, P} where {T, V, P}</code>, where <code>P</code> is your new type.  These will replace the generic methods allowing special processing to be done in cases where the generic calculations need to be changed, without requiring writing duplicate methods where they do not. An example of a different coordinate system might be when stations have <a href="http://geoweb.princeton.edu/people/simons/earthscopeoceans/">positions which vary in time</a>.</p><h3 id="[Seis.Geographic](@ref)"><a class="docs-heading-anchor" href="#[Seis.Geographic](@ref)"><a href="../internal-index/#Seis.Geographic"><code>Seis.Geographic</code></a></a><a id="[Seis.Geographic](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Geographic](@ref)" title="Permalink"></a></h3><h3 id="[Seis.Cartesian](@ref)"><a class="docs-heading-anchor" href="#[Seis.Cartesian](@ref)"><a href="../internal-index/#Seis.Cartesian"><code>Seis.Cartesian</code></a></a><a id="[Seis.Cartesian](@ref)-1"></a><a class="docs-heading-anchor-permalink" href="#[Seis.Cartesian](@ref)" title="Permalink"></a></h3></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../">« Home</a><a class="docs-footer-nextpage" href="../plotting/">Plotting »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Tuesday 15 August 2023 20:33">Tuesday 15 August 2023</span>. Using Julia version 1.9.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
