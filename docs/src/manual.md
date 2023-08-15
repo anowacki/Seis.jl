@@ -514,6 +514,15 @@ t.picks
 Note that the `:S` pick is overwritten.  Note also here that by not providing
 a name for the pick, its name defaults to `missing`.
 
+Picks can also be set using [`add_picks!`](@ref), which can take a
+`Dates.DateTime` to set a pick in absolute time rather than a time relative
+to the trace origin.
+
+```@repl example
+using Dates
+add_pick!(t, DateTime("1981-03-29T10:39:10"), "Coffee time")
+```
+
 ### Removing picks
 Remove picks as usual for `Dict`-like collections of things, with `delete!`:
 
