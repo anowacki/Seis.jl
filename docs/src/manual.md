@@ -280,7 +280,7 @@ using respectively the [`write_sac`](@ref) and [`write_mseed`](@ref) functions.
 ```@repl example
 t = sample_data()
 write_sac(t, "outfile.sac")
-write_mseed(t, "outfile.mseed")
+write_mseed("outfile.mseed", t)
 ```
 
 Note that miniSEED files can contain several traces, and so you can also
@@ -288,7 +288,7 @@ pass an array of traces to `write_mseed`:
 
 ```@repl example
 t = sample_data(:local)
-write_mseed(t, "local_data.mseed")
+write_mseed("local_data.mseed", t)
 ```
 
 !!! note
@@ -299,6 +299,13 @@ write_mseed(t, "local_data.mseed")
     miniSEED files do not contain any information about the station or
     event.  The only information saved is the station network, station,
     location and channel codes and the start date of the first sample.
+
+!!! note
+    The order of arguments (file name and trace object) is different
+    between `write_mseed` and `write_sac` for legacy reasons.  In a
+    future major update the functions will all have the same order as
+    `Base.write` (i.e., file name or `IO` object first, then trace
+    object).
 
 Seis supports reading and writing only the header part of SAC files:
 - To read just headers, use `read_sac(file; header_only=true)`.
