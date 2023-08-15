@@ -18,12 +18,27 @@ channels are horizontals.
 The optional keyword argument `tol` specifies the angle in ° by which
 the traces must be orthogonal; see [`are_orthogonal`](@ref).
 
+# Example
+```
+julia> e, n = sample_data(:local)[1:2];
+
+julia> rotate_through!(n, e, 20); # Rotate 20° clockwise looking down
+
+julia> n.sta.azi, e.sta.azi
+(20.0f0, 110.0f0)
+
+julia> rotate_through!(e, n, 20); # Rotate in opposite direction
+
+julia> n.sta.azi, e.sta.azi
+(6.5939315f-7, 90.0f0)
+```
+
 See also: [`rotate_through`](@ref), [`rotate_to_gcp!`](@ref),
 [`rotate_to_azimuth_incidence!`](@ref)
 """
 function rotate_through!(t1::AbstractTrace, t2::AbstractTrace, phi; tol=_angle_tol(t1, t2))
     T = promote_type(eltype(t1), eltype(t2))
-    if !are_orthogonal(t1, t2)
+    if !are_orthogonal(t1, t2; tol=tol)
         throw(ArgumentError("traces must be orthogonal"))
     elseif nsamples(t1) != nsamples(t2)
         throw(ArgumentError("traces must be same length"))
@@ -173,7 +188,7 @@ altered, and the returned traces point to the same data as the input traces, but
 possibly in a different order.  Use [`rotate_to_azimuth_incidence`](@ref) to return
 copies of the traces and leave the original traces unmodified.
 
-See also: [`rotate_to_azimuth_incidence!`](@ref), [`rotate_to_gcp!`](@ref),
+See also: [`rotate_to_azimuth_incidence`](@ref), [`rotate_to_gcp!`](@ref),
 [`rotate_to_lqt!`](@ref), [`rotate_through!`](@ref)
 """
 function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::AbstractTrace,
@@ -185,7 +200,7 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
     # Check traces
     if any(x -> x.sta.azi === missing || x.sta.inc === missing, (t1, t2, t3))
         throw(ArgumentError("traces must contain station orientation information"))
-    elseif !are_orthogonal(t1, t2, t3)
+    elseif !are_orthogonal(t1, t2, t3; tol=tol)
         throw(ArgumentError("traces must be orthogonal"))
     elseif !(axes(trace(t1)) == axes(trace(t2)) == axes(trace(t3)))
         throw(ArgumentError("traces must all be the same length"))
@@ -195,7 +210,7 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
         throw(ArgumentError("traces must all have the same start time and sampling interval"))
     end
     # Sort traces so that we start with a right-handed set
-    x, y, z, perm = sort_traces_right_handed(t1, t2, t3)
+    x, y, z, perm = sort_traces_right_handed(t1, t2, t3; tol=tol)
 
     # Component directions
     uˣ, uʸ, uᶻ = _direction_vector.((x, y, z))

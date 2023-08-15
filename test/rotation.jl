@@ -16,7 +16,14 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
     @testset "rotate_through" begin
         @testset "Argument checking" begin
             @testset "Not orthogonal" begin
-                @test_throws ArgumentError rotate_through(sample_data(), sample_data(), 10)
+                @testset "Default tolerance" begin
+                    @test_throws ArgumentError rotate_through(sample_data(), sample_data(), 10)
+                end
+                @testset "Custom tolerance" begin
+                    e, n, z = sample_data(:local)[1:3]
+                    e.sta.azi += 1e-5
+                    @test_throws ArgumentError rotate_through(e, n, 10, tol=1e-6)
+                end
             end
             @testset "Different samples" begin
                 e, n = sample_data(:local)[1:2]
@@ -203,7 +210,12 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
             @testset "Orthogonal" begin
                 e′ = deepcopy(e)
                 e′.sta.azi += 5
-                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+                @testset "Default tolerance" begin
+                    @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+                end
+                @testset "Custom tolerance" begin
+                    @test length(rotate_to_azimuth_incidence(e′, n, z, 0, 0, tol=90)) == 3
+                end
             end
 
             @testset "Trace data" begin
