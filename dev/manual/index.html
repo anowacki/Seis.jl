@@ -104,26 +104,26 @@ julia&gt; t = get_data(code=&quot;IU.ANMO.00.BH?&quot;, starttime=&quot;2018-02-
  Seis.Trace(IU.ANMO.00.BH1: delta=0.05, b=0.0, nsamples=72000)
  Seis.Trace(IU.ANMO.00.BH2: delta=0.05, b=0.0, nsamples=72000)
  Seis.Trace(IU.ANMO.00.BHZ: delta=0.05, b=0.0, nsamples=72000)</code></pre></li></ul><h2 id="Creating-data-from-scratch"><a class="docs-heading-anchor" href="#Creating-data-from-scratch">Creating data from scratch</a><a id="Creating-data-from-scratch-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-data-from-scratch" title="Permalink"></a></h2><p><a href="../function-index/#Seis.Trace"><code>Trace</code></a>s can be constructed using the constructors.  For example:</p><pre><code class="language-julia-repl hljs" style="display:block;">julia&gt; b = 0</code><code class="nohighlight hljs ansi" style="display:block;">0</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; delta = 0.01</code><code class="nohighlight hljs ansi" style="display:block;">0.01</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; data = randn(1000)</code><code class="nohighlight hljs ansi" style="display:block;">1000-element Vector{Float64}:
-  0.5720129455451602
- -0.058151352966005806
- -0.9449333269890912
- -0.5710057607834418
-  0.2906241836722716
- -2.1466592190747322
-  0.5397576729018335
-  0.965190867304574
- -0.5506596551075468
-  0.6870355896297164
+ -1.0103253450707919
+  0.07711896134206012
+  0.034434379487304
+  0.4844468809703593
+  0.519645532998319
+  0.8341878502956079
+  0.5687972867799115
+ -0.8659207012112278
+  0.14309377134901982
+ -0.36898667780932537
   ⋮
-  0.1626776899889632
-  0.6327865058871851
- -1.2136302811458888
- -0.42089133312160604
-  0.10306361954404011
- -0.4611198346052979
- -0.901513116570383
-  0.6799764049896612
-  0.1843069287534724</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t = Trace(b, delta, data) # Fill trace with data already available</code><code class="nohighlight hljs ansi" style="display:block;">Seis.Trace{Float64,Vector{Float64},Seis.Geographic{Float64}}:
+  1.1871089989875045
+  0.9382030707688875
+ -0.15859105307622456
+ -1.5520542206896704
+  0.3412451221045532
+  0.7712309073979822
+ -0.4102486270036607
+ -0.6046762247242888
+ -0.7041663391473858</code><br/><code class="language-julia-repl hljs" style="display:block;">julia&gt; t = Trace(b, delta, data) # Fill trace with data already available</code><code class="nohighlight hljs ansi" style="display:block;">Seis.Trace{Float64,Vector{Float64},Seis.Geographic{Float64}}:
             b: 0.0
         delta: 0.01
  GeogStation{Float64}:
