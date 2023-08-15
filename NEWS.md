@@ -51,6 +51,9 @@
   to arbitrary orientations.
 - Spectrograms can be calculated with `spectrogram`, and can be plotted
   with `Seis.Plot.plot_spectrogram`.
+### Picks
+- `add_picks!` now accepts an absolute time (a `DateTime`) at which to
+  record a pick
 ### Convenience functions
 - The new single-argument `origin_time` method returns the origin time of
   the trace (like `.evt.time` but nicer-looking).
