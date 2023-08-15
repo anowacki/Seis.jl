@@ -1,10 +1,10 @@
 # Functions relating to travel times and picks
 
 """
-    add_pick!(t, time [, name=missing]) -> (time, name)
+    add_pick!(t, time [, name=missing]) -> ::Seis.Pick
 
 Add an arrival time pick to the Trace `t`, ensuring existing picks are not
-overwritten.
+overwritten, and return the `Seis.Pick` object added to the trace
 
 If `name` is not `missing`, then the key of this pick will be `Symbol(name)`,
 unless another pick with the same key already exists.  In that case, the name
@@ -67,6 +67,44 @@ function add_pick!(t::AbstractTrace, time, name=missing)
 end
 
 """
+    add_pick!(t, date::Dates.AbstractDateTime[, name=missing]) -> ::Seis.Pick
+
+Add a time pick based on absolute time, given as a `DateTime` or another
+`AbstractDateTime`.
+
+!!! note
+    The pick is converted to relative time, so does not remain independent of
+    any changes to `t.b` or `t.evt.time` if you update the trace manually.
+    Use [`origin_time!`](@ref) to change the origin time whilst preserving
+    the absolute time of picks.
+
+# Example
+```
+julia> t = sample_data();
+
+julia> using Dates
+
+julia> add_pick!(t, DateTime("1981-03-29T10:39:10"), "Coffee time")
+Seis.Pick{Float32}(time=56.0, name="Coffee time")
+
+julia> picks(t)
+3-element Vector{Seis.Pick{Float32}}:
+ Seis.Pick{Float32}(time=53.670002, name=missing)
+ Seis.Pick{Float32}(time=56.0, name="Coffee time")
+ Seis.Pick{Float32}(time=60.980003, name=missing)
+```
+"""
+function add_pick!(t::AbstractTrace, date::Dates.AbstractDateTime, name=missing)
+    if origin_time(t) === missing
+        throw(ArgumentError("origin time must be set for trace to add a pick by date"))
+    end
+
+    time_ms::Dates.Millisecond = date - origin_time(t)
+    time = Dates.value(time_ms)/1000
+    add_pick!(t, time, name)
+end
+
+"""
     add_pick!(t, p::Pick, name=p.name) -> p
 
 Add a travel time pick to the `Trace` `t` from a `Seis.Pick`.  By default,
@@ -121,12 +159,16 @@ julia> picks(t)
 clear_picks!(t::AbstractTrace) = empty!(t.picks)
 
 """
-    picks(t; sort=nothing) -> p::Vector{Tuple{<:AbstractString,<:AbstractFloat}}
+    picks(t; sort=:time) -> p::Vector{Tuple{<:AbstractString,<:AbstractFloat}}
 
 Return a vector `p` of `Seis.Pick`s, which contain pairs of pick times and names
 associated with the `Trace` `t`.
 
-This can be iterated like:
+`sort` can be one of:
+- `:time` (the default): Picks are returned in order of increasing time
+- `:name`: Picks are sorted alphanumerically by name, with unnamed picks first
+
+The returned vector can be iterated like:
 
 ```
 julia> t = Trace(0, 1, rand(10));
