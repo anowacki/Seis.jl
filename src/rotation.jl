@@ -18,6 +18,21 @@ channels are horizontals.
 The optional keyword argument `tol` specifies the angle in ° by which
 the traces must be orthogonal; see [`are_orthogonal`](@ref).
 
+# Example
+```
+julia> e, n = sample_data(:local)[1:2];
+
+julia> rotate_through!(n, e, 20); # Rotate 20° clockwise looking down
+
+julia> n.sta.azi, e.sta.azi
+(20.0f0, 110.0f0)
+
+julia> rotate_through!(e, n, 20); # Rotate in opposite direction
+
+julia> n.sta.azi, e.sta.azi
+(6.5939315f-7, 90.0f0)
+```
+
 See also: [`rotate_through`](@ref), [`rotate_to_gcp!`](@ref),
 [`rotate_to_azimuth_incidence!`](@ref)
 """
