@@ -23,7 +23,7 @@ See also: [`rotate_through`](@ref), [`rotate_to_gcp!`](@ref),
 """
 function rotate_through!(t1::AbstractTrace, t2::AbstractTrace, phi; tol=_angle_tol(t1, t2))
     T = promote_type(eltype(t1), eltype(t2))
-    if !are_orthogonal(t1, t2)
+    if !are_orthogonal(t1, t2; tol=tol)
         throw(ArgumentError("traces must be orthogonal"))
     elseif nsamples(t1) != nsamples(t2)
         throw(ArgumentError("traces must be same length"))
