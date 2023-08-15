@@ -210,7 +210,12 @@ angles_are_same(a, b, tol=Seis._angle_tol(typeof(float(a)), typeof(float(b)))) =
             @testset "Orthogonal" begin
                 e′ = deepcopy(e)
                 e′.sta.azi += 5
-                @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+                @testset "Default tolerance" begin
+                    @test_throws ArgumentError rotate_to_azimuth_incidence!(e′, n, z, 0, 0)
+                end
+                @testset "Custom tolerance" begin
+                    @test length(rotate_to_azimuth_incidence(e′, n, z, 0, 0, tol=90)) == 3
+                end
             end
 
             @testset "Trace data" begin

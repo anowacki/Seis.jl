@@ -188,7 +188,7 @@ altered, and the returned traces point to the same data as the input traces, but
 possibly in a different order.  Use [`rotate_to_azimuth_incidence`](@ref) to return
 copies of the traces and leave the original traces unmodified.
 
-See also: [`rotate_to_azimuth_incidence!`](@ref), [`rotate_to_gcp!`](@ref),
+See also: [`rotate_to_azimuth_incidence`](@ref), [`rotate_to_gcp!`](@ref),
 [`rotate_to_lqt!`](@ref), [`rotate_through!`](@ref)
 """
 function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::AbstractTrace,
@@ -200,7 +200,7 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
     # Check traces
     if any(x -> x.sta.azi === missing || x.sta.inc === missing, (t1, t2, t3))
         throw(ArgumentError("traces must contain station orientation information"))
-    elseif !are_orthogonal(t1, t2, t3)
+    elseif !are_orthogonal(t1, t2, t3; tol=tol)
         throw(ArgumentError("traces must be orthogonal"))
     elseif !(axes(trace(t1)) == axes(trace(t2)) == axes(trace(t3)))
         throw(ArgumentError("traces must all be the same length"))
@@ -210,7 +210,7 @@ function rotate_to_azimuth_incidence!(t1::AbstractTrace, t2::AbstractTrace, t3::
         throw(ArgumentError("traces must all have the same start time and sampling interval"))
     end
     # Sort traces so that we start with a right-handed set
-    x, y, z, perm = sort_traces_right_handed(t1, t2, t3)
+    x, y, z, perm = sort_traces_right_handed(t1, t2, t3; tol=tol)
 
     # Component directions
     uˣ, uʸ, uᶻ = _direction_vector.((x, y, z))
