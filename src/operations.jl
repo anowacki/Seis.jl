@@ -640,20 +640,59 @@ function taper!(t::AbstractTrace, width=0.05;
         times = Seis.times(t)
         trace_length = last(times) - first(times)
         width = time/trace_length
-        0 < width <= 0.5 ||
-            throw(ArgumentError("time must be between 0 s and half the trace length"))
+        if left && right
+            0 < width <= 0.5 ||
+                throw(ArgumentError(
+                    "time must be between 0 s and half the trace length for a two-sided taper"))
+        else
+            0 < width <= 1 ||
+                throw(ArgumentError(
+                    "time must be between 0 s and the trace length for one-sided taper"))
+        end
     else
         iszero(width) && return t
-        0 < width <= 0.5 || throw(ArgumentError("width must be between 0 and 0.5"))
+        if left && right
+            0 < width <= 0.5 ||
+                throw(ArgumentError("width must be between 0 and 0.5 for a two-sided taper"))
+        else
+            0 < width <= 1 ||
+                throw(ArgumentError("time must be between 0 s and the trace length for a one-sided taper"))
+        end
     end
 
-    n = max(2, floor(Int, (nsamples(t) + 1)*width))
+    n = max(
+        2,
+        min(
+            floor(Int, (nsamples(t) + 1)*width),
+            nsamples(t)
+        )
+    )
 
-    T = eltype(trace(t))
-    npts = nsamples(t)
+    _taper_core!(trace(t), n, left, right, form)
+
+    t
+end
+taper(t::AbstractTrace, args...; kwargs...) = taper!(deepcopy(t), args...; kwargs...)
+@doc (@doc taper!) taper
+
+"""
+    _taper_core!(data, n, left, right, form)
+
+Perform tapering using a window of kind `form`, on `n` samples of `data`.  The
+`left` and `right` are `Bool`s saying whether or not respectively to taper the
+first and last part of `data`.
+
+Note that this works when `data` is a `AbstractVector`, or `AbstractMatrix` where
+the individual traces are arranged down columns.
+"""
+function _taper_core!(data, n, left, right, form)
+    T = eltype(data)
+
+    n <= size(data, 1) || throw(BoundsError(data, n))
 
     if form in (:hamming, :hanning)
-        omega = T(π/n)
+        # 1/n, without the π factor (since we call cospi)
+        omega_π = 1/T(n)
         if form == :hanning
             f0 = f1 = T(0.50)
         elseif form == :hamming
@@ -661,25 +700,27 @@ function taper!(t::AbstractTrace, width=0.05;
             f1 = T(0.46)
         end
 
-        @inbounds for i in 0:n-1
-            amp = f0 - f1*cos(omega*T(i))
-            j = npts - i
-            t.t[i+1] *= left ? amp : one(T)
-            t.t[j] *= right ? amp : one(T)
+        for j in axes(data, 2)
+            @inbounds for i in 0:(n - 1)
+                amp = f0 - f1*cospi(omega_π*T(i))
+                data[begin+i,j] *= left ? amp : one(T)
+                data[end-i,j] *= right ? amp : one(T)
+            end
         end
     end
 
     if form == :cosine
-        omega = T(π/2n)
-        @inbounds for i in 0:n-1
-            amp = sin(omega*i)
-            j = npts - i
-            t.t[i+1] *= left ? amp : one(T)
-            t.t[j] *= right ? amp : one(T)
+        # 1/2n without the π factor (since we call sinpi)
+        omega_π = 1/T(2n)
+
+        for j in axes(data, 2)
+            @inbounds for i in 0:(n - 1)
+                amp = sinpi(omega_π*T(i))
+                data[begin+i,j] *= left ? amp : one(T)
+                data[end-i,j] *= right ? amp : one(T)
+            end
         end
     end
 
-    t
+    nothing    
 end
-taper(t::AbstractTrace, args...; kwargs...) = taper!(deepcopy(t), args...; kwargs...)
-@doc (@doc taper!) taper

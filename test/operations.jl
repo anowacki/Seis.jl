@@ -258,9 +258,48 @@ end
             taper!(t, 0.3)
             @test t == taper(t′, 0.3)
         end
-        let t = Trace(0, 1, fill(1.0, 100))
-            @test all(isapprox.(trace(taper(t, 0.01, form=:hamming))[3:end-2], 1.0))
-            @test all(isapprox.(trace(taper(t, 0.30, form=:cosine))[31:end-30], 1.0))
+
+        @testset "One-sided" begin
+            let t = Trace(0, 1, fill(1.0, 100))
+                @test all(isapprox.(trace(taper(t, 0.01, form=:hamming))[3:end-2], 1.0))
+                @test all(isapprox.(trace(taper(t, 0.30, form=:cosine))[31:end-30], 1.0))
+            end
+
+            @testset "Width <= 1" begin
+                let t = Trace(rand(), rand(), rand(100)), t′ = deepcopy(t)
+                    @test_throws ArgumentError taper(t, 1.1; left=false)
+                    @test_throws ArgumentError taper(t; left=false, time=t.delta*(nsamples(t) + 1))
+                    @testset "Right" begin
+                        @test trace(taper(t, 0.8; left=false))[1:20] == trace(t)[1:20]
+                        @test trace(taper(t, 0.8; left=false))[21] != trace(t)[21]
+                        @test trace(taper(t, 0.8; left=false))[end] == 0
+                    end
+                    @testset "Left" begin
+                        @test trace(taper(t, 0.8; right=false))[end-19:end] == trace(t)[end-19:end]
+                        @test trace(taper(t, 0.8; right=false))[end-20] != trace(t)[end-20]
+                        @test trace(taper(t, 0.8; right=false))[begin] == 0
+                    end
+                end
+            end
+        end
+
+        @testset "_taper_core!" begin
+            @testset "n too large" begin
+                @test_throws BoundsError Seis._taper_core!(rand(3), 4, true, false, :hanning)
+            end
+
+            @testset "Matrices" begin
+                @testset "$form" for form in (:hamming, :hanning, :cosine)
+                    v = rand(100)
+                    m = [v v v]
+                    n = 20
+                    Seis._taper_core!(v, n, true, true, form)
+                    Seis._taper_core!(m, n, true, true, form)
+                    for col in eachcol(m)
+                        @test v == col
+                    end
+                end
+            end
         end
     end
 
