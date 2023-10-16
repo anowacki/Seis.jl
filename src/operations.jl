@@ -472,6 +472,7 @@ normalise(t::AbstractTrace, args...; kwargs...) =
     normalise!(deepcopy(t), args...; kwargs...)
 @doc (@doc normalise!) normalise
 
+# Avoid method ambiguity with LinearAlgebra.normalize(x, p::Real)
 LinearAlgebra.normalize!(t::AbstractTrace, val::Real=1) =
     normalise!(t, val)
 @doc (@doc normalise!) normalize!
