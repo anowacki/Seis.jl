@@ -436,6 +436,509 @@ integrate(t::AbstractTrace, args...) = integrate!(deepcopy(t), args...)
 @doc (@doc integrate!) integrate
 
 """
+    merge!(t1::AbstractTrace, ts::AbstractArray{<:AbstractTrace}; gaps=:zero, overlaps=:mean, sample_tol=0.1, check=true) -> t1
+    merge!(t1, ts...; kwargs...) -> t1
+    merge!([t1, ts...]; kwargs...) -> t1
+
+    merge(t1::AbstractTrace, ts::AbstractArray{<:AbstractTrace}; gaps=:zero, overlaps=:mean, sample_tol=0.1, check=true) -> t1
+    merge(t1, ts...; kwargs...) -> t1
+    merge([t1, ts...]; kwargs...) -> t1
+
+Merge two or more traces together into the first trace, retaining only
+station and event information from the first trace.
+
+In the first form, update the trace in place and return the trace.
+In the second form, return an updated copy.
+
+All traces must have the same sampling interval.  They must also have the
+same channel code (see [`channel_code`](@ref)), unless `check` is `false`.
+The traces do not need to have the same element type or geometry.
+
+Where gaps between traces occur, these may be filled in a number of
+different ways, or an error may be thrown.  Tapering may be applied to
+the data either side of gaps.  See 'Keyword arguments' below for details.
+
+Likewise, where overlaps occur, either data from the first or last trace
+in each overlap may be used, or the mean of the traces used.  Other
+options are also possible.
+
+If the start times of traces (and hence each sample itself) are not
+quantised in time in the same way, then an error is thrown, unless
+the difference in quantisation is less than a fraction of `sample_tol`
+of the sampling interval.  Hence `sample_tol` should be between 0 and
+0.5.
+
+If all traces have an event time set, then merging is done in absolute
+time.  If not all have an event time set, then all times are assumed
+to be relative to the same origin and only the traces' `b` fields are
+used.  To perform merging in relative time regardless of whether the
+origin time is set, pass `relative = true`.
+
+Empty traces are checked for matching channel codes, but are not otherwise
+merged into the final trace.  If all traces are empty, the first is returned
+unaltered.
+
+# Keyword arguments
+
+## `gaps`
+`gaps` controls how gaps between continuous segments of data are
+treated, and may take one of the following values:
+- `:zero` (default): Fill any gaps with zero
+- `:error`: Throw an error if any gaps are present
+- `:linear`: Linearly interpolate between the last sample before the gap
+  and the first sample after the gap.  Cannot be used with tapering.
+- `value`: Fill with `value`, which must be convertable to the element
+  type of `t1`.
+
+## `overlaps`
+`overlaps` controls how the new merged trace uses traces which overlap
+in time, and may take one of the following values:
+- `:mean` (default): Take the mean of the values at each overlapping
+  sample
+- `:first`: Use the data from the first (in time) trace in the overlap
+- `:last`: Use the data from the last (in time) trace
+- `:zero`: Zero out any overlapping periods
+- `:error`: Throw an error if any overlaps are present and the data
+  are not identical.  (Note that the error type is not at present defined
+  but may be in a future version.)
+- `value`: Fill with `value`, which must be convertable to the element
+  type of `t1`.
+
+## `sample_tol`
+Any trace which does not have its samples quantised to the same
+as `t1` to within a fraction of a sampling interval `sample_tol`
+will cause an error to be thrown.  Set this to a value between 0 and 0.5
+to control this.  A value of 0.5 will mean any quantisation differences
+are ignored.
+
+## `taper`
+If `taper` is set to a fractional width, a taper is performed
+on the ends of traces adjoining gaps, with `taper` defining the
+proportional length of the taper relative to the gap length.  Values are
+tapered to 0.
+
+Note that if `taper` is used with a number for `gaps`, then sharp
+jumps will occur at the first and last sample of each gap to whatever
+`value` is supplied to the `gaps` argument
+
+## `taper_form`
+Determines the type of taper applied around gaps if `taper` is set.
+This can be one of `:hanning` (the default), `:hamming` or `:cosine`.
+See [`taper!`](@ref) for details.
+
+## `relative`
+If `relative` is `true`, then ignore any origin times in traces
+and merge them all only with regard to their [`starttime`](@ref).
+By default merging is done in absolute time if all traces have `.evt.time`
+set.
+
+## `metadata`
+If `true` (the default), then entries in the `.meta` field of each trace
+are merged into the `.meta` field of the first trace.  Entries of the first
+trace are preserved, while entries not in the first trace are added in turn
+from the last trace to the first.  This means duplicate entries are not
+overwritten in the first trace, and entries present in more than one of
+the other traces are taken from the second, third, etc., trace in preference
+to any later traces.
+"""
+function Base.merge!(
+    t1::AbstractTrace,
+    ts::Union{AbstractArray{<:AbstractTrace}, NTuple{N,AbstractTrace} where N};
+    gaps=:zero,
+    overlaps=:mean,
+    taper=0,
+    taper_form=:hanning,
+    relative=false, check=true,
+    metadata=true,
+    sample_tol=0.1
+)
+#=
+There are several possibilities in which two traces may line up:
+
+Perfect overlap:
+    t1: |--------------------|
+    t2: |--------------------|
+                                      --------> time
+Complete gap
+    t1: |---------------|
+    t2:                      |--------------------|
+
+    t1:                      |--------------------|
+    t2: |---------------|
+
+Partial overlap
+    t1:           |--------------------|
+    t2:                   |--------------------|
+
+    t1:                   |--------------------|
+    t2:           |--------------------|
+ 
+Containment
+    t1:           |--------------------|
+    t2:                   |------|
+
+    t1:                   |------|
+    t2:           |--------------------|
+
+Our method simply takes the earliest and latest times, sorts the traces by
+start time, creates a new trace covering the whole time span, and fills in
+the new trace, looking for places where the above cases need to be handled:
+
+    t1: |--------------------|
+    t2:                          |----|
+    t3:                             |-----|
+
+        |<- start time         end time ->|
+                     samples
+        |||||||||||||||||||||||||||||||||||
+
+                   merged trace
+        1111111111111111111111___222***3333
+               (_: gap; *: overlap)
+=#
+    0 <= sample_tol <= 0.5 ||
+        throw(ArgumentError("sample_tol should be between 0 and 0.5"))
+
+    all(t -> t.delta == t1.delta, ts) ||
+        throw(ArgumentError("all traces must have the same sampling interval"))
+    delta = t1.delta
+
+    if check
+        _channel_codes_are_equal(t1, ts) ||
+            throw(ArgumentError("all traces must have the same channel code"))
+    end
+
+    ts_nonempty = filter(!iszero∘nsamples, ts)
+
+    # Cannot both linearly interpolate and taper
+    if gaps === :linear && !iszero(taper)
+        throw(ArgumentError("cannot combine `gaps=:linear` and `taper>0`"))
+    end
+
+    0 <= taper ||
+        throw(ArgumentError("taper must be positive"))
+    taper_form in (:hanning, :hamming, :cosine) ||
+        throw(ArgumentError("taper_form must be one of :hanning, :hamming or :cosine"))
+
+    # Do it by date unless any of the traces doesn't have absolute time,
+    # in which case do it all by relative time, or if we have asked for
+    # relative time
+    time_base = (relative ||
+            (t1.evt.time === missing || any(t -> t.evt.time === missing, ts_nonempty))) ?
+        :relative : :absolute
+
+    # These update and return `t1`
+    if time_base == :absolute
+        _merge_absolute!(t1, ts_nonempty, gaps, overlaps, taper, sample_tol, taper_form)
+    elseif time_base == :relative
+        _merge_relative!(t1, ts_nonempty, gaps, overlaps, taper, sample_tol, taper_form)
+    end
+
+    # Merge the metadata
+    if metadata
+        for t in ts
+            t1.meta = merge(t.meta, t1.meta)
+        end
+    end
+
+    t1
+end
+
+function Base.merge!(t1::AbstractTrace, t2::AbstractTrace, ts::Vararg{AbstractTrace}; kwargs...)
+    merge!(t1, [t2, ts...]; kwargs...)
+end
+function Base.merge!(ts::AbstractArray{<:AbstractTrace}; kwargs...)
+    isempty(ts) && throw(ArgumentError("cannot merge an empty array of traces"))
+    length(ts) == 1 && return only(ts)
+    merge!(ts[begin], @view(ts[begin+1:end]); kwargs...)
+end
+
+Base.merge(t1::AbstractTrace, ts::AbstractArray{<:AbstractTrace}; kwargs...) =
+    merge!(deepcopy(t1), ts; kwargs...)
+Base.merge(t1::AbstractTrace, t2::AbstractTrace, ts::Vararg{AbstractTrace}; kwargs...) =
+    merge!(deepcopy(t1), [t2, ts...]; kwargs...)
+Base.merge(t1::AbstractTrace, ts::NTuple{N,AbstractTrace} where N; kwargs...) =
+    merge!(deepcopy(t1), ts...; kwargs...)
+function Base.merge(ts::AbstractArray{<:AbstractTrace}; kwargs...)
+    isempty(ts) && throw(ArgumentError("cannot merge an empty array of traces"))
+    length(ts) == 1 && return deepcopy(only(ts))
+    merge!(deepcopy(ts[begin]), @view(ts[begin+1:end]); kwargs...)
+end
+
+@doc (@doc merge!(::AbstractTrace, ::AbstractArray{<:AbstractTrace})) merge
+
+"""
+    _merge_relative!(t1, ts, gaps, overlaps, taper, sample_tol, taper_form) -> t1
+
+Merge all the data in the set of traces `ts` into the single `Trace` `t1`.
+
+See `Base.merge!(::AbstractTrace, ::AbstractArray{<:AbstractTrace})` for
+details of the arguments `gaps`, `overlaps`, `taper`, `sample_tol` and `taper_form`.
+"""
+function _merge_relative!(t1, ts, gaps, overlaps, taper, sample_tol, taper_form)
+    # Just put points in t1 if there is only one non-empty trace at `t1` is empty
+    if nsamples(t1) == 0 && length(ts) == 1
+        t_nonempty = only(ts)
+        append!(trace(t1), trace(t_nonempty))
+        t1.b = t_nonempty.b
+        return t1
+    elseif nsamples(t1) == 0 && isempty(ts)
+        return t1
+    end
+
+    # Already checked they all have same delta
+    delta = t1.delta
+
+    # Check for quantisation of samples
+    t1_offset = _round_offset(starttime(t1), delta)
+
+    if any(t -> abs(_round_offset(starttime(t), delta)) > sample_tol*delta, ts)
+        throw(ArgumentError(
+            "trace sample times are not aligned to within $(sample_tol) of a sample ($(sample_tol*delta) s)"))
+    end
+
+    # Remove the first trace if it's empty
+    all_ts = nsamples(t1) == 0 ? ts : [t1; ts]
+
+    # Sort data
+    sorted_inds = sortperm(all_ts, by=starttime)
+
+    # New start time for all traces based on t1, but quantised the same as t1
+    first_sample = _quantise(minimum(starttime, all_ts), delta, t1_offset)
+    # Final sample of new data, quantised same as t1
+    last_sample = _quantise(maximum(endtime, all_ts), delta, t1_offset)
+
+    # Simple case of all traces ordered without gaps or overlaps
+    if _traces_are_sequential(all_ts, sorted_inds, sample_tol)
+        t1.t = reduce(vcat, trace(all_ts[i]) for i in sorted_inds)
+        t1.b = first_sample
+        return t1
+    end
+
+    # New raw data for merged `t1`
+    new_nsamples = round(Int, (last_sample - first_sample)/delta) + 1
+    new_axes = (new_nsamples, Base.tail(axes(trace(t1)))...)
+    new_trace = similar(trace(t1), new_axes)
+    new_trace .= 0
+
+    # Trace keeping track of number of original traces at each sample
+    count_trace = zeros(Int, new_nsamples)
+
+    # Fill data into new trace
+    for i in sorted_inds
+        t = all_ts[i]
+        isempty(trace(t)) && continue
+
+        b = _quantise(starttime(t), delta, t1_offset)
+        i1 = round(Int, (b - first_sample)/delta) + 1
+        i2 = i1 + nsamples(t) - 1
+
+        if !(i1 in eachindex(new_trace) || i2 in eachindex(new_trace))
+            error("error in indexing logic; please report bug")
+        end
+
+        if overlaps === :mean
+            @views new_trace[i1:i2] .+= trace(t)
+        elseif overlaps === :first
+            @views new_trace[i1:i2] .= ifelse.(count_trace[i1:i2] .> 0, new_trace[i1:i2], trace(t))
+            # for (i, new_i) in enumerate(i1:i2)
+            #     new_trace[new_i] = count_trace[new_i] > 0 ? new_trace[new_i] : trace(t)[begin+i-1]
+            # end
+        elseif overlaps === :last
+            new_trace[i1:i2] .= trace(t)
+        elseif overlaps === :error
+            any(i -> count_trace[i] > 1, i1:i2) &&
+                error("traces overlap")
+        elseif !isa(overlaps, Symbol) # For zero and user-supplied value cases, sort it out later
+            new_trace[i1:i2] .= trace(t)
+        else
+            overlaps in (:zero,) ||
+                throw(ArgumentError("unrecognised overlaps option '$overlaps'"))
+        end
+
+        @views count_trace[i1:i2] .+= 1
+    end
+
+    has_overlaps = any(>(1), count_trace)
+
+    # Sort out overlaps
+    if has_overlaps
+        for i in eachindex(new_trace, count_trace)
+            if count_trace[i] > 1
+                if overlaps === :mean
+                    new_trace[i] /= max(count_trace[i], 1)
+                elseif overlaps === :zero
+                    new_trace[i] = count_trace[i] > 1 ? zero(eltype(new_trace)) : new_trace[i]
+                elseif !isa(overlaps, Symbol) # User-supplied value
+                    new_trace[i] = count_trace[i] > 1 ? overlaps : new_trace[i]
+                end
+            end
+        end
+    end
+
+    # Sort out gaps and apply tapers (`:zero` case already handled)
+    gap_sections = _find_gap_sections(count_trace)
+    if !isempty(gap_sections)
+        if gaps === :error
+            error("gaps present in merged trace")
+        elseif gaps === :zero
+            # Case already handled, but keep this here to catch
+            # unsupported options at the end of this `if` block
+        elseif gaps === :linear
+            for (i1, i2) in gap_sections
+                if i1 <= firstindex(new_trace) || i2 >= lastindex(new_trace)
+                    error("logic error in gap filling code; please report bug")
+                end
+                # Single sample gap
+                if i1 == i2
+                    new_trace[i1] = (new_trace[i1-1] + new_trace[i2+1])/2
+                else
+                    v1 = new_trace[i1-1]
+                    v2 = new_trace[i2+1]
+                    nsamples_in_gap = i2 - i1 + 1
+                    new_trace[i1-1:i2+1] .= range(v1, v2, length=nsamples_in_gap+2)
+                end
+            end
+        elseif !isa(gaps, Symbol)
+            for (i1, i2) in gap_sections
+                new_trace[i1:i2] .= gaps
+            end
+        else
+            throw(ArgumentError("unrecognised gaps option '$gaps'"))
+        end
+
+        if !iszero(taper)
+            for (igap, (i1, i2)) in enumerate(gap_sections)
+                gap_nsamples = i2 - i1 + 1
+                taper_nsamples = round(Int, taper*gap_nsamples)
+
+                if igap == 1
+                    samples_before = firstindex(new_trace):(i1 - 1)
+                    n_before = min(length(samples_before), taper_nsamples)
+                else
+                    samples_before = (gap_sections[igap-1][2] + 1):(i1 - 1)
+                    n_before = min(length(samples_before)÷2, taper_nsamples)
+                end
+
+                _taper_core!(view(new_trace, samples_before), n_before, false, true, taper_form)
+
+                if igap == lastindex(gap_sections)
+                    samples_after = (i2 + 1):lastindex(new_trace)
+                    n_after = min(length(samples_after), taper_nsamples)
+                else
+                    samples_after = (i2 + 1):(gap_sections[igap+1][1] - 1)
+                    n_after = min(length(samples_after)÷2, taper_nsamples)
+                end
+
+                _taper_core!(view(new_trace, samples_after), n_after, true, false, taper_form)
+            end
+        end
+    end
+
+    t1.b = first_sample
+    t1.t = new_trace
+
+    t1
+end
+
+function _merge_absolute!(t1, ts, gaps, overlaps, taper, sample_tol, taper_form)
+    # FIXME: Make this more efficient; maybe by passing the relative start times
+    shifted_ts = origin_time.(ts, t1.evt.time)
+    _merge_relative!(t1, shifted_ts, gaps, overlaps, taper, sample_tol, taper_form)
+end
+
+"""
+Return `true` if the channel codes are equal for both traces.
+"""
+function _channel_codes_are_equal(t1::AbstractTrace, t2::AbstractTrace)
+    isequal(t1.sta.net, t2.sta.net) &&
+        isequal(t1.sta.sta, t2.sta.sta) &&
+        isequal(t1.sta.loc, t2.sta.loc) &&
+        isequal(t1.sta.cha, t2.sta.cha)
+end
+_channel_codes_are_equal(t1::AbstractTrace, ts) =
+    all(_channel_codes_are_equal(t1, t) for t in ts)
+
+"""
+Find an offset of a time relative to a timing base specified by samples
+at `delta` s increments, starts at 0 s.
+"""
+function _round_offset(start_time, delta)
+    offset = start_time%delta
+    if offset < -delta/2
+        offset + delta
+    elseif offset > delta/2
+        offset - delta
+    else
+        offset
+    end
+end
+
+"""
+For the set of traces `ts`, whose ordered starttimes are given by `indices`,
+return `true` is each trace succeeds the previous one and the first sample
+of each trace is one sample later than the last sample of the previous;
+otherwise return `false`.
+"""
+function _traces_are_sequential(ts, indices, sample_tol)
+    ntraces = length(ts)
+    length(indices) == ntraces || error("`ts` and `indices` must be the same length")
+    ntraces > 1 ||
+        throw(ArgumentError("_traces_are_sequential should not get called with less than two traces"))
+
+    delta = first(ts).delta
+    delta_min, delta_max = (1 - sample_tol)*delta, (1 + sample_tol)*delta
+
+    for index in eachindex(indices)
+        index == lastindex(indices) && return true
+        if delta_min <= (starttime(ts[indices[index + 1]])
+                - endtime(ts[indices[index]])) <= delta_max
+            continue
+        else
+            return false
+        end
+    end
+end
+
+"""
+Given `count_trace`, a vector containing the number of traces which
+have contributed to each sample in a final merged trace, return
+a `Vector{Tuple{Int,Int}}`, where each element of the vector contains
+the start and end index of `count_trace` where a run of `0`s occur.
+In other words, each pair of indices gives the start and end of a gap
+in the merged trace.
+"""
+function _find_gap_sections(count_trace)
+    gap_start = typemin(Int) + 1
+    gap_end = typemin(Int)
+    gap_sections = Tuple{Int,Int}[]
+
+    for (i, n) in pairs(count_trace)
+        if n == 0
+            if i == gap_end + 1
+                # Gap carries on
+                gap_end = i
+            else
+                # New gap
+                gap_start = i
+                gap_end = i
+            end
+        end
+
+        if n > 0 || i == lastindex(count_trace)
+            # Not a gap or the last sample
+            if gap_end >= gap_start
+                push!(gap_sections, (gap_start, gap_end))
+                gap_start = typemin(Int) + 1
+                gap_end = typemin(Int)
+            end
+        end
+    end
+
+    gap_sections
+end
+
+"""
     normalise!(t::Trace, val=1) -> t
     normalise(t::Trace, val=1) -> t′
 

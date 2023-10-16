@@ -745,3 +745,24 @@ function _u_dot_v_and_theta(u, v)
     θ = acosd(clamp(u_dot_v, -1, 1))
     u_dot_v, θ
 end
+
+"""
+    _quantise(value, step, offset) -> quantised_value
+
+Find the nearest to `value` of the set of quantised values, where
+`step` is the spacing between values, and `offset` is the shift from
+0.
+
+The magnitude of `offset` should not be greater than half of `step`,
+though no check is made.
+
+# Examples
+```
+julia> Seis._quantise(0.5, 1, 0.2)
+0.2
+
+julia> Seis._quantise(-5, 2, 0.4)
+-5.6
+```
+"""
+_quantise(value, step, offset) = round((value - offset)/step)*step + offset

@@ -40,6 +40,7 @@
   header information on disk without reading and writing the whole
   trace data.
 ### Trace operations
+- Traces with the same channel code can be merged with `merge` and `merge!`.
 - `resample[!]` can resample traces to arbitrary sampling intervals.
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
