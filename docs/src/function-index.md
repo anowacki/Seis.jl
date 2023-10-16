@@ -71,8 +71,8 @@ flip
 ifft(::FourierTrace)
 integrate!
 integrate
-merge!(::AbstractTrace)
-merge(::AbstractTrace)
+merge!(::AbstractTrace, ::AbstractArray{<:AbstractTrace})
+merge(::AbstractTrace, ::AbstractArray{<:AbstractTrace})
 normalise!
 normalise
 normalize!
