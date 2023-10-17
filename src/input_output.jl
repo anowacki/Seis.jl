@@ -528,7 +528,7 @@ Return the channel code for trace `t` or station `s`, in the form of
 The information is taken respectively from the `net`, `sta`, `cha` and `loc`
 fields of the `Station`.
 """
-channel_code(sta::Station) = join(_blankmissing.((sta.net, sta.sta, sta.loc, sta.cha)), ".")
+channel_code(sta::Station) = join(map(_blankmissing, (sta.net, sta.sta, sta.loc, sta.cha)), ".")
 channel_code(t::AbstractTrace) = channel_code(t.sta)
 
 _blankmissing(x) = string(ismissing(x) ? "" : x)

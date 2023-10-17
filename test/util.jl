@@ -380,4 +380,10 @@ using .TestHelpers
             @test nsamples(t, 0, -Inf) == 0
         end
     end
+
+    @testset "_quantise" begin
+        @test Seis._quantise(-5, 2, 0.4) == -5.6
+        @test Seis._quantise(100, 1.34, 0.22) ≈ 99.38 atol=eps(100.0)
+        @test Seis._quantise(-5, 2, -0.1) == -4.1
+    end
 end

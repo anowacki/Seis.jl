@@ -40,6 +40,7 @@
   header information on disk without reading and writing the whole
   trace data.
 ### Trace operations
+- Traces with the same channel code can be merged with `merge` and `merge!`.
 - `resample[!]` can resample traces to arbitrary sampling intervals.
 - `rotate_through[!]` can rotate arbitrary pairs of orthogonal traces,
   not just horizontal ones.
@@ -57,6 +58,11 @@
 ### Convenience functions
 - The new single-argument `origin_time` method returns the origin time of
   the trace (like `.evt.time` but nicer-looking).
+- `taper[!]` optionally takes a taper length in absolute time (i.e., in
+  seconds) via the new `time` keyword argument.
+- A one-sided (or no-sided) taper can be applied using the new keywords
+  arguments to `taper[!]` `left` and `right`.
+- One-sided tapers can be applied to up to 100% of the trace length.
 
 ## Deprecated or removed
 - `traces_are_orthogonal` will be removed in v0.5.  It has been replaced by

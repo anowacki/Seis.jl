@@ -345,7 +345,9 @@ copying version, without.
   [`normalize!`](@ref) (or [`normalise`](@ref) for us Brits).
 - Take the envelope of a trace with [`envelope`](@ref) or [`envelope!`](@ref).
 - Change the trace sampling interval with [`resample`](@ref) or
-  [`resample!`](@ref)
+  [`resample!`](@ref).
+- Merge multiple traces with the same channel code together with [`merge!`](@ref)
+  and [`merge`](@ref).
 
 In addition, sets of traces can be rotated:
 - [`rotate_through`](@ref) and [`rotate_through!`](@ref) rotate
