@@ -669,7 +669,7 @@ function _below_above(x, y, level)
                 push!(x⁻, last_x)
                 push!(y⁻, last_y)
                 push!(x⁻, xx)
-                push!(x⁻, yy)
+                push!(y⁻, yy)
             end
             last_point = :below
         # On line
