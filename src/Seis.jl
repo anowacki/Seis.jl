@@ -130,6 +130,8 @@ export
     rotate_to_lqt,
     sort_traces_right_handed,
     # Plotting
+    plot_section!,
+    plot_section,
     plot_traces,
     # Analysis
     spectrogram
