@@ -15,5 +15,7 @@ using Seis.Plot
             ([], [], [2,4], [-1, 5]))
         @test isequal(Seis.Plot._below_above([2, 4, 6], [0, 1, 0], 0.5),
             ([2, 3, NaN, 5, 6], [0, 0.5, NaN, 0.5, 0], [3, 4, 5, NaN], [0.5, 1, 0.5, NaN]))
+        @test isequal(Seis.Plot._below_above(1:4, [0, -1, -1, 0], 0),
+            ([1, 2, 3, 4, NaN], [0, -1, -1, 0, NaN], [], []))
     end
 end

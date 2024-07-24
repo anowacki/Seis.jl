@@ -669,7 +669,7 @@ function _below_above(x, y, level)
                 push!(x⁻, last_x)
                 push!(y⁻, last_y)
                 push!(x⁻, xx)
-                push!(x⁻, yy)
+                push!(y⁻, yy)
             end
             last_point = :below
         # On line
@@ -737,5 +737,91 @@ function _picks_in_window(traces, t1, t2, shifts=zeros(length(traces)))
     end
     pick_times, pick_names
 end
+
+"""
+    _flatten_with_separator(a, separator; trim=false) -> a′
+
+Convert the array-of-arrays `a` into a single flat array `a′` where
+each constituent array is separated by `separator`.  Note than an
+additional `separator` is added to the end unless `trim` is `true`.
+
+# Example
+```julia> _flatten_with_separator([[1, 2], [3, 4]], NaN)
+6-element Vector{Float64}:
+   1.0
+   2.0
+ NaN
+   3.0
+   4.0
+ NaN
+```
+"""
+function _flatten_with_separator(a, separator; trim=false)
+    a′ = reduce(vcat,
+        Iterators.flatten(
+            zip(a, Iterators.repeated(separator))
+        )
+    )
+
+    if trim
+        pop!(a′)
+    end
+
+    a′
+end
+
+"""
+    _bin_min_max(x, y, n) -> x′, y′
+
+Bin the data sampled at `x` having values `y` such that `y′` contains
+two values at each new sampling point, the minimum and maximum value
+of `y` within the bin of `n` points.  `x′` and `y′` therefore are twice
+the length of `x` and `y`, divided by `n`, and if the length of `x` and `y`
+is not divisible by `n`, then the remaining points are not included.
+
+The function does not check that `x` increases monotonically and
+does not require that it is evenly spaced.
+
+# Example
+```
+julia> Seis.Plot._bin_min_max(0:10, [-1, 0, 1, 2, -4, -5, -3, 3, 9, 11, 30], 3)
+([1.0, 1.0, 4.0, 4.0, 7.0, 7.0], [-1.0, 1.0, -5.0, 2.0, -3.0, 9.0])
+```
+"""
+function _bin_min_max(x, y, n::Integer)
+    axes(x) == axes(y) || throw(ArgumentError("axes of x and y must be the same"))
+
+    n >= 1 || throw(ArgumentError("n must be 1 or greater"))
+
+    if n <= 2
+        return copy(x), copy(y)
+    end
+
+    xout = similar(x, float(eltype(x)), 2*(length(x)÷n))
+    yout = similar(y, float(eltype(y)), 2*(length(y)÷n))
+
+    for iout in eachindex(xout, yout)[begin:2:end]
+        ixy1 = firstindex(x) + (iout - 1)*n÷2
+        ixy2 = min(ixy1 + n - 1, lastindex(x))
+        minval, maxval = extrema(@view y[ixy1:ixy2])
+        xout[iout] = xout[iout+1] = (x[ixy1] + x[ixy2])/2
+        yout[iout], yout[iout+1] = minval, maxval
+    end
+
+    xout, yout
+end
+
+"""
+    _bin_min_max(trace::Seis.AbstractTrace[, t1, t2], n) -> x′, y′
+
+Bin the data in `trace` between start time `t1` s and end time `t2` s.
+If `t1` and `t2` are not defined, then all data is binned
+"""
+function _bin_min_max(trace::Seis.AbstractTrace, t1, t2, n::Integer)
+    i1, i2 = Seis._cut_time_indices(trace, t1, t2; warn=false, allowempty=true)
+    _bin_min_max(@view(Seis.times(trace)[i1:i2]), @view(Seis.trace(trace)[i1:i2]), n)
+end
+_bin_bin_max(trace::Seis.AbstractTrace, n::Integer) =
+    _bin_min_max(trace, Seis.starttime(trace), Seis.endtime(trace), n)
 
 end # module
