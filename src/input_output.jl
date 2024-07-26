@@ -438,6 +438,13 @@ whether or not gaps cause new traces to be created.  See below for more details.
 
 The following keyword arguments can be passed to `read_mseed`:
 
+- `headers_only = false`: If `true`, only read trace header information,
+  leaving the returned traces empty.  In this case, the following additional
+  fields in `.meta` are set:
+  - `mseed_nsamples`: Number of samples in the trace
+  - `mseed_enddate`: `DateTime` of the final sample
+  - `mseed_endtime`: Time of the final sample
+
 - `maximum_gap`: The maximum absolute gap length in s beyond which gaps are
   no longer tolerated in a single trace.  By default this is the sampling
   interval of the trace being read.
@@ -446,7 +453,7 @@ The following keyword arguments can be passed to `read_mseed`:
       Set `maximum_gap` to 0 to always split miniseed files into separate
       traces at all gaps.
 
-- `verbose`: An integer starting from 0 upwards indicating how much
+- `verbose = 0`: An integer starting from 0 upwards indicating how much
   information about the reding process should be printed to the screen.
   The default (`0`) only produces output for errors and warnings.
 

@@ -311,6 +311,9 @@ Seis supports reading and writing only the header part of SAC files:
 - To read just headers, use `read_sac(file; header_only=true)`.
 - To write just headers, use [`write_sac_header`](@ref).
 
+miniSEED files can be read with only headers using
+`read_mseed(file; header_only=true)`.
+
 
 ## Basic processing
 
