@@ -22,11 +22,16 @@ type of `Trace` `T <: AbstractTrace`.
 For details of keywords arguments, see [`Seis.read_mseed`](@ref).
 """
 function read(file, ::Type{T};
-        maximum_gap=nothing, verbose=0
-        ) where {T<:AbstractTrace}
+    header_only=false,
+    maximum_gap=nothing,
+    verbose=0,
+) where {T<:AbstractTrace}
     tracelist = LibMseed.read_file(file;
-        time_tolerance=maximum_gap, verbose_level=verbose)
-    parse_tracelist(T, tracelist, file)
+        headers_only=header_only,
+        time_tolerance=maximum_gap,
+        verbose_level=verbose,
+    )
+    parse_tracelist(T, tracelist, file; header_only=header_only)
 end
 
 """
@@ -39,11 +44,16 @@ type of `Trace` `T <: AbstractTrace`.
 For details of keywords arguments, see [`Seis.read_mseed`](@ref).
 """
 function read(data::AbstractVector{UInt8}, ::Type{T};
-        maximum_gap=nothing, verbose=0
-        ) where {T<:AbstractTrace}
+        header_only=false,
+        maximum_gap=nothing,
+        verbose=0,
+) where {T<:AbstractTrace}
     tracelist = LibMseed.read_buffer(data;
-        time_tolerance=maximum_gap, verbose_level=verbose)
-    parse_tracelist(T, tracelist)
+        headers_only=header_only,
+        time_tolerance=maximum_gap,
+        verbose_level=verbose,
+    )
+    parse_tracelist(T, tracelist; header_only=header_only)
 end
 
 read(file; kwargs...) = read(file, DEFAULT_TRACE; kwargs...)
@@ -94,7 +104,7 @@ function write(file, traces::AbstractArray{<:AbstractTrace}; kwargs...)
 end
 
 """
-    parse_tracelist(T, tracelist::LibMseed.MseedTraceList) -> ::Vector{T}
+    parse_tracelist(T, tracelist::LibMseed.MseedTraceList, file=nothing; header_only=false) -> ::Vector{T}
 
 Convert a `LibMseed.MseedTraceList` into a `Vector{T}`, where `T <: AbstractTrace`.
 
@@ -109,7 +119,12 @@ being potentially empty.
     segment start time is used to give the `evt.time` value for each trace,
     and the trace starting time is the remaining micro- or nanoseconds.
 """
-function parse_tracelist(::Type{T}, tracelist::LibMseed.MseedTraceList, file=nothing) where {T<:AbstractTrace}
+function parse_tracelist(
+    ::Type{T},
+    tracelist::LibMseed.MseedTraceList,
+    file=nothing;
+    header_only=false
+) where {T<:AbstractTrace}
     ntraces = sum(x->length(x.segments), tracelist.traces)
     traces = Vector{T}(undef, ntraces)
     itrace = 0
@@ -132,7 +147,9 @@ function parse_tracelist(::Type{T}, tracelist::LibMseed.MseedTraceList, file=not
 
         for segment in mstrace.segments
             itrace += 1
+            # Date and time rounded down to the millisecond
             starttime = LibMseed.datetime(segment.starttime)
+            # Additional sub-millisecond time
             b = Dates.value(LibMseed.nanoseconds(segment.starttime))/1e9
             delta = 1/segment.sample_rate
             tr = T(b, delta, segment.data)
@@ -144,6 +161,13 @@ function parse_tracelist(::Type{T}, tracelist::LibMseed.MseedTraceList, file=not
             if file !== nothing
                 tr.meta.mseed_file = file
             end
+
+            if header_only
+                tr.meta.mseed_nsamples = segment.sample_count
+                tr.meta.mseed_enddate = LibMseed.nearest_datetime(segment.endtime)
+                tr.meta.mseed_endtime = b + delta*(segment.sample_count - 1)
+            end
+
             traces[itrace] = tr
         end
 

@@ -84,6 +84,33 @@ io_data_path(file) = joinpath(@__DIR__, "..", "test_data", "io", file)
             end
         end
 
+        @testset "Header only" begin
+            path = io_data_path("miniseed_submillisecond_startdate.mseed")
+
+            @testset "Default" begin
+                @test read_mseed(path) == read_mseed(path; header_only=false)
+            end
+
+            @testset "Meta" begin                
+                t = only(read_mseed(path))
+                t2 = only(read_mseed(path; header_only=true))
+                @test isempty(trace(t2))
+                @test t2.meta.mseed_nsamples == nsamples(t)
+                @test starttime(t) == starttime(t2)
+                @test startdate(t) == startdate(t2)
+                @test endtime(t) == t2.meta.mseed_endtime
+                @test enddate(t) == t2.meta.mseed_enddate
+            end
+
+            @testset "Data" begin
+                data = read(path)
+                t2 = only(read_mseed(path; header_only=true))
+                t3 = only(read_mseed(data; header_only=true))
+                t3.meta.mseed_file = t2.meta.mseed_file
+                @test t2 == t3
+            end
+        end
+
         @testset "Wrong format" begin
             @test_throws ErrorException read_mseed(io_data_path("../seis.sac"))
         end
