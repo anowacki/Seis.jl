@@ -199,6 +199,7 @@ then the most recently used `Makie.Axis` is updated.
 - `color = :black`: Line color for traces; passed to `Makie.lines`.
 - `decimate`: If `false`, do not perform downsampling of traces for plotting.
   Defaults to `true`.
+- `lines_kwargs`: Passed to the `Makie.lines` call which plots the traces.
 - `flip = false`: Flip the polarity of traces if `true`, so that positive values
   point down the page.  Note that positive values are always up even if
   `reverse` is `true`, unless `flip` is also `true`.
@@ -231,6 +232,7 @@ function Seis.plot_section!(
     # fill_down=nothing,
     # fill_up=nothing,
     flip=false,
+    lines_kwargs=(),
     linewidth=1,
     max_samples=50_000,
     show_picks=false,
@@ -391,7 +393,7 @@ function Seis.plot_section!(
     # Lines
     if linewidth > 0
         line_data = Makie.@lift($(line_data_and_text)[1])
-        pl = Makie.lines!(ax, line_data; linewidth, color)
+        pl = Makie.lines!(ax, line_data; linewidth, color, lines_kwargs...)
     end
 
 
@@ -477,6 +479,7 @@ function Seis.plot_section(
     ts::AbstractArray{<:Seis.AbstractTrace},
     y_values=Seis.distance_deg;
     align=nothing,
+    lines_kwargs=(),
     reverse=false,
     fig_kwargs=(size=(800, 1100),),
     ax_kwargs=(xlabel="Time / s", yreversed=reverse),
@@ -513,7 +516,7 @@ function Seis.plot_section(
 
     ax = Makie.Axis(fig[1,1]; ylabel, limits, ax_kwargs...)
 
-    Seis.plot_section!(ax, ts, y_shifts; align, kwargs...)
+    Seis.plot_section!(ax, ts, y_shifts; align, lines_kwargs, kwargs...)
 
     fig
 end
