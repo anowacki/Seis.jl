@@ -184,23 +184,27 @@ function Base.getproperty(t::AbstractArray{<:AbstractFourierTrace}, f::Symbol)
     end
 end
 
-# Set an array of traces with a single value
-function Base.setproperty!(t::AbstractArray{<:AbstractFourierTrace}, f::Symbol, val)
-    if f === :b || f === :delta || f === :meta || f === :evt || f == :sta || f === :picks
-        for tt in t
-            setproperty!(tt, f, val)
+for A in (Array, AbstractArray)
+    @eval begin
+        # Set an array of traces with a single value
+        function Base.setproperty!(t::$A{<:AbstractFourierTrace}, f::Symbol, val)
+            if f === :b || f === :delta || f === :meta || f === :evt || f == :sta || f === :picks
+                for tt in t
+                    setproperty!(tt, f, val)
+                end
+            else
+                # Fallback in case of desired dot-access to fields of an array type
+                setfield!(t, f, val)
+            end
         end
-    else
-        # Fallback in case of desired dot-access to fields of an array type
-        setfield!(t, f, val)
-    end
-end
 
-# Set an array of traces with an array of values
-function Base.setproperty!(t::AbstractArray{<:AbstractFourierTrace}, f::Symbol, val::AbstractArray)
-    length(t) == length(val) || throw(DimensionMismatch())
-    for (tt, vv) in zip(t, val)
-        setproperty!(tt, f, vv)
+    # Set an array of traces with an array of values
+        function Base.setproperty!(t::$A{<:AbstractFourierTrace}, f::Symbol, val::AbstractArray)
+            length(t) == length(val) || throw(DimensionMismatch())
+            for (tt, vv) in zip(t, val)
+                setproperty!(tt, f, vv)
+            end
+        end
     end
 end
 
