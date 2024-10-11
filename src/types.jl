@@ -99,8 +99,21 @@ Base.setproperty!(sd::SeisDict{K,V}, key::Symbol, val) where {K,V} = setindex!(s
 Base.setproperty!(sd::SeisDict{K,Any}, key::Symbol, val) where K = setindex!(sd, val, key)
 Base.propertynames(sd::SeisDict, private::Bool=false) = collect(keys(sd))
 
-Base.getproperty(sd::AbstractArray{<:SeisDict}, key::Symbol) = getproperty.(sd, key)
-Base.setproperty!(sd::AbstractArray{<:SeisDict}, key::Symbol, val) = setproperty!.(sd, key, val)
+function Base.getproperty(sd::AbstractArray{<:SeisDict}, key::Symbol)
+    if key in fieldnames(typeof(sd))
+        getfield(sd, key)
+    else
+        getproperty.(sd, key)
+    end
+end
+function Base.setproperty!(sd::AbstractArray{<:SeisDict}, key::Symbol, val)
+    setproperty!.(sd, key, val)
+end
+# Method for concrete type needed in Julia v1.11+ now that Array is a Julia
+# type with method.  This is type piracy!
+function Base.setproperty!(sd::Array{<:SeisDict}, key::Symbol, val)
+    setproperty!.(sd, key, val)
+end
 
 """
     Position
@@ -122,7 +135,13 @@ true
 """
 abstract type Position{T} end
 
-Base.getproperty(p::AbstractArray{<:Position}, f::Symbol) = getfield.(p, f)
+function Base.getproperty(p::AbstractArray{<:Position}, f::Symbol)
+    if f in fieldnames(typeof(p))
+        getfield(f, p)
+    else
+        getproperty.(p, f)
+    end
+end
 Base.getindex(p::Position, i::Int) = getfield(p, i)
 Base.:(==)(p1::P, p2::P) where {P<:Position} =
     all(isequal(getfield(p1, f), getfield(p2, f)) for f in fieldnames(P))
@@ -174,6 +193,17 @@ end
 Cartesian{T}(; x=missing, y=missing, z=missing) where T =
     Cartesian{T}(x, y, z)
 Cartesian(args...; kwargs...) = Cartesian{DEFAULT_FLOAT}(args...; kwargs...)
+
+# Fix getproperty(::Array{<:Position}, ::Symbol) for Julia v1.11+
+for T in (Cartesian, Geographic)
+    @eval function Base.getproperty(a::Array{<:$T}, f::Symbol)
+        if f in fieldnames(typeof(a))
+            getfield(a, f)
+        else
+            getproperty.(a, f)
+        end
+    end
+end
 
 """
     Event
@@ -294,6 +324,7 @@ end
 
 Base.setproperty!(e::AbstractArray{<:Event}, f::Symbol, val) =
     setproperty!.(e, f, val)
+Base.setproperty!(e::Array{<:Event}, f::Symbol, val) = setproperty!.(e, f, val)
 Base.propertynames(e::AbstractArray{<:Event}, private=false) = fieldnames(eltype(e))
 Base.:(==)(e1::Event, e2::Event) =
     all(x -> isequal(x[1], x[2]), (getfield.((e1, e2), f) for f in EVENT_FIELDS))
@@ -464,6 +495,7 @@ end
 
 Base.setproperty!(s::AbstractArray{<:Station}, f::Symbol, val) =
     setproperty!.(s, f, val)
+Base.setproperty!(s::Array{<:Station}, f::Symbol, val) = setproperty!.(s, f, val)
 Base.propertynames(s::AbstractArray{<:Station}, private=false) = propertynames(first(s))
 Base.:(==)(s1::Station, s2::Station) =
     all(x -> isequal(x[1], x[2]), (getfield.((s1, s2), f) for f in STATION_FIELDS))
@@ -704,25 +736,30 @@ function Base.getproperty(t::AbstractArray{<:Trace}, f::Symbol)
     end
 end
 
-# Set an array of traces with a single value
-function Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val)
-    if f === :b || f === :delta || f === :meta || f === :evt || f == :sta || f === :picks
-        for tt in t
-            setproperty!(tt, f, val)
+for A in (AbstractArray{<:Trace}, Array{<:Trace})
+    @eval begin
+        # Set an array of traces with a single value
+        function Base.setproperty!(t::$A, f::Symbol, val)
+            if f === :b || f === :delta || f === :meta || f === :evt || f == :sta || f === :picks
+                for tt in t
+                    setproperty!(tt, f, val)
+                end
+            else
+                # Fallback in case of desired dot-access to fields of an array type
+                setfield!(t, f, val)
+            end
         end
-    else
-        # Fallback in case of desired dot-access to fields of an array type
-        setfield!(t, f, val)
+
+        # Set an array of traces with an array of values
+        function Base.setproperty!(t::$A, f::Symbol, val::AbstractArray)
+            length(t) == length(val) || throw(DimensionMismatch())
+            for (tt, vv) in zip(t, val)
+                setproperty!(tt, f, vv)
+            end
+        end
     end
 end
 
-# Set an array of traces with an array of values
-function Base.setproperty!(t::AbstractArray{<:Trace}, f::Symbol, val::AbstractArray)
-    length(t) == length(val) || throw(DimensionMismatch())
-    for (tt, vv) in zip(t, val)
-        setproperty!(tt, f, vv)
-    end
-end
 
 Base.propertynames(t::AbstractArray{<:Trace}, private=false) = fieldnames(eltype(t))
 
