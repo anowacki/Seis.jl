@@ -233,8 +233,10 @@ return an updated copy.
   Central difference.  `t.b` is increased by `t.delta`; the trace length is reduced
   by 2 samples.
 - `points == 5`: Five-point. `dsdt.t[i] =
-  (2/3)*(t.t[i+1] - t.t[i-1])/t.delta - (1/12)*(t.t[i+2] - t.t[i-2])/t.delta`.
-  Central difference.  `t.b` is increased by `2t.delta`; `npts` reduced by 4.
+  (2/3)*(t.t[i+1] - t.t[i-1])/t.delta - (1/12)*(t.t[i+2] - t.t[i-2])/t.delta`,
+  except for the first and last points, which use a three-point central difference
+  meaning only two points fewer are retained as for `points == 3`.
+  Central difference.  `t.b` is increased by `t.delta`; `npts` reduced by 2.
 
 # Example
 ```
