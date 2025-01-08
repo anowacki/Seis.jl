@@ -443,23 +443,6 @@ function Seis.plot_section!(
         )
     end
 
-    # Report position in data terms
-    Makie.on(Makie.events(ax).mousebutton) do event
-        axis_pixel_limits = _get_axis_pixel_limits(ax)
-        if event.button == Makie.Mouse.left && event.action == Makie.Mouse.release
-            mouse_px_x, mouse_px_y = mouseposition = Makie.events(ax).mouseposition[]
-            if (
-                axis_pixel_limits.x0 <= mouse_px_x <= axis_pixel_limits.x1 &&
-                axis_pixel_limits.y0 <= mouse_px_y <= axis_pixel_limits.y1
-            )
-                mouse_t, mouse_y = _mouseposition_data(ax, mouseposition)
-                println("Cursor at $((mouse_t, mouse_y))!")
-            else
-                println("Cursor outside axis at $(mouseposition)")
-            end
-        end
-    end
-
     # Zoom traces: `=` for in, `-` for out
     Makie.on(Makie.events(ax).keyboardbutton) do event
         event.key in (Makie.Keyboard.equal, Makie.Keyboard.minus) || return
@@ -581,31 +564,6 @@ function _calculate_y_shifts(ts, y_values)
             throw(ArgumentError("unrecognised y axis name '$y_values'"))
         end
     end
-end
-
-function _get_axis_pixel_limits(ax::Makie.Axis)
-    viewport = Makie.viewport(ax)[]
-    x0, y0 = viewport.origin
-    x1, y1 = viewport.origin .+ viewport.widths
-    (; x0, x1, y0, y1)
-end
-
-function _mouseposition_data(ax::Makie.Axis, mouseposition)
-    x, y = mouseposition
-
-end
-
-function trace_points_in_window!(
-    npts::Vector{Int},
-    traces::AbstractArray{<:Seis.AbstractTrace},
-    t1,
-    t2
-)
-    for i in eachindex(npts, traces)
-
-    end
-
-    nothing
 end
 
 """
