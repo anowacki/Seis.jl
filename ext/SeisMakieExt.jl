@@ -199,7 +199,7 @@ then the most recently used `Makie.Axis` is updated.
 - A string:
   - `"index"`: Plot equally spaced apart by trace index, starting at 1.
 
-# Keyword arguments
+## Keyword arguments
 - `absscale`: Set to a value to plot traces at some absolute scale.  This is
   useful if one wants two or more sections to have the same scale.
 - `align`: Set to a `String` to align on the first pick with this name.
@@ -227,6 +227,13 @@ then the most recently used `Makie.Axis` is updated.
 - `show_picks`:  If `true`, add marks on the record section for each pick in the trace
   headers.
 - `zoom`: Set magnification scale for traces (default 1).
+
+## Interactions
+The following keys can be used in addition to the standard Makie
+plot interactions (when using an interactive backend):
+
+- `-` key: reduce the trace amplitude by a constant factor.
+- `=` key: Increase the trace amplitude by a constant factor.
 
 See also: [`plot_section`](@ref plot_section).
 """
@@ -487,6 +494,15 @@ not passed on:
 - `axis`: Dictionary, named tuple or set of pairs containing
   keyword arguments which are passed to `Makie.Axis`, controlling
   the appearance of the axis.
+
+## Interactions
+The following keys can be used in addition to the standard Makie
+plot interactions (when using an interactive backend):
+
+- `-` key: reduce the trace amplitude by a constant factor.
+- `=` key: Increase the trace amplitude by a constant factor.
+
+See also: [`plot_section!`](@ref).
 """
 function Seis.plot_section(
     ts::AbstractArray{<:Seis.AbstractTrace},
