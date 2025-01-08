@@ -180,6 +180,7 @@ Seis.plot_traces(t::Seis.AbstractTrace; kwargs...) = Seis.plot_traces([t]; kwarg
 function Makie.plot(ts::AbstractArray{<:Seis.AbstractTrace}; kwargs...)
     Seis.plot_traces(ts; kwargs...)
 end
+Makie.plot(t::Seis.AbstractTrace; kwargs...) = Makie.plot([t]; kwargs...)
 
 """
     plot_section!([ax::Makie.Axis=Makie.current_axis(),] traces::AbstractVector{<:Seis.AbstractTrace}, y_values=Seis.distance_deg; kwargs...)
