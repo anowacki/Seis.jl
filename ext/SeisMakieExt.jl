@@ -180,6 +180,7 @@ Seis.plot_traces(t::Seis.AbstractTrace; kwargs...) = Seis.plot_traces([t]; kwarg
 function Makie.plot(ts::AbstractArray{<:Seis.AbstractTrace}; kwargs...)
     Seis.plot_traces(ts; kwargs...)
 end
+Makie.plot(t::Seis.AbstractTrace; kwargs...) = Makie.plot([t]; kwargs...)
 
 """
     plot_section!([ax::Makie.Axis=Makie.current_axis(),] traces::AbstractVector{<:Seis.AbstractTrace}, y_values=Seis.distance_deg; kwargs...)
@@ -198,7 +199,7 @@ then the most recently used `Makie.Axis` is updated.
 - A string:
   - `"index"`: Plot equally spaced apart by trace index, starting at 1.
 
-# Keyword arguments
+## Keyword arguments
 - `absscale`: Set to a value to plot traces at some absolute scale.  This is
   useful if one wants two or more sections to have the same scale.
 - `align`: Set to a `String` to align on the first pick with this name.
@@ -226,6 +227,13 @@ then the most recently used `Makie.Axis` is updated.
 - `show_picks`:  If `true`, add marks on the record section for each pick in the trace
   headers.
 - `zoom`: Set magnification scale for traces (default 1).
+
+## Interactions
+The following keys can be used in addition to the standard Makie
+plot interactions (when using an interactive backend):
+
+- `-` key: reduce the trace amplitude by a constant factor.
+- `=` key: Increase the trace amplitude by a constant factor.
 
 See also: [`plot_section`](@ref plot_section).
 """
@@ -435,23 +443,6 @@ function Seis.plot_section!(
         )
     end
 
-    # Report position in data terms
-    Makie.on(Makie.events(ax).mousebutton) do event
-        axis_pixel_limits = _get_axis_pixel_limits(ax)
-        if event.button == Makie.Mouse.left && event.action == Makie.Mouse.release
-            mouse_px_x, mouse_px_y = mouseposition = Makie.events(ax).mouseposition[]
-            if (
-                axis_pixel_limits.x0 <= mouse_px_x <= axis_pixel_limits.x1 &&
-                axis_pixel_limits.y0 <= mouse_px_y <= axis_pixel_limits.y1
-            )
-                mouse_t, mouse_y = _mouseposition_data(ax, mouseposition)
-                println("Cursor at $((mouse_t, mouse_y))!")
-            else
-                println("Cursor outside axis at $(mouseposition)")
-            end
-        end
-    end
-
     # Zoom traces: `=` for in, `-` for out
     Makie.on(Makie.events(ax).keyboardbutton) do event
         event.key in (Makie.Keyboard.equal, Makie.Keyboard.minus) || return
@@ -486,6 +477,15 @@ not passed on:
 - `axis`: Dictionary, named tuple or set of pairs containing
   keyword arguments which are passed to `Makie.Axis`, controlling
   the appearance of the axis.
+
+## Interactions
+The following keys can be used in addition to the standard Makie
+plot interactions (when using an interactive backend):
+
+- `-` key: reduce the trace amplitude by a constant factor.
+- `=` key: Increase the trace amplitude by a constant factor.
+
+See also: [`plot_section!`](@ref).
 """
 function Seis.plot_section(
     ts::AbstractArray{<:Seis.AbstractTrace},
@@ -564,31 +564,6 @@ function _calculate_y_shifts(ts, y_values)
             throw(ArgumentError("unrecognised y axis name '$y_values'"))
         end
     end
-end
-
-function _get_axis_pixel_limits(ax::Makie.Axis)
-    viewport = Makie.viewport(ax)[]
-    x0, y0 = viewport.origin
-    x1, y1 = viewport.origin .+ viewport.widths
-    (; x0, x1, y0, y1)
-end
-
-function _mouseposition_data(ax::Makie.Axis, mouseposition)
-    x, y = mouseposition
-
-end
-
-function trace_points_in_window!(
-    npts::Vector{Int},
-    traces::AbstractArray{<:Seis.AbstractTrace},
-    t1,
-    t2
-)
-    for i in eachindex(npts, traces)
-
-    end
-
-    nothing
 end
 
 """
