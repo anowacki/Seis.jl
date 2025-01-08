@@ -66,8 +66,8 @@
 ### Plotting with [Makie.jl](https://docs.makie.org/stable)
 - If you are on Julia v1.9 or greater and have loaded
   the `Makie` package (e.g., via one of its backends like `using GLMakie`),
-  then the `plot_traces` and `plot_section` functions can be used to plot
-  multiple traces.
+  then the `plot_traces`, `plot_section` and `plot_hodogram` functions can
+  be used to plot traces in different ways.
   Users of earlier versions or those who have not loaded Makie are unaffected.
 
 ## Deprecated or removed

@@ -40,6 +40,13 @@ The figures produced here were made using CairoMakie unless otherwise noted.
 
 ## Plotting functions
 
+### New figure or existing axis?
+The Makie plotting functions mostly come in two flavours—one which adds a plot
+into an existing axis (and ends with `!`, such as [`plot_section!`](@ref)),
+and another with a `!` which creates a returns a new `Makie.Figure`
+object, such as [`plot_section`](@ref).  We discuss the new-figure versions
+below.
+
 ### `Makie.plot`: Default plot
 Seis.jl extends `Makie.plot` to produce the default kind of plot for
 whatever Seis.jl types are passed to it.  At present, it will forward to
@@ -53,6 +60,9 @@ similar to simply plotting `trace(t)` against `times(t)`.
 However, `plot_traces` when applied to a single `Trace` or an
 `AbstractArray{<:Trace}` offers options to scale plots relatively,
 show pick times, and so on.
+
+(Note that there is no in-place version of `plot_traces` because it requires
+several axes.)
 
 #### Examples
 1: A simple plot for a single trace, showing the picks.
@@ -90,7 +100,7 @@ Seis.plot_traces
 ```
 
 
-### `section`: Record sections
+### `plot_section`: Record sections
 `section` plots a 'record section', or a set of traces where a trace's
 position on the y-axis is determined by some other information.
 
@@ -184,7 +194,38 @@ downsampling.
     If using `decimate=false` with very large datasets (many millions of
     points) plotting may become extremely slow or even unstable.
 
+#### Full docstrings
+```@docs
+Seis.plot_section!
+Seis.plot_section
+```
+
+### `plot_hodogram`: Particle motion plots
+Hododgrams, or particle motion plots, are parametric plots
+of two or three components of motion through time.  These can be plotted
+in Seis using `plot_hodogram`.
+
+#### Examples
+Hodogram of the horizontal components of an earthquake, windowed around
+the P-wave arrival, showing the backazimuth to the event location,
+and the particle motion and backazimuth lines set to have different
+colours.
+
+```@example plotting_makie
+t = e, n, z = sample_data(:regional)[1:3]
+cut!.(t, 50, 70)
+plot_hodogram(e, n; backazimuth=true, lines=(color=:blue,), backazimuth_lines=(color=:red, linestyle=:dash))
+```
+
+We can also create a 3D plot of the particle motion across all three
+components:
+
+```@example plotting_makie
+plot_hodogram(e, n, z)
+```
+
 #### Full docstring
 ```@docs
-Seis.plot_section
+Seis.plot_hodogram!
+Seis.plot_hodogram
 ```
