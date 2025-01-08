@@ -1,4 +1,5 @@
 [deps]
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Geodesics = "6aaf26a4-c633-11e8-35ae-8904cb805353"
@@ -8,5 +9,5 @@ SeisTau = "802e1830-4752-5daf-add9-2f2a4d2e763c"
 TauPy = "fa53487c-c63f-11e8-170c-e7abdb8d2806"
 
 [compat]
-Documenter = "0.27"
+Documenter = "1"
 Plots = "1"

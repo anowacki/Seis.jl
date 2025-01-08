@@ -653,6 +653,13 @@ function Base.merge!(ts::AbstractArray{<:AbstractTrace}; kwargs...)
     merge!(ts[begin], @view(ts[begin+1:end]); kwargs...)
 end
 
+"""
+    merge(t1::AbstractTrace, t2::AbstractTrace...) -> t_merged
+    merge(t1::AbstractTrace, ::Vararg{AbstractTrace}) -> t_merged
+    merge(ts::AbstractArray{<:AbstractTrace}) -> t_merged
+
+For details of out-of-place trace merging, see [`merge!`](@ref merge!(::AbstractTrace, ::AbstractArray{<:AbstractTrace})).
+"""
 Base.merge(t1::AbstractTrace, ts::AbstractArray{<:AbstractTrace}; kwargs...) =
     merge!(deepcopy(t1), ts; kwargs...)
 Base.merge(t1::AbstractTrace, t2::AbstractTrace, ts::Vararg{AbstractTrace}; kwargs...) =
@@ -664,8 +671,6 @@ function Base.merge(ts::AbstractArray{<:AbstractTrace}; kwargs...)
     length(ts) == 1 && return deepcopy(only(ts))
     merge!(deepcopy(ts[begin]), @view(ts[begin+1:end]); kwargs...)
 end
-
-@doc (@doc merge!(::AbstractTrace, ::AbstractArray{<:AbstractTrace})) merge
 
 """
     _merge_relative!(t1, ts, gaps, overlaps, taper, sample_tol, taper_form) -> t1
