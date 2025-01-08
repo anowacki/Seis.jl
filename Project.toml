@@ -15,17 +15,25 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
+[weakdeps]
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+
+[extensions]
+SeisMakieExt = "Makie"
+
 [compat]
 DSP = "0.6, 0.7"
 FFTW = "1"
 Glob = "1"
 LibMseed = "0.3.2"
+Makie = "0.20, 0.21"
 RecipesBase = "1"
 StaticArrays = "1"
 Statistics = "1"
 julia = "1.6"
 
 [extras]
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
