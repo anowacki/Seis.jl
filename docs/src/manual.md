@@ -23,7 +23,7 @@ it uses.  Fundamentally, there are four important types:
 - [`Trace`](@ref)s, which contain
 - [`Station`](@ref)s and
 - [`Event`](@ref)s; and also
-- [`FourierTrace`](@ref)s, which a frequency-domain `Trace`s.
+- [`FourierTrace`](@ref)s, which are frequency-domain `Trace`s.
 
 Each of these types have fields which either must contain data,
 or allow data to be [`missing`](https://docs.julialang.org/en/v1/manual/missing/#missing-1).
@@ -365,7 +365,7 @@ In addition, sets of traces can be rotated:
   [`rotate_to_azimuth_incidence!`](@ref) rotate triplets of orthogonal
   traces to arbitrary orientations.
 
-All of the above will use trace header information (coordinate of the
+All of the above will use trace header information (coordinates of the
 event and station, and channel orientations) to automatically compute
 the directions if possible.
 

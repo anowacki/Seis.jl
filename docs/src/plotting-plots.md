@@ -1,9 +1,10 @@
-# Plotting
+# Plotting with Plots.jl
 
 ## Introduction
-Seis comes with plotting functionality which relies on
+Seis comes with two kinds of plotting functionality.
+The first relies on
 [Plots](https://docs.juliaplots.org/latest/).  To create plots with
-Seis, first install Plots:
+Seis and Plots.jl, first install Plots:
 ```
 import Pkg
 Pkg.add("Plots")
@@ -15,6 +16,10 @@ julia> using Seis.Plot, Plots
 ```
 
 This will bring the recipes into scope.
+
+For the other kind of plotting using [Makie.jl](https://docs.makie.org/stable/),
+see the [separate documentation](@ref Plotting-with-Makie.jl).
+
 
 ## 'Recipes'
 Seis.jl implements plotting via so-called

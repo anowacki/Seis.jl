@@ -129,6 +129,10 @@ export
     rotate_to_lqt!,
     rotate_to_lqt,
     sort_traces_right_handed,
+    # Plotting
+    plot_section!,
+    plot_section,
+    plot_traces,
     # Analysis
     spectrogram
 
@@ -174,7 +178,8 @@ include("spectrogram.jl")
 include("Synth.jl")
 import .Synth
 
-# Plotting functionality is only loaded when using Plots
+# Plotting functionality is only loaded when using Plots or Makie
 include("Plot.jl")
+include("makie.jl")
 
 end # module
