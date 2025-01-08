@@ -45,24 +45,32 @@ These affect the way that the traces are plotted and annotated.
 ## Makie keyword arguments
 These affect the way Makie draws the figure, axes and lines.
 
-- `fig_kwargs=(size=(700,800),)`: Keyword arguments passed to the `Makie.Figure`
+- `figure=(size=(700,800),)`: Keyword arguments passed to the `Makie.Figure`
   constructor.
-- `ax_kwargs=(xgridvisible=false, ygridvisible=false)`: Keyword arguments passed
+- `axis=(xgridvisible=false, ygridvisible=false)`: Keyword arguments passed
   to the `Makie.Axis` constructor.
-- `lines_kwargs=()`: Keyword arguments passed to the `Makie.lines` function which
+- `lines=()`: Keyword arguments passed to the `Makie.lines` function which
   displays trace lines.
 """
 function Seis.plot_traces(
     ts::AbstractArray{<:Seis.AbstractTrace};
-    fig_kwargs=(size=(700,800),),
-    ax_kwargs=(xgridvisible=false, ygridvisible=false),
-    lines_kwargs=(),
+    figure=(size=(700,800),),
+    axis=(xgridvisible=false, ygridvisible=false),
+    lines=(),
     label=Seis.channel_code,
     show_picks=true,
     sort=nothing,
     ylims=nothing,
+    # TODO: Remove deprecated keyword arguments in a new release
+    fig_kwargs=nothing,
+    ax_kwargs=nothing,
+    lines_kwargs=nothing,
 )
     isempty(ts) && throw(ArgumentError("cannot plot empty array of traces"))
+
+    figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
+    axis = _kwargs_deprecation(:ax_kwargs, :axis, ax_kwargs, axis)
+    lines = _kwargs_deprecation(:lines_kwargs, :lines, lines_kwargs, lines)
 
     ntraces = length(ts)
 
@@ -109,15 +117,15 @@ function Seis.plot_traces(
         label.(ts)
     end
 
-    fig = Makie.Figure(; fig_kwargs...)
+    fig = Makie.Figure(; figure...)
 
     axs = Vector{Makie.Axis}(undef, length(ts))
 
     # Plot traces
     for (i, t) in enumerate(ts)
-        axs[i] = Makie.Axis(fig[i,1]; limits=limits, ax_kwargs...)
+        axs[i] = Makie.Axis(fig[i,1]; limits=limits, axis...)
         Makie.lines!(axs[i], Seis.times(t), Seis.trace(t);
-            color=:black, linewidth=1, lines_kwargs...
+            color=:black, linewidth=1, lines...
         )
         Makie.linkxaxes!(axs[i], axs[1])
 
@@ -199,7 +207,7 @@ then the most recently used `Makie.Axis` is updated.
 - `color = :black`: Line color for traces; passed to `Makie.lines`.
 - `decimate`: If `false`, do not perform downsampling of traces for plotting.
   Defaults to `true`.
-- `lines_kwargs`: Passed to the `Makie.lines` call which plots the traces.
+- `lines`: Passed to the `Makie.lines` call which plots the traces.
 - `flip = false`: Flip the polarity of traces if `true`, so that positive values
   point down the page.  Note that positive values are always up even if
   `reverse` is `true`, unless `flip` is also `true`.
@@ -232,13 +240,17 @@ function Seis.plot_section!(
     # fill_down=nothing,
     # fill_up=nothing,
     flip=false,
-    lines_kwargs=(),
+    lines=(),
     linewidth=1,
     max_samples=50_000,
     show_picks=false,
     zoom=1,
+    # TODO: Remove deprecated keyword arguments
+    lines_kwargs=nothing,
 )
     isempty(ts) && throw(ArgumentError("set of traces cannot be empty"))
+
+    lines = _kwargs_deprecation(:lines_kwargs, :lines, lines_kwargs, lines)
 
     ntraces = length(ts)
     total_npts = sum(Seis.nsamples, ts)
@@ -393,7 +405,7 @@ function Seis.plot_section!(
     # Lines
     if linewidth > 0
         line_data = Makie.@lift($(line_data_and_text)[1])
-        pl = Makie.lines!(ax, line_data; linewidth, color, lines_kwargs...)
+        pl = Makie.lines!(ax, line_data; linewidth, color, lines...)
     end
 
 
@@ -468,10 +480,10 @@ Most `kwargs` are passed onto [`plot_section!`](@ref); see
 The following keyword arguments are unique to this function and are
 not passed on:
 
-- `fig_kwargs`: Dictionary, named tuple or set of pairs containing
+- `figure`: Dictionary, named tuple or set of pairs containing
   keyword arguments which are passed to `Makie.Figure`, controlling
   the appearance of the figure.
-- `ax_kwargs`: Dictionary, named tuple or set of pairs containing
+- `axis`: Dictionary, named tuple or set of pairs containing
   keyword arguments which are passed to `Makie.Axis`, controlling
   the appearance of the axis.
 """
@@ -479,13 +491,22 @@ function Seis.plot_section(
     ts::AbstractArray{<:Seis.AbstractTrace},
     y_values=Seis.distance_deg;
     align=nothing,
-    lines_kwargs=(),
+    lines=(),
     reverse=false,
-    fig_kwargs=(size=(800, 1100),),
-    ax_kwargs=(xlabel="Time / s", yreversed=reverse),
+    figure=(size=(800, 1100),),
+    axis=(xlabel="Time / s", yreversed=reverse),
+    # TODO: Remove deprecated keyword arguments
+    fig_kwargs=nothing,
+    ax_kwargs=nothing,
+    lines_kwargs=nothing,
+    # Other keyword arguments passed to `plot_section!`
     kwargs...
 )
-    fig = Makie.Figure(; fig_kwargs...)
+    figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
+    axis = _kwargs_deprecation(:ax_kwargs, :axis, ax_kwargs, axis)
+    lines = _kwargs_deprecation(:lines_kwargs, :lines, lines_kwargs, lines)
+
+    fig = Makie.Figure(; figure...)
 
     ylabel = if y_values isa Symbol
         String(y_values)
@@ -514,9 +535,9 @@ function Seis.plot_section(
 
     limits = (min_time, max_time, y_min - Δy/20, y_max + Δy/20)
 
-    ax = Makie.Axis(fig[1,1]; ylabel, limits, ax_kwargs...)
+    ax = Makie.Axis(fig[1,1]; ylabel, limits, axis...)
 
-    Seis.plot_section!(ax, ts, y_shifts; align, lines_kwargs, kwargs...)
+    Seis.plot_section!(ax, ts, y_shifts; align, lines, kwargs...)
 
     fig
 end
@@ -584,6 +605,15 @@ end
 function _decimation_value(times, t1, t2, max_samples)
     npts = sum(x -> t1 <= x <= t2, times)
     max(1, round(Int, npts/max_samples))
+end
+
+function _kwargs_deprecation(old_name, new_name, kwargs_old, kwargs_new)
+    if !isnothing(kwargs_old)
+        @warn("$old_name is deprecated in favour of $new_name and will be removed in a future version=")
+        kwargs_old
+    else
+        kwargs_new
+    end
 end
 
 end # module
