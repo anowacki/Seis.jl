@@ -22,7 +22,7 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 SeisMakieExt = "Makie"
 
 [compat]
-DSP = "0.6, 0.7"
+DSP = "0.8"
 FFTW = "1"
 Glob = "1"
 LibMseed = "0.3.2"
