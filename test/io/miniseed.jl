@@ -71,16 +71,22 @@ io_data_path(file) = joinpath(@__DIR__, "..", "test_data", "io", file)
                 @test startdate(t[2]) - enddate(t[1]) == Dates.Second(2)
             end
 
-            @testset "No gap allowed" begin
-                @test read_mseed(path, maximum_gap=0) == read_mseed(path)
-            end
+            # Neither ARM nor PowerPC are currently supported in using
+            # `LibMseed.read(...; time_tolerance)`:
+            if Sys.ARCH != :aarch64
+                @testset "No gap allowed" begin
+                    @test read_mseed(path, maximum_gap=0) == read_mseed(path)
+                end
 
-            @testset "Single segment from larger gap" begin
-                t = read_mseed(path, maximum_gap=2)
-                @test length(t) == 1
-                @test nsamples(t[1]) == 6
-                @test trace(t[1]) == [1, 2, 3, 4, 5, 6]
-                @test channel_code(t[1]) == "AN.STA2..HHZ"
+                @testset "Single segment from larger gap" begin
+                    t = read_mseed(path, maximum_gap=2)
+                    @test length(t) == 1
+                    @test nsamples(t[1]) == 6
+                    @test trace(t[1]) == [1, 2, 3, 4, 5, 6]
+                    @test channel_code(t[1]) == "AN.STA2..HHZ"
+                end
+            else
+                @test_throws ErrorException read_mseed(path, maximum_gap=0)
             end
         end
 
