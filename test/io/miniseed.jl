@@ -192,6 +192,20 @@ io_data_path(file) = joinpath(@__DIR__, "..", "test_data", "io", file)
                     end
                 end
             end
+
+            @testset "Negative submillisecond b time" begin
+                # 1 s and 0.1 ms before 2000-01-01T00:00:00.000
+                # = 1000.1 ms before 2000-01-01T00:00:00.000
+                # = 0.1 ms before 1999-12-31T23:59:59
+                # = 0.9 ms after 1999-12-31T23:59:58.999
+                # = 1999-12-31T23:59:58.999 with a b of 0.0009
+                t = Trace(-1.0001, 0.001, rand(100))
+                t.evt.time = DateTime(2000)
+                write_mseed(file, t)
+                t′ = only(read_mseed(file))
+                @test t′.b ≈ 0.0009 atol=0.0001
+                @test t′.evt.time == DateTime(1999, 12, 31, 23, 59, 58, 999)
+            end
         end
     end
 
