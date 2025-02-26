@@ -63,6 +63,8 @@
 - A one-sided (or no-sided) taper can be applied using the new keywords
   arguments to `taper[!]` `left` and `right`.
 - One-sided tapers can be applied to up to 100% of the trace length.
+- Trace constructors like `Trace` now have keyword argument versions and
+  defaults for `b` and `delta`.
 ### Plotting with [Makie.jl](https://docs.makie.org/stable)
 - If you are on Julia v1.9 or greater and have loaded
   the `Makie` package (e.g., via one of its backends like `using GLMakie`),

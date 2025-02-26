@@ -57,7 +57,7 @@ composite types:
 
 ```@repl example
 # A trace starting a 0 s with sampling interval 1 s made of 100 random samples
-t = Trace(0, 1, rand(100))
+t = Trace(b=0, delta=1, data=rand(100))
 # Update the sampling interval to 0.1 s
 t.delta = 0.1
 ```

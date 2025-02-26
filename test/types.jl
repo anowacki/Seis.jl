@@ -278,12 +278,72 @@ import FFTW
             @test t.b == b
             @test t.delta == delta
 
-            @test_throws MethodError Trace()
             @test_throws MethodError Trace(b)
             @test_throws MethodError Trace(b, delta)
             @test_throws ArgumentError Trace(b, -delta, tr)
             @test_throws MethodError Trace(b, delta, b)
+
+            @testset "Keyword constructor" begin
+                @testset "$T $S $E" for (T, S, E) in (
+                    (Trace, Station, Event),
+                    (CartTrace, CartStation, CartEvent)
+                )
+                    @testset "Defaults" begin
+                        @test T() == T(0, 1, [])
+                    end
+
+                    @testset "Specified kwargs" begin
+                        sta = S(sta="ABC")
+                        evt = E(id="123")
+                        picks = Seis.SeisDict{Union{Int,Symbol},Seis.Pick{Seis.DEFAULT_FLOAT}}(
+                            :a => Seis.Pick(1, "a"),
+                            2 => Seis.Pick(2, "b")
+                        )
+                        meta = Seis.SeisDict(Dict{Symbol,Any}(:test=>0.1))
+                        @test T(b=b).b == b
+                        @test trace(T(data=tr)) == tr
+                        @test nsamples(T(n=n-1)) == n - 1
+                        @test T(delta=delta).delta == delta
+                        @test T(evt=evt).evt == evt
+                        @test T(sta=sta).sta == sta
+                        @test T(meta=meta).meta == meta
+                        @test T(picks=picks).picks == picks
+
+                        @test (
+                            @test_logs (
+                                :warn, "ignoring keyword argument `n` as `data` was passed in"
+                            ) T(n=10, data=[1, 2, 3]) == T(data=[1, 2, 3])
+                        )
+
+                        tref = T()
+                        tref.b = b
+                        tref.delta = delta
+                        tref.t = tr
+                        tref.evt = evt
+                        tref.sta = sta
+                        tref.picks = picks
+                        tref.meta = meta
+                        @test T(; b, delta, data=tr, evt, sta, picks, meta) == tref
+                    end
+
+                    @testset "Parameterised constructor" begin
+                        @test T{Float32}(b=1, delta=0.5, data=[1,2,3]) ==
+                            T{Float32}(1, 0.5, [1,2,3])
+                        @test T{Float32,Vector{Float16}}(b=1, delta=0.5, data=[1,2,3]) ==
+                            T{Float32,Vector{Float16}}(1, 0.5, [1,2,3])
+                    end
+                end
+
+                @testset "Parameterised constructor" begin
+                    @test typeof(Trace{Float16}()) == Trace{Float16,Vector{Float16},Seis.Geographic{Float16}}
+                    @test typeof(Trace{Float16,Vector{Float32}}()) ==
+                        Trace{Float16,Vector{Float32},Seis.Geographic{Float16}}
+                    @test typeof(Trace{Float16,Vector{Float32},Seis.Cartesian{Float16}}()) ==
+                        Trace{Float16,Vector{Float32},Seis.Cartesian{Float16}}
+                end
+            end
         end
+
 
         let b = rand(), delta = rand(), n = rand(1:100), t = Trace(b, delta, n)
             @test t.b == b

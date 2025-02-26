@@ -679,17 +679,47 @@ an `AbstractVector` `t` of values for the trace.  The default precision for
 the type is `$DEFAULT_FLOAT`.  By default, the trace's event and station
 are in geographic coordinates.
 
+---
+
     Trace(b, delta, n::Integer) -> trace::Trace{$DEFAULT_FLOAT,Vector{$DEFAULT_FLOAT},Seis.Geographic{$DEFAULT_FLOAT}}
 
 Create a new `Trace` with uninitialised data of length `n` samples.
 
-    Trace{T,V,P}(args...) -> trace::Trace{T,V,P}
-    Trace{T,V}(args...) -> trace::Trace{T,V,Seis.Geographic{T}}
-    Trace{T}(args...) -> trace::Trace{T,Vector{T},Seis.Geographic{T}}
+---
+
+    Trace(; kwargs...) -> trace
+
+Construct a new `Trace` with fields set according the to the following
+keyword arguments `kwargs`:
+
+- `b = 0`: Start time of trace relative to `evt.time`
+- `delta = 1`: Sampling interval in s
+- `data = $(DEFAULT_FLOAT)[]`: `AbstractVector` of trace data.  Takes
+  precedence over `n` if `n` is also supplied.
+- `n`: Create a vector with arbitrary contents of length `n` samples.
+  Ignored if `data` is supplied.
+- `evt = Event{$(DEFAULT_FLOAT)}()`: [`Event`](@ref) object
+- `sta = Station{$(DEFAULT_FLOAT)}()`: [`Station`](@ref) object
+- `meta = Seis.SeisDict{Symbol,Any}()`: Metadata dictionary
+- `picks = Seis.SeisDict{Union{Int,Symbol},Seis.Pick{T}}()`: Picks dictionary
+
+---
+
+    Trace{T,V,P}(args...; kwargs...) -> trace::Trace{T,V,P}
+    Trace{T,V}(args...; kwargs...) -> trace::Trace{T,V,Seis.Geographic{T}}
+    Trace{T}(args...; kwargs...) -> trace::Trace{T,Vector{T},Seis.Geographic{T}}
 
 Construct traces with non-default number and data types.  In the third
 form, the data type defaults to `Vector{$DEFAULT_FLOAT}`, whilst in
 both the second and third forms, `P` defaults to `Seis.Geographic{T}`.
+
+# Examples
+The default, empty trace
+```
+julia> Trace()
+```
+
+A trace with defined station code
 """
 Trace{T,V,P}(b, delta, t::AbstractVector) where {T,V,P} =
     Trace{T,V,P}(b, delta, t, Event{T,P}(), Station{T,P}(), Dict(), Dict())
@@ -697,6 +727,25 @@ Trace{T,V,P}(b, delta, n::Integer) where {T,V,P} = Trace{T,V,P}(b, delta, Vector
 Trace{T,V}(args...) where {T,V} = Trace{T,V,Geographic{T}}(args...)
 Trace{T}(args...) where T = Trace{T,Vector{T},Geographic{T}}(args...)
 Trace(b, delta, t_or_n) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},Geographic{DEFAULT_FLOAT}}(b, delta, t_or_n)
+
+function Trace{T,V,P}(;
+    b=zero(T),
+    delta=one(T),
+    n=0,
+    data=V(undef, n),
+    sta=Station{T,P}(),
+    evt=Event{T,P}(),
+    meta=SeisDict{Symbol,Any}(),
+    picks=SeisDict{Union{Int,Symbol},Pick{T}}()
+) where {T,V,P}
+    if length(data) != n && n != 0
+        @warn("ignoring keyword argument `n` as `data` was passed in")
+    end
+    Trace{T,V,P}(b, delta, data, evt, sta, picks, meta)
+end
+Trace{T,V}(; kwargs...) where {T,V} = Trace{T,V,Geographic{T}}(; kwargs...)
+Trace{T}(; kwargs...) where T = Trace{T,Vector{T},Geographic{T}}(; kwargs...)
+Trace(; kwargs...) = Trace{DEFAULT_FLOAT,Vector{DEFAULT_FLOAT},Geographic{DEFAULT_FLOAT}}(; kwargs...)
 
 """
     CartTrace
@@ -715,15 +764,15 @@ See [`Trace`](@ref) for more details of the different construction methods.
 
 ---
     CartTrace{T,V}(b, delta, t::AbstractVector) -> trace
-    CartTrace{T}(args...)
+    CartTrace{T}(args...; kwargs...)
 
 Construct a `Trace` with Cartesian coordinates for the `Event` and `Station`
 with non-default number and data types.  See [`Trace{T,V}`](@ref)
 for details.
 """
-CartTrace{T}(args...) where T = Trace{T, Vector{T}, Cartesian{T}}(args...)
-CartTrace(args...) = Trace{DEFAULT_FLOAT, Vector{DEFAULT_FLOAT},
-          Cartesian{DEFAULT_FLOAT}}(args...)
+CartTrace{T}(args...; kwargs...) where T = Trace{T, Vector{T}, Cartesian{T}}(args...; kwargs...)
+CartTrace(args...; kwargs...) = Trace{DEFAULT_FLOAT, Vector{DEFAULT_FLOAT},
+          Cartesian{DEFAULT_FLOAT}}(args...; kwargs...)
 
 const TRACE_FIELDS = fieldnames(Trace)
 
