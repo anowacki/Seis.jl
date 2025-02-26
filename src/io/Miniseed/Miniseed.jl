@@ -76,11 +76,15 @@ function write(file, t::AbstractTrace;
         throw(ArgumentError("trace has no origin time set; cannot write miniSEED"))
     b = Seis.starttime(t)
     # Start offset to the nearest millisecond
-    ms = Dates.Millisecond(floor(Int64, b*1000))
+    ms = Dates.Millisecond(round(Int64, b*1000, RoundToZero))
     # First sample date to millisecond precision
     startdatetime = Seis.origin_time(t) + ms
     # Additional number of nanoseconds
-    ns = Dates.Nanosecond(floor(Int64, b*1_000_000_000)%1_000_000)
+    ns = Dates.Nanosecond(round(Int64, b*1_000_000_000, RoundToZero)%1_000_000)
+    if ns < Dates.Nanosecond(0)
+        ns = ns + Dates.Nanosecond(1_000_000)
+        startdatetime -= Dates.Millisecond(1)
+    end
     # Nanosecond precision of first sample
     startnanotime = LibMseed.NanosecondDateTime(startdatetime, ns)
     id = trace_id(t.sta)
