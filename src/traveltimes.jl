@@ -99,8 +99,8 @@ function add_pick!(t::AbstractTrace, date::Dates.AbstractDateTime, name=missing)
         throw(ArgumentError("origin time must be set for trace to add a pick by date"))
     end
 
-    time_ms::Dates.Millisecond = date - origin_time(t)
-    time = Dates.value(time_ms)/1000
+    time_ns::Dates.Nanosecond = date - origin_time(t)
+    time = Dates.value(time_ns)/1_000_000_000
     add_pick!(t, time, name)
 end
 

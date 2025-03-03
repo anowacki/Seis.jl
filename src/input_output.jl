@@ -138,7 +138,7 @@ function Trace(s::SAC.SACTrace; header_only=false)
     t = Trace{Float32}(s[:b], s[:delta], s[:t])
     # Origin time
     if !any(SAC.isundefined, getfield.(s, sac_date_hdr))
-        t.evt.time = Dates.DateTime(s[:nzyear], 1, 1, s[:nzhour], s[:nzmin],
+        t.evt.time = NanoDates.NanoDate(s[:nzyear], 1, 1, s[:nzhour], s[:nzmin],
             s[:nzsec], s[:nzmsec]) + Dates.Day(s[:nzjday] - 1)
         # Seis.Traces are always aligned so that 0 is the origin, whatever it is
         # Shift all SAC headers such that O is 0.

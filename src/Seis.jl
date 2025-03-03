@@ -148,6 +148,7 @@ import DSP
 import DSP: resample, spectrogram
 import FFTW
 import FFTW: fft, ifft
+using NanoDates: NanoDates, NanoDate
 import StaticArrays
 
 import Geodesics

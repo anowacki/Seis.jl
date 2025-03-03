@@ -138,7 +138,7 @@ time of a section of data with no energy source implied.
 
 `Event`s have the following accessible fields, all of which can be `missing`:
 
-- `time` is a `Dates.DateTime` giving an absolute date and time in UTC
+- `time` is a `NanoDates.NanoDate` giving an absolute date and time in UTC
   against which a `Trace`'s `b` field (beginning time) is relative.
   For an earthquake or other source of energy, it should be the origin
   time of that event.
@@ -520,8 +520,8 @@ Note that the `:S` pick is overwritten.  Note also here that by not providing
 a name for the pick, its name defaults to `missing`.
 
 Picks can also be set using [`add_picks!`](@ref), which can take a
-`Dates.DateTime` to set a pick in absolute time rather than a time relative
-to the trace origin.
+`Dates.DateTime` or `NanoDates.NanoDate` to set a pick in absolute time
+rather than a time relative to the trace origin.
 
 ```@repl example
 using Dates

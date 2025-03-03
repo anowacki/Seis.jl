@@ -198,13 +198,12 @@ io_data_path(file) = joinpath(@__DIR__, "..", "test_data", "io", file)
                 # = 1000.1 ms before 2000-01-01T00:00:00.000
                 # = 0.1 ms before 1999-12-31T23:59:59
                 # = 0.9 ms after 1999-12-31T23:59:58.999
-                # = 1999-12-31T23:59:58.999 with a b of 0.0009
+                # = 1999-12-31T23:59:58.9999
                 t = Trace(-1.0001, 0.001, rand(100))
                 t.evt.time = DateTime(2000)
                 write_mseed(file, t)
                 t′ = only(read_mseed(file))
-                @test t′.b ≈ 0.0009 atol=0.0001
-                @test t′.evt.time == DateTime(1999, 12, 31, 23, 59, 58, 999)
+                @test t′.evt.time == NanoDate(1999, 12, 31, 23, 59, 58, 999, 900)
             end
         end
     end
@@ -213,8 +212,8 @@ io_data_path(file) = joinpath(@__DIR__, "..", "test_data", "io", file)
         @testset "Reading" begin
             file = io_data_path("miniseed_submillisecond_startdate.mseed")
             t = only(read_mseed(file))
-            @test t.b ≈ 0.000123
-            @test startdate(t) == Dates.DateTime(2000)
+            @test t.b == 0
+            @test startdate(t) == NanoDate(2000, 1, 1, 0, 0, 0, 000, 123, 000)
         end
 
         @testset "Writing" begin
@@ -225,10 +224,7 @@ io_data_path(file) = joinpath(@__DIR__, "..", "test_data", "io", file)
                     "AB", "CD", "EF", "HG2"
                 write_mseed(path, t)
                 t′ = only(read_mseed(path, Trace{Float64, Vector{Float32}}))
-                # Writing in miniSEED version 2 format only retains µs precision,
-                # truncating any further digits.
-                @test t′.b ≈ 0.000456 atol = 1e-9
-                @test startdate(t′) == Dates.DateTime(2000) + Dates.Millisecond(123)
+                @test startdate(t′) == NanoDate(2000) + Dates.Microsecond(123456)
             end
         end
     end

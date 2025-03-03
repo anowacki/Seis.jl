@@ -210,7 +210,7 @@ end
 
 Type containing information about a seismic event.  Fields `lon` and `lat` are
 epicentral location in °; `dep` is depth below the reference (e.g., sea level) in km.
-`time` is a `Dates.DateTime` giving the event origin date and time, while `id`
+`time` is a `NanoDates.NanoDate` giving the event origin date and time, while `id`
 is a string holding the event identifier.
 `meta` is a `Dict` holding any extra information about the event.
 
@@ -218,7 +218,7 @@ Missing information is allowed and stored as `missing`.
 """
 mutable struct Event{T<:AbstractFloat, P<:Position}
     pos::P
-    time::Union{DateTime,Missing}
+    time::Union{NanoDate,Missing}
     id::Union{String,Missing}
     meta::SeisDict{Symbol,Any}
 end
@@ -231,7 +231,7 @@ start time for the trace with no extra information).
 
 ## Keyword arguments
 All arguments default to `missing`.
-- `time`: `DateTime` of the reference time
+- `time`: `NanoDates.NanoDate` of the reference time
 - `id`: string giving the event identifier
 - `meta`: `Dict` holding any extra information
 

@@ -1,4 +1,5 @@
 using Test, Dates
+using NanoDates: NanoDates, NanoDate
 using Seis
 using LinearAlgebra: ×, ⋅
 import Rotations
@@ -287,7 +288,7 @@ using .TestHelpers
                     origin_time!(t, DateTime(3000))
                     @test t.evt.time == DateTime(3000)
                     @test starttime(t) == b
-                    @test startdate(t) == DateTime(3000) + Millisecond(round(Int, 1000*b))
+                    @test startdate(t) == NanoDate(3000) + Nanosecond(round(Int, 1_000_000_000*b))
                     @test t.picks.A.time == p
                     @test t.picks.A.name == "A"
                 end
@@ -313,13 +314,13 @@ using .TestHelpers
             @test_throws ErrorException dates(t) # No origin time defined
             t.evt.time = DateTime(3004, 2, 29, 08, 47, 21, 400)
             @test length(dates(t)) == 340
-            @test dates(t)[1] == t.evt.time + Dates.Millisecond(round(Int, t.b*1e3))
-            @test Dates.value(dates(t)[2] - dates(t)[1]) ≈ t.delta*1e3 # in ms
+            @test dates(t)[1] == t.evt.time + Dates.Nanosecond(round(Int, t.b*1e9))
+            @test Dates.value(dates(t)[2] - dates(t)[1]) ≈ t.delta*1e9 # in ns
         end
         let b = 0, delta = 1, n = 61, t = Trace(b, delta, rand(n))
-            t.evt.time = DateTime(1999, 12, 31, 23, 59, 0)
+            t.evt.time = NanoDate(1999, 12, 31, 23, 59, 0)
             @test dates(t)[end] == DateTime(2000)
-            t.delta = 0.25e-3
+            t.delta = 0.25e-9
             @test_throws ErrorException dates(t) # delta < 1 ms
             @test_throws ErrorException startdate(t)
             @test_throws ErrorException enddate(t)
