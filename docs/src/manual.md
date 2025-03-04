@@ -152,6 +152,16 @@ time of a section of data with no energy source implied.
   - `quakeml` holds information about an event in QuakeML form, if any;
   - `catalog` gives the name of the catalogue for this event.
 
+#### Dates
+Dates are returned as
+[`NanoDates.NanoDate`](https://github.com/JuliaTime/NanoDates.jl)s, with
+ns resolution.  `NanoDate`s are broadly compatible with Julia's
+[`Dates`](https://docs.julialang.org/en/v1/stdlib/Dates/) standard library.
+However if you need to convert any dates to the
+[`Dates.DateTime`](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.DateTime)
+type, simply call `DateTime` on any `NanoDate` like `DateTime(nanodate)` to
+truncate it to ms.
+
 ### `FourierTrace`s
 
 A `FourierTrace` is a frequency-domain version of its corresponding `Trace`.
