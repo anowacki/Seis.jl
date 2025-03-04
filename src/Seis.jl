@@ -41,6 +41,7 @@ export
     # 'Getters'
     are_orthogonal,
     dates,
+    datetimes,
     enddate,
     endtime,
     frequencies,

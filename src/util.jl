@@ -100,12 +100,43 @@ julia> dates(t)
 1981-03-29T10:39:06.659998720:Nanosecond(10000000):1981-03-29T10:39:16.649998720
 ```
 
-See also: [`times`](@ref).
+See also: [`times`](@ref), [`datetimes`](@ref).
 """
 function dates(t)
     b, delta = _check_date_b_delta(t)
     (t.evt.time + b):delta:(t.evt.time + b + (nsamples(t)-1)*delta)
 end
+
+"""
+    datetimes(t::AbstractTrace) -> ::Vector{Dates.DateTime}
+
+Like [`dates`](@ref), but return a `Vector` of `Dates.DateTime`s giving
+the rounded `DateTime` of each sample of `t`, rather than the full-precision
+date.
+
+Unless you specifically need only `DateTime`s, use `dates` by preference.
+
+!!! note
+    This function may return successive samples with the same date
+    because it truncates the ns-resolved dates of each sample down
+    to the lower `DateTime`.
+
+!!! note
+    The rounding behaviour of the conversion of each sample date to
+    `DateTime` is not defined and could change in future.  Users should
+    treat the returned vector as an unequally-spaced set of values.
+
+# Example
+```
+julia> t = sample_data();
+
+julia> datetimes(t)
+1981-03-29T10:39:06.66:10 milliseconds:1981-03-29T10:39:16.65
+```
+
+See also: [`dates`](@ref), [`times`](@ref).
+"""
+datetimes(t::AbstractTrace) = DateTime.(dates(t))
 
 """
     startdate(t) -> date

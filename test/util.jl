@@ -331,6 +331,33 @@ using .TestHelpers
             @test dates(t)[end] == DateTime(2000, 1, 1, 0, 0, 1)
             @test dates(t)[end] == enddate(t)
         end
+
+        @testset "datetimes" begin
+            n = rand(10:100)
+            b = 100*(rand() - 0.5)
+            delta = rand() + 0.01
+            t = Trace(b, delta, n)
+            @test_throws ErrorException datetimes(t)
+            origin_time!(t, NanoDate("2000-01-01T01:23:45.012345678"))
+            dts = datetimes(t)
+            @test dts isa Vector{DateTime}
+            @test length(dts) == nsamples(t)
+            @test all(i -> dts[i] <= dts[i+1], eachindex(dts)[begin:(end-1)])
+        end
+
+        @testset "dates v datetimes" begin
+            n = rand(10:100)
+            b = 100rand()
+            delta = rand() + 0.01
+            t = Trace(b, delta, n)
+            origin_time!(t, NanoDate("2000-01-01T01:23:45.012345678"))
+            @test length(dates(t)) == length(datetimes(t)) == nsamples(t)
+            @test first(datetimes(t)) == DateTime(startdate(t))
+            @test first(datetimes(t)) == DateTime(
+                origin_time(t) + Dates.Nanosecond(floor(Int, b*1000000000))
+            )
+            @test last(datetimes(t)) == DateTime(enddate(t))
+        end
     end
 
     @testset "Nearest sample" begin
