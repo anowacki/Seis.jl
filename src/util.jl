@@ -192,8 +192,8 @@ as `Dates.Nanosecond`s.
 function _check_date_b_delta(t::AbstractTrace)
     ismissing(t.evt.time) && error("trace does not have origin time set")
     t.delta < 1e-9 && error("date calculations do not support sampling intervals < 1 ns")
-    b = Dates.Nanosecond(round(Int, starttime(t)*1_000_000_000))
-    delta_in_ns = round(Int, 1_000_000_000*t.delta)
+    b = Dates.Nanosecond(round(Int64, starttime(t)*1_000_000_000))
+    delta_in_ns = round(Int64, 1_000_000_000*t.delta)
     delta = Dates.Nanosecond(delta_in_ns)
     b, delta
 end
