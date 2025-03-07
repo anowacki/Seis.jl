@@ -157,17 +157,20 @@ function Seis.plot_traces(
 
         # Trace labels in the top right
         if !isnothing(labels)
-            if !date
-                Makie.text!(axs[i], 1, 1;
-                    text=labels[i],
-                    space=:relative,
-                    align=(:right, :top),
-                    offset=(-2, -1)
-                )
+            # Can't plot in relative space with unitful axis:
+            # https://github.com/MakieOrg/Makie.jl/issues/4324
+            # Workaround from https://github.com/MakieOrg/Makie.jl/issues/4324#issuecomment-2694097047
+            label_axis = if date
+                Makie.Scene(axs[i].scene)
             else
-                @warn("Plotting labels is not currently supported with `date=true`. " *
-                    "Use `label=nothing` to silence this warning.")
+                axs[i]
             end
+            Makie.text!(label_axis, 1, 1;
+                text=labels[i],
+                space=:relative,
+                align=(:right, :top),
+                offset=(-2, -1)
+            )
         end
 
         # Picks
