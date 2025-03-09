@@ -58,7 +58,7 @@ These affect the way Makie draws the figure, axes and lines.
 function Seis.plot_traces(
     ts::AbstractArray{<:Seis.AbstractTrace};
     figure=(size=(700,800),),
-    axis=(xgridvisible=false, ygridvisible=false),
+    axis=(),
     date::Bool=false,
     lines=(),
     label=Seis.channel_code,
@@ -139,10 +139,10 @@ function Seis.plot_traces(
 
     # Plot traces
     for (i, t) in enumerate(ts)
-        # axs[i] = Makie.Axis(fig[i,1]; limits, axis...)
         times = date ? Seis.datetimes(t) : Seis.times(t)
         axs[i], _ = Makie.lines(fig[i,1], times, Seis.trace(t);
-            color=:black, linewidth=1, axis, lines...
+            axis=(xgridvisible=false, ygridvisible=false, axis...),
+            color=:black, linewidth=1, lines...
         )
         # Set limits second in case we are dealing with dates:
         # https://github.com/MakieOrg/Makie.jl/issues/4059
