@@ -51,6 +51,45 @@ end
                 @test enddate(t′) == time_now + Second(1)
             end
 
+            @testset "Dates with non-zero b" begin
+                t2 = Trace(0.5, 1, 1:20)
+                origin_time!(t2, DateTime(2000))
+
+                @testset "Relative" begin
+                    cut1 = 1.1
+                    cut2 = 2.9
+                    t_cut = cut(t2, cut1, cut2; warn=false)
+                    @test nsamples(t_cut) == 2
+                    @test times(t_cut) == 1.5:1.0:2.5
+                    @test all(
+                        dates(t_cut) .== DateTime.(2000, 1, 1, 0, 0, (1, 2), 500)
+                    )
+                    @test trace(t_cut) == trace(t2)[2:3]
+
+                    @testset "In-place" begin
+                        @test cut!(deepcopy(t2), cut1, cut2; warn=false) == t_cut
+                    end
+                end
+
+                @testset "Date" begin
+                    d1 = DateTime(2000, 1, 1, 0, 0, 1, 100)
+                    d2 = DateTime(2000, 1, 1, 0, 0, 2, 900)
+                    t_cut = cut(t2, d1, d2)
+
+                    @test nsamples(t_cut) == 2
+                    @test times(t_cut) == 1.5:1.0:2.5
+                    @test all(
+                        dates(t_cut) .== DateTime.(2000, 1, 1, 0, 0, (1, 2), 500)
+                    )
+                    @test trace(t_cut) == trace(t2)[2:3]
+
+                    @testset "In-place" begin
+                        @test cut!(deepcopy(t2), d1, d2; warn=false) == t_cut
+                    end
+                end
+
+            end
+
             @testset "Picks" begin
                 add_pick!(t, 1, "Test pick")
                 @test cut(t, "Test pick", 0, "Test pick", 0.5) == cut(t, 1, 1.5)

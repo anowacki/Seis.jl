@@ -77,5 +77,7 @@
   `are_orthogonal` which works for non-horizontal pairs as well.
 
 ## Notable bug fixes
+- `cut[!]` using dates only worked correctly when the trace start time was 0;
+  this has been fixed.
 - `rotate_through[!]` behaved in an inconsistent way and has been fixed
   (see 'Breaking changes'), but its new behaviour is different.
