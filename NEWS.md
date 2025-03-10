@@ -5,6 +5,11 @@
   Versions older than this are not supported.
 
 ## Breaking changes
+- Dates are now returned (e.g., by `dates`) and stored internally as
+  [`NanoDates`](https://github.com/JuliaTime/NanoDates.jl), replacing
+  the `Dates.DateTime`s used before.  Call `DateTime(nd)` to truncate
+  a `NanoDate` to the millisecond, or call `datetimes` to get a vector
+  of the nearest `DateTime`s to each sample.
 - `rotate_through[!]` now explicitly implements the partial de-facto
   previous behaviour: that the direction of the rotation is defined
   by the order of the traces.
@@ -16,9 +21,11 @@
 - `read_mseed`:
   - no longer supports the `maximum_offset` keyword argument;
   - moves the positional argument `T` specifying the trace type to the
-    end to better match up with `Base.read`; and
+    end to better match up with `Base.read`;
   - now returns a `Trace{Float64, Vector{Float32}, Seis.Geographic{Float64}}`
-    by default.
+    by default; and
+  - no longer sets the `b` time to anything other than 0 s, since we use
+    ns-resolved dates internally.
 - `plot`: The deprecated `picks` keyword argument has been removed in
   favour of `show_picks`.
 

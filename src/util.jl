@@ -90,19 +90,17 @@ are_orthogonal(t1::AbstractTrace, t2::AbstractTrace, t3::AbstractTrace; kwargs..
 Return a `date_range` which contains the dates for each sample of `t`, so long
 as `t.evt.time` is defined.  If not, an error is thrown.
 
-N.B.  This function assumes that the sampling interval `t.delta` is representable
-as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
-have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+N.B.  This function rounds the sampling interval to the nearest number of ns.
 
 # Example
 ```
 julia> t = sample_data();
 
 julia> dates(t)
-1981-03-29T10:39:06.66:10 milliseconds:1981-03-29T10:39:16.65
+1981-03-29T10:39:06.659998720:Nanosecond(10000000):1981-03-29T10:39:16.649998720
 ```
 
-See also: [`times`](@ref).
+See also: [`times`](@ref), [`datetimes`](@ref).
 """
 function dates(t)
     b, delta = _check_date_b_delta(t)
@@ -110,13 +108,44 @@ function dates(t)
 end
 
 """
+    datetimes(t::AbstractTrace) -> ::Vector{Dates.DateTime}
+
+Like [`dates`](@ref), but return a `Vector` of `Dates.DateTime`s giving
+the rounded `DateTime` of each sample of `t`, rather than the full-precision
+date.
+
+Unless you specifically need only `DateTime`s, use `dates` by preference.
+
+!!! note
+    This function may return successive samples with the same date
+    because it truncates the ns-resolved dates of each sample down
+    to the lower `DateTime`.
+
+!!! note
+    The rounding behaviour of the conversion of each sample date to
+    `DateTime` is not defined and could change in future.  Users should
+    treat the returned vector as an unequally-spaced set of values.
+
+# Example
+```
+julia> t = sample_data();
+
+julia> datetimes(t)
+1981-03-29T10:39:06.66:10 milliseconds:1981-03-29T10:39:16.65
+```
+
+See also: [`dates`](@ref), [`times`](@ref).
+"""
+datetimes(t::AbstractTrace) = DateTime.(dates(t))
+
+"""
     startdate(t) -> date
 
 Return the `date` of the first sample of the trace `t`.
 
 N.B.  This function assumes that the sampling interval `t.delta` is representable
-as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
-have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+as an integer number of nanoseconds and rounds it accordingly.  `NanoDates.NanoDate`s
+have precision of 1 ns.  An error is thrown if `t.delta < 1e-9` s.
 
 # Example
 ```
@@ -137,8 +166,8 @@ startdate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time +
 Return the `date` of the last sample of the trace `t`.
 
 N.B.  This function assumes that the sampling interval `t.delta` is representable
-as an integer number of milliseconds, and rounds it accordingly.  `Dates.DateTime`s
-have precision of 1 ms.  An error is thrown if `t.delta < 1e-3` s.
+as an integer number of nanoseconds, and rounds it accordingly.  `NanoDates.NanoDate`s
+have precision of 1 ns.  An error is thrown if `t.delta < 1e-9` s.
 
 # Example
 ```
@@ -154,20 +183,18 @@ See also: [`startdate`](@ref).
 enddate(t::AbstractTrace) = ((b, delta) = _check_date_b_delta(t); t.evt.time + b + (nsamples(t)-1)*delta)
 
 """
-    _check_date_b_delta(t) -> b::Millisecond, delta::Millisecond
+    _check_date_b_delta(t) -> b::Dates.Nanosecond, delta::Dates.Nanosecond
 
 Throw an error if a trace either has no origin time set, or has a sampling interval
 less than 1 ms, and return the trace start time `b` and sampling interval `delta`
-as `Dates.Millisecond`s.
+as `Dates.Nanosecond`s.
 """
 function _check_date_b_delta(t::AbstractTrace)
     ismissing(t.evt.time) && error("trace does not have origin time set")
-    t.delta < 1e-3 && error("date calculations do not support sampling intervals < 1 ms")
-    b = Millisecond(round(Int, starttime(t)*1000))
-    delta_in_ms = round(Int, 1000*t.delta)
-    delta_in_ms ≈ 1000t.delta || error("date calculations do not support sampling intervals " *
-                                       "which are not whole numbers of milliseconds")
-    delta = Millisecond(delta_in_ms)
+    t.delta < 1e-9 && error("date calculations do not support sampling intervals < 1 ns")
+    b = Dates.Nanosecond(round(Int64, starttime(t)*1_000_000_000))
+    delta_in_ns = round(Int64, 1_000_000_000*t.delta)
+    delta = Dates.Nanosecond(delta_in_ns)
     b, delta
 end
 
@@ -206,7 +233,7 @@ See also: [`starttime`](@ref).
 endtime(t::AbstractTrace) = t.b + (nsamples(t) - 1)*t.delta
 
 """
-    origin_time!(t, time::DateTime; picks=true) -> t
+    origin_time!(t, time::Dates.AbstractDateTime; picks=true) -> t
 
 Set the origin time of the trace `t` and shift the start time of the trace
 (stored in its `.b` field) so that the absolute time of all samples remains
@@ -240,36 +267,37 @@ Seis.SeisDict{Union{Int64, Symbol},Seis.Pick{Float32}} with 2 entries:
   :A => Seis.Pick{Float32}(time=52.670002, name=missing)
 ```
 """
-function origin_time!(t::AbstractTrace, time::DateTime; picks=true)
-    if t.evt.time === missing
+function origin_time!(t::AbstractTrace, time::Dates.AbstractDateTime; picks=true)
+    if origin_time(t) === missing
         t.evt.time = time
         return t
     end
     # Shift in s of the trace start time from old to new origin time.
     # Δb is positive if the new time is *later*.
-    Δb = Dates.value(time - t.evt.time)*1e-3
-    t.b -= Δb
+    Δb::Dates.Nanosecond = time - origin_time(t)
+    Δb_s = Dates.value(Δb)*1e-9
+    t.b -= Δb_s
     t.evt.time = time
     if picks
         for (key, (time, name)) in t.picks
-            t.picks[key] = Seis.Pick{eltype(t)}(time-Δb, name)
+            t.picks[key] = Seis.Pick{eltype(t)}(time - Δb_s, name)
         end
     end
     t
 end
 
 """
-    origin_time(t, time::DateTime; picks=true) -> t′
+    origin_time(t, time::Dates.AbstractDateTime; picks=true) -> t′
 
 Return a copy to `t` where the event origin time is shifted to `time`.
 
 See the in-place version [`origin_time!`](@ref) for more details.
 """
-origin_time(t::AbstractTrace, time::DateTime; kwargs...) =
+origin_time(t::AbstractTrace, time::Dates.AbstractDateTime; kwargs...) =
     origin_time!(deepcopy(t), time; kwargs...)
 
 """
-    origin_time(t) -> ::Dates.DateTime
+    origin_time(t) -> ::NanoDates.NanoDate
 
 Return the origin time of the trace `t`, which is the point in time to
 which samples are referenced.  In this single-argument method, the trace
@@ -442,7 +470,7 @@ function nearest_sample(t::AbstractTrace, time; inside=true)::Union{Int,Nothing}
 end
 
 """
-    nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
+    nearest_sample(t::AbstractTrace, datetime::Dates.AbstractDateTime; inside=true)
 
 Form of `nearest_sample` where `datetime` is given as absolute time.
 
@@ -463,7 +491,7 @@ julia> nearest_sample(t, startdate(t) -  Second(10), inside=false)
 1
 ```
 """
-function nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
+function nearest_sample(t::AbstractTrace, datetime::Dates.AbstractDateTime; inside=true)
     ismissing(t.evt.time) && error("trace does not have origin time set")
     d = dates(t)
     if inside
@@ -471,7 +499,8 @@ function nearest_sample(t::AbstractTrace, datetime::DateTime; inside=true)
     end
     datetime <= d[1] && return 1
     datetime >= d[end] && return nsamples(t)
-    argmin(abs.(d .- datetime))
+    _, index = findmin(x -> abs(x - datetime), d)
+    index
 end
 
 """
@@ -523,7 +552,7 @@ function nsamples(t::AbstractTrace, b, e)
 end
 
 """
-    nsamples(t, start::DateTime, stop::DateTime) -> n
+    nsamples(t, start::Dates.AbstractDateTime, stop::Dates.AbstractDateTime) -> n
 
 Return the number of samples `n` in a trace `t` between dates
 `start` and `stop`.
@@ -544,14 +573,15 @@ julia> nsamples(t, DateTime(3000) + Second(20), DateTime(3000) + Second(22))
 3
 ```
 """
-function nsamples(t::AbstractTrace, start::DateTime, stop::DateTime)
+function nsamples(t::AbstractTrace, start::Dates.AbstractDateTime, stop::Dates.AbstractDateTime)
     ismissing(t.evt.time) && throw(ArgumentError("trace does not have origin time set"))
     bdate = startdate(t)
     edate = enddate(t)
     (start > edate || stop < bdate) && return 0
     tb = starttime(t)
-    b = Dates.value(start - bdate)/1000 + tb
-    e = Dates.value(stop - bdate)/1000 + tb
+    te = endtime(t)
+    b = start < bdate ? tb : (Dates.value(NanoDate(start) - bdate)/1_000_000_000 + tb)
+    e = stop > edate ? te : (Dates.value(NanoDate(stop) - bdate)/1_000_000_000 + tb)
     nsamples(t, b, e)
 end
 

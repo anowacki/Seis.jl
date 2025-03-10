@@ -179,12 +179,12 @@ function _cut_time_indices(t::AbstractTrace, b, e; warn=true, allowempty=false)
     ib, ie, new_start, empty
 end
 
-function _cut_time_indices(t::AbstractTrace, b::DateTime, e::DateTime; warn=true, allowempty=true)
+function _cut_time_indices(t::AbstractTrace, b::Dates.AbstractDateTime, e::Dates.AbstractDateTime; warn=true, allowempty=true)
     t.evt.time === missing && throw(ArgumentError("no event time defined for trace array"))
-    b_ms::Dates.Millisecond = b - origin_time(t)
-    e_ms::Dates.Millisecond = e - origin_time(t)
-    b = Dates.value(b_ms)/1000
-    e = Dates.value(e_ms)/1000
+    b_ns::Dates.Nanosecond = b - origin_time(t)
+    e_ns::Dates.Nanosecond = e - origin_time(t)
+    b = Dates.value(b_ns)/1_000_000_000
+    e = Dates.value(e_ns)/1_000_000_000
     _cut_time_indices(t, b, e; warn, allowempty)
 end
 

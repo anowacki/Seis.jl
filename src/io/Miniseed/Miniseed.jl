@@ -7,6 +7,7 @@ module Miniseed
 
 import Dates
 import LibMseed
+using NanoDates: NanoDates, NanoDate
 import ..Seis
 using ..Seis: Trace, CartTrace, AbstractTrace
 
@@ -68,6 +69,13 @@ If `trace` does not have an origin time set (in the `.evt.time` field),
 an error is thrown.
 
 For keyword arguments, see [`Seis.write_mseed`](@ref).
+
+!!! note
+    Seis uses `NanoDates.NanoDate`s to represent points in time, giving nanosecond
+    resolution.  miniSEED version 2 uses microseconds, therefore
+    trace start times will be truncated to the nearest microsecond when
+    writing to this format.  It is currently the default because although
+    miniSEED version 3 uses nanoseconds, is not yet widely used.
 """
 function write(file, t::AbstractTrace;
         append=false, verbose=0, pubversion=1, record_length=nothing, version=2)
@@ -75,18 +83,12 @@ function write(file, t::AbstractTrace;
     ismissing(t.evt.time) &&
         throw(ArgumentError("trace has no origin time set; cannot write miniSEED"))
     b = Seis.starttime(t)
-    # Start offset to the nearest millisecond
-    ms = Dates.Millisecond(round(Int64, b*1000, RoundToZero))
-    # First sample date to millisecond precision
-    startdatetime = Seis.origin_time(t) + ms
-    # Additional number of nanoseconds
-    ns = Dates.Nanosecond(round(Int64, b*1_000_000_000, RoundToZero)%1_000_000)
-    if ns < Dates.Nanosecond(0)
-        ns = ns + Dates.Nanosecond(1_000_000)
-        startdatetime -= Dates.Millisecond(1)
-    end
+    # Start offset to the nearest nanosecond
+    ns = Dates.Nanosecond(round(Int64, b*1_000_000_000, RoundToZero))
+    # First sample date to nanosecond precision
+    startnanodate = Seis.origin_time(t) + ns
     # Nanosecond precision of first sample
-    startnanotime = LibMseed.NanosecondDateTime(startdatetime, ns)
+    startnanotime = _nanodate2libmseed_nanodatetime(startnanodate)
     id = trace_id(t.sta)
     sample_rate = inv(t.delta)
     LibMseed.write_file(file, Seis.trace(t), sample_rate, startnanotime, id;
@@ -117,11 +119,9 @@ station, location and channel codes as best as possible, with all of these
 being potentially empty.
 
 !!! note
-    Seis uses `DateTime`s to represent points in time, giving only millisecond
-    resolution.  However, miniSEED version 2 uses microseconds, and version 3
-    uses nanoseconds.  Therefore the lowest whole millisecond of the miniSEED
-    segment start time is used to give the `evt.time` value for each trace,
-    and the trace starting time is the remaining micro- or nanoseconds.
+    Seis uses `NanoDates.NanoDate`s to represent points in time, giving nanosecond
+    resolution.  miniSEED version 2 uses microseconds, while version 3
+    uses nanoseconds, though the newer version is not yet widely used.
 """
 function parse_tracelist(
     ::Type{T},
@@ -151,12 +151,9 @@ function parse_tracelist(
 
         for segment in mstrace.segments
             itrace += 1
-            # Date and time rounded down to the millisecond
-            starttime = LibMseed.datetime(segment.starttime)
-            # Additional sub-millisecond time
-            b = Dates.value(LibMseed.nanoseconds(segment.starttime))/1e9
+            starttime = _libmseed_nanodatetime2nanodate(segment.starttime)
             delta = 1/segment.sample_rate
-            tr = T(b, delta, segment.data)
+            tr = T(0, delta, segment.data)
             tr.sta.net = net
             tr.sta.sta = sta
             tr.sta.loc = loc
@@ -168,8 +165,8 @@ function parse_tracelist(
 
             if header_only
                 tr.meta.mseed_nsamples = segment.sample_count
-                tr.meta.mseed_enddate = LibMseed.nearest_datetime(segment.endtime)
-                tr.meta.mseed_endtime = b + delta*(segment.sample_count - 1)
+                tr.meta.mseed_enddate = _libmseed_nanodatetime2nanodate(segment.endtime)
+                tr.meta.mseed_endtime = delta*(segment.sample_count - 1)
             end
 
             traces[itrace] = tr
@@ -229,6 +226,27 @@ function check_id(net, sta, loc, cha, maxlengths)
     end
 
     parts
+end
+
+"""
+    _libmseed_nanodatetime2nanodate(dt::LibMseed.NanosecondDateTime) -> nd::NanoDates.NanoDate
+
+Convert a `LibMseed.NanosecondDateTime` into a `NanoDates.NanoDate`.
+"""
+function _libmseed_nanodatetime2nanodate(dt::LibMseed.NanosecondDateTime)
+    NanoDate(LibMseed.datetime(dt)) + LibMseed.nanoseconds(dt)
+end
+
+"""
+    _nanodate2libmseed_nanodatetime(nd::NanoDate) -> nst::LibMseed.NanosecondDateTime
+
+Convert a `NanoDates.NanoDate` into a `LibMseed.NanosecondDateTime
+"""
+function _nanodate2libmseed_nanodatetime(nd::NanoDate)
+    LibMseed.NanosecondDateTime(
+        Dates.DateTime(nd),
+        Dates.Nanosecond(1000*Dates.microsecond(nd) + Dates.nanosecond(nd))
+    )
 end
 
 end # module

@@ -41,6 +41,7 @@ export
     # 'Getters'
     are_orthogonal,
     dates,
+    datetimes,
     enddate,
     endtime,
     frequencies,
@@ -148,6 +149,7 @@ import DSP
 import DSP: resample, spectrogram
 import FFTW
 import FFTW: fft, ifft
+using NanoDates: NanoDates, NanoDate
 import StaticArrays
 
 import Geodesics

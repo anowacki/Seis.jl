@@ -8,6 +8,7 @@ module SeisMakieExt
 
 import Dates
 import Seis
+import Statistics
 
 @static if isdefined(Base, :get_extension)
     import Makie
@@ -24,6 +25,8 @@ Plot a set of traces as a set of separate wiggles, each with its own axis.
 ## Keyword arguments
 These affect the way that the traces are plotted and annotated.
 
+- `date=false`: If `true`, plot traces as a function of date (absolute time)
+  rather than relative to the start time.
 - `label=Seis.channel_code`: Set the label for each trace, which is placed
   in the top right corner of its axis.  The behaviour of this keyword depends
   on the type of `label`:
@@ -55,7 +58,8 @@ These affect the way Makie draws the figure, axes and lines.
 function Seis.plot_traces(
     ts::AbstractArray{<:Seis.AbstractTrace};
     figure=(size=(700,800),),
-    axis=(xgridvisible=false, ygridvisible=false),
+    axis=(),
+    date::Bool=false,
     lines=(),
     label=Seis.channel_code,
     show_picks=true,
@@ -96,7 +100,17 @@ function Seis.plot_traces(
     end
 
     # Default axis limits
-    limits = (minimum(Seis.starttime, ts), maximum(Seis.endtime, ts), nothing, nothing)
+    limits = if date
+        # Conversion to DateTime here because we get a NanoDate back
+        (
+            minimum(Dates.DateTime∘Seis.startdate, ts),
+            maximum(Dates.DateTime∘Seis.enddate, ts),
+            nothing,
+            nothing
+        )
+    else
+        (minimum(Seis.starttime, ts), maximum(Seis.endtime, ts), nothing, nothing)
+    end
     # Custom limits
     if ylims == :all
         minval = minimum(minimum∘Seis.trace, ts)
@@ -113,6 +127,8 @@ function Seis.plot_traces(
         label
     elseif label isa Symbol
         [coalesce(t.meta[label], "") for t in ts]
+    elseif isnothing(label)
+        nothing
     else
         label.(ts)
     end
@@ -123,11 +139,17 @@ function Seis.plot_traces(
 
     # Plot traces
     for (i, t) in enumerate(ts)
-        axs[i] = Makie.Axis(fig[i,1]; limits=limits, axis...)
-        Makie.lines!(axs[i], Seis.times(t), Seis.trace(t);
+        times = date ? Seis.datetimes(t) : Seis.times(t)
+        axs[i], _ = Makie.lines(fig[i,1], times, Seis.trace(t);
+            axis=(xgridvisible=false, ygridvisible=false, axis...),
             color=:black, linewidth=1, lines...
         )
-        Makie.linkxaxes!(axs[i], axs[1])
+        # Set limits second in case we are dealing with dates:
+        # https://github.com/MakieOrg/Makie.jl/issues/4059
+        Makie.limits!(axs[i], limits...)
+        if i > 1
+            Makie.linkxaxes!(axs[i], axs[1])
+        end
 
         if i < ntraces
             Makie.hidexdecorations!(axs[i])
@@ -135,7 +157,15 @@ function Seis.plot_traces(
 
         # Trace labels in the top right
         if !isnothing(labels)
-            Makie.text!(axs[i], 1, 1;
+            # Can't plot in relative space with unitful axis:
+            # https://github.com/MakieOrg/Makie.jl/issues/4324
+            # Workaround from https://github.com/MakieOrg/Makie.jl/issues/4324#issuecomment-2694097047
+            label_axis = if date
+                Makie.Scene(axs[i].scene)
+            else
+                axs[i]
+            end
+            Makie.text!(label_axis, 1, 1;
                 text=labels[i],
                 space=:relative,
                 align=(:right, :top),
@@ -148,12 +178,32 @@ function Seis.plot_traces(
             picks = t.picks
             if !isempty(picks)
                 pick_keys = collect(keys(picks))
-                pick_times = [picks[key].time for key in pick_keys]
+                pick_times = if date
+                    [
+                        Dates.DateTime(
+                            Seis.origin_time(t) +
+                            Dates.Nanosecond(round(Int64, picks[key].time*1_000_000_000))
+                        )
+                        for key in pick_keys
+                    ]
+                else
+                    [picks[key].time for key in pick_keys]
+                end
                 pick_names = String[
                     coalesce(picks[key].name, String(key)) for key in pick_keys
                 ]
 
-                Makie.vlines!(axs[i], pick_times, color=:blue)
+                # Currently can't plot vlines with `DateTime`:
+                # https://github.com/MakieOrg/Makie.jl/issues/4412
+                if date
+                    Makie.scatter!(axs[i], pick_times,
+                        [Statistics.mean(Seis.trace(t))];
+                        color=:blue,
+                        marker=:diamond,
+                    )
+                else
+                    Makie.vlines!(axs[i], pick_times; color=:blue)
+                end
                 # Work around inability to place things at a relative position
                 # in one dimension and absolute in another by plotting the
                 # pick label at the bottom of the axis in data space, using

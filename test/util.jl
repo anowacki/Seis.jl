@@ -1,4 +1,5 @@
 using Test, Dates
+using NanoDates: NanoDates, NanoDate
 using Seis
 using LinearAlgebra: ×, ⋅
 import Rotations
@@ -287,7 +288,7 @@ using .TestHelpers
                     origin_time!(t, DateTime(3000))
                     @test t.evt.time == DateTime(3000)
                     @test starttime(t) == b
-                    @test startdate(t) == DateTime(3000) + Millisecond(round(Int, 1000*b))
+                    @test startdate(t) == NanoDate(3000) + Nanosecond(round(Int, 1_000_000_000*b))
                     @test t.picks.A.time == p
                     @test t.picks.A.name == "A"
                 end
@@ -313,13 +314,13 @@ using .TestHelpers
             @test_throws ErrorException dates(t) # No origin time defined
             t.evt.time = DateTime(3004, 2, 29, 08, 47, 21, 400)
             @test length(dates(t)) == 340
-            @test dates(t)[1] == t.evt.time + Dates.Millisecond(round(Int, t.b*1e3))
-            @test Dates.value(dates(t)[2] - dates(t)[1]) ≈ t.delta*1e3 # in ms
+            @test dates(t)[1] == t.evt.time + Dates.Nanosecond(round(Int, t.b*1e9))
+            @test Dates.value(dates(t)[2] - dates(t)[1]) ≈ t.delta*1e9 # in ns
         end
         let b = 0, delta = 1, n = 61, t = Trace(b, delta, rand(n))
-            t.evt.time = DateTime(1999, 12, 31, 23, 59, 0)
+            t.evt.time = NanoDate(1999, 12, 31, 23, 59, 0)
             @test dates(t)[end] == DateTime(2000)
-            t.delta = 0.25e-3
+            t.delta = 0.25e-9
             @test_throws ErrorException dates(t) # delta < 1 ms
             @test_throws ErrorException startdate(t)
             @test_throws ErrorException enddate(t)
@@ -329,6 +330,33 @@ using .TestHelpers
             @test dates(t)[1] == startdate(t)
             @test dates(t)[end] == DateTime(2000, 1, 1, 0, 0, 1)
             @test dates(t)[end] == enddate(t)
+        end
+
+        @testset "datetimes" begin
+            n = rand(10:100)
+            b = 100*(rand() - 0.5)
+            delta = rand() + 0.01
+            t = Trace(b, delta, n)
+            @test_throws ErrorException datetimes(t)
+            origin_time!(t, NanoDate("2000-01-01T01:23:45.012345678"))
+            dts = datetimes(t)
+            @test dts isa Vector{DateTime}
+            @test length(dts) == nsamples(t)
+            @test all(i -> dts[i] <= dts[i+1], eachindex(dts)[begin:(end-1)])
+        end
+
+        @testset "dates v datetimes" begin
+            n = rand(10:100)
+            b = 100rand()
+            delta = rand() + 0.01
+            t = Trace(b, delta, n)
+            origin_time!(t, NanoDate("2000-01-01T01:23:45.012345678"))
+            @test length(dates(t)) == length(datetimes(t)) == nsamples(t)
+            @test first(datetimes(t)) == DateTime(startdate(t))
+            @test first(datetimes(t)) == DateTime(
+                origin_time(t) + Dates.Nanosecond(floor(Int64, b*1000000000))
+            )
+            @test last(datetimes(t)) == DateTime(enddate(t))
         end
     end
 

@@ -138,7 +138,7 @@ time of a section of data with no energy source implied.
 
 `Event`s have the following accessible fields, all of which can be `missing`:
 
-- `time` is a `Dates.DateTime` giving an absolute date and time in UTC
+- `time` is a `NanoDates.NanoDate` giving an absolute date and time in UTC
   against which a `Trace`'s `b` field (beginning time) is relative.
   For an earthquake or other source of energy, it should be the origin
   time of that event.
@@ -151,6 +151,16 @@ time of a section of data with no energy source implied.
   - `mag` holds an event magnitude;
   - `quakeml` holds information about an event in QuakeML form, if any;
   - `catalog` gives the name of the catalogue for this event.
+
+#### Dates
+Dates are returned as
+[`NanoDates.NanoDate`](https://github.com/JuliaTime/NanoDates.jl)s, with
+ns resolution.  `NanoDate`s are broadly compatible with Julia's
+[`Dates`](https://docs.julialang.org/en/v1/stdlib/Dates/) standard library.
+However if you need to convert any dates to the
+[`Dates.DateTime`](https://docs.julialang.org/en/v1/stdlib/Dates/#Dates.DateTime)
+type, simply call `DateTime` on any `NanoDate` like `DateTime(nanodate)` to
+truncate it to ms.
 
 ### `FourierTrace`s
 
@@ -520,8 +530,8 @@ Note that the `:S` pick is overwritten.  Note also here that by not providing
 a name for the pick, its name defaults to `missing`.
 
 Picks can also be set using [`add_picks!`](@ref), which can take a
-`Dates.DateTime` to set a pick in absolute time rather than a time relative
-to the trace origin.
+`Dates.DateTime` or `NanoDates.NanoDate` to set a pick in absolute time
+rather than a time relative to the trace origin.
 
 ```@repl example
 using Dates

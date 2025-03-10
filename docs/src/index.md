@@ -26,7 +26,7 @@ Seis can be added to your Julia environment like so:
 
 ```julia
 julia> ] # Press ']' to enter the REPL Pkg mode
-(@v1.4)> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/Seis.jl
+(@v1.11)> add https://github.com/anowacki/Geodesics.jl https://github.com/anowacki/Seis.jl
 ```
 
 ## Testing
