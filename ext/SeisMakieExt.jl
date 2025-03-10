@@ -170,7 +170,11 @@ function Seis.plot_traces(
 
     Makie.rowgap!(fig.layout, 0)
 
-    axs[end].xlabel = get(axis, :xlabel, "Time / s")
+    axs[end].xlabel = if isempty(axis)
+        "Time / s"
+    else
+        get(axis, :xlabel, "Time / s")
+    end
 
     fig
 end
