@@ -354,7 +354,7 @@ using .TestHelpers
             @test length(dates(t)) == length(datetimes(t)) == nsamples(t)
             @test first(datetimes(t)) == DateTime(startdate(t))
             @test first(datetimes(t)) == DateTime(
-                origin_time(t) + Dates.Nanosecond(floor(Int, b*1000000000))
+                origin_time(t) + Dates.Nanosecond(floor(Int64, b*1000000000))
             )
             @test last(datetimes(t)) == DateTime(enddate(t))
         end
