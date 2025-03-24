@@ -43,7 +43,7 @@ The figures produced here were made using CairoMakie unless otherwise noted.
 ### New figure or existing axis?
 The Makie plotting functions mostly come in two flavours—one which adds a plot
 into an existing axis (and ends with `!`, such as [`plot_section!`](@ref)),
-and another with a `!` which creates a returns a new `Makie.Figure`
+and another without a `!` which creates a returns a new `Makie.Figure`
 object, such as [`plot_section`](@ref).  We discuss the new-figure versions
 below.
 
