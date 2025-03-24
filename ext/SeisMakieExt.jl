@@ -737,9 +737,9 @@ function Seis.plot_hodogram(
     axis=(),
     lines=(color=:black,),
 )
-    _check_hodogram_args(t1, t2)
+    _check_hodogram_args(t1, t2, t3)
 
-    maxval = _max_abs_value(t1, t2)
+    maxval = _max_abs_value(t1, t2, t3)
     limits = 1.01*maxval.*(-1, 1, -1, 1, -1, 1)
     xlabel = coalesce(t1.sta.cha, string(t1.sta.azi))
     ylabel = coalesce(t2.sta.cha, string(t2.sta.azi))
@@ -748,7 +748,7 @@ function Seis.plot_hodogram(
     fig = Makie.Figure(; figure...)
 
     axis_defaults = if axis_type == Makie.Axis3
-        (; xlabel, ylabel, limits, aspect=(1, 1, 1), viewmode=:fit)
+        (; xlabel, ylabel, zlabel, limits, aspect=(1, 1, 1), viewmode=:fit)
     elseif axis_type == Makie.LScene
         ()
     else
