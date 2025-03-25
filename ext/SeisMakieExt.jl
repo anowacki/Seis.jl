@@ -19,7 +19,8 @@ end
     plot_traces(::AbstractArray{<:Seis.AbstractTrace}; kwargs...) -> ::Makie.Figure
     plot_traces(::AbstractTrace; kwargs...) -> ::Makie.Figure
 
-Plot a set of traces as a set of separate wiggles, each with its own axis.
+Plot a set of traces as a set of separate wiggles, each with its own axis,
+returning the figure object created.
 
 ## Keyword arguments
 These affect the way that the traces are plotted and annotated.
@@ -49,26 +50,51 @@ These affect the way Makie draws the figure, axes and lines.
   constructor.
 - `axis=(xgridvisible=false, ygridvisible=false)`: Keyword arguments passed
   to the `Makie.Axis` constructor.
-- `lines=()`: Keyword arguments passed to the `Makie.lines` function which
-  displays trace lines.
+- `lines=(color=:black, linewidth=1)`: Keyword arguments passed to the
+  `Makie.lines` function which displays trace lines.
+"""
+function Seis.plot_traces(ts::AbstractArray{<:Seis.AbstractTrace};
+    figure=(size=(700,800),),
+    # TODO: Remove deprecated keyword arguments in a new release
+    fig_kwargs=nothing,
+    kwargs...
+)
+    figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
+    fig = Makie.Figure(; figure...)
+    Seis.plot_traces(fig[1,1], ts; kwargs...)
+    fig
+end
+
+"""
+    plot_traces(gridposition, traces; kwargs...) -> ::Vector{Makie.AxisPlot}
+
+Plot a set of traces, each in their own axis, into a subgrid layout
+of an existing `Makie.Figure`.  Usually this will be created by
+indexing into an existing figure object.
+
+# Example
+Plot the east and north components of a set of data in two sets of axes
+next to each other:
+```
+julia> fig = plot_traces(filter(is_east, sample_data(:local)); lines=(; color=:red))
+
+julia> plot_traces(fig[1,2], filter(is_north, sample_data(:local)); lines=(; color=:blue));
 """
 function Seis.plot_traces(
+    gp::Union{Makie.GridPosition,Makie.GridSubposition},
     ts::AbstractArray{<:Seis.AbstractTrace};
-    figure=(size=(700,800),),
-    axis=(xgridvisible=false, ygridvisible=false),
+    axis=(),
     lines=(),
     label=Seis.channel_code,
     show_picks=true,
     sort=nothing,
     ylims=nothing,
     # TODO: Remove deprecated keyword arguments in a new release
-    fig_kwargs=nothing,
     ax_kwargs=nothing,
     lines_kwargs=nothing,
 )
     isempty(ts) && throw(ArgumentError("cannot plot empty array of traces"))
 
-    figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
     axis = _kwargs_deprecation(:ax_kwargs, :axis, ax_kwargs, axis)
     lines = _kwargs_deprecation(:lines_kwargs, :lines, lines_kwargs, lines)
 
@@ -117,21 +143,25 @@ function Seis.plot_traces(
         label.(ts)
     end
 
-    fig = Makie.Figure(; figure...)
-
     axs = Vector{Makie.Axis}(undef, length(ts))
+    plots = Vector{Makie.Plot}(undef, length(ts))
 
     # Plot traces
     for (i, t) in enumerate(ts)
-        axs[i] = Makie.Axis(fig[i,1]; limits=limits, axis...)
-        Makie.lines!(axs[i], Seis.times(t), Seis.trace(t);
+        axs[i] = Makie.Axis(gp[i,1];
+            limits=limits,
+            xgridvisible=false,
+            # Spines on the inside of the axes
+            xtickalign=1,
+            xticklabelsvisible=(i == ntraces),
+            xticksmirrored=true,
+            ygridvisible=false,
+            axis...
+        )
+        plots[i] = Makie.lines!(axs[i], Seis.times(t), Seis.trace(t);
             color=:black, linewidth=1, lines...
         )
         Makie.linkxaxes!(axs[i], axs[1])
-
-        if i < ntraces
-            Makie.hidexdecorations!(axs[i])
-        end
 
         # Trace labels in the top right
         if !isnothing(labels)
@@ -168,7 +198,7 @@ function Seis.plot_traces(
         end
     end
 
-    Makie.rowgap!(fig.layout, 0)
+    Makie.rowgap!(Makie.content(gp), 0)
 
     axs[end].xlabel = if isempty(axis)
         "Time / s"
@@ -176,7 +206,7 @@ function Seis.plot_traces(
         get(axis, :xlabel, "Time / s")
     end
 
-    fig
+    [Makie.AxisPlot(a, p) for (a, p) in zip(axs, plots)]
 end
 
 Seis.plot_traces(t::Seis.AbstractTrace; kwargs...) = Seis.plot_traces([t]; kwargs...)
@@ -184,10 +214,24 @@ Seis.plot_traces(t::Seis.AbstractTrace; kwargs...) = Seis.plot_traces([t]; kwarg
 function Makie.plot(ts::AbstractArray{<:Seis.AbstractTrace}; kwargs...)
     Seis.plot_traces(ts; kwargs...)
 end
+function Makie.plot(
+    gp::Union{Makie.GridPosition,Makie.GridSubposition},
+    ts::AbstractArray{<:Seis.AbstractTrace};
+    kwargs...
+)
+    Seis.plot_traces(gp, ts; kwargs...)
+end
 Makie.plot(t::Seis.AbstractTrace; kwargs...) = Makie.plot([t]; kwargs...)
+function Makie.plot(
+    gp::Union{Makie.GridPosition,Makie.GridSubposition},
+    t::Seis.AbstractTrace;
+    kwargs...
+)
+    Makie.plot(gp, [t]; kwargs...)
+end
 
 """
-    plot_section!([ax::Makie.Axis=Makie.current_axis(),] traces::AbstractVector{<:Seis.AbstractTrace}, y_values=Seis.distance_deg; kwargs...)
+    plot_section!([ax::Makie.Axis=Makie.current_axis(),] traces::AbstractVector{<:Seis.AbstractTrace}, y_values=Seis.distance_deg; kwargs...)::Makie.Plot
 
 Plot a record section for the `traces` supplied, where each is plotted at
 `y_values` against time on the x-axis.  If no explicit `ax` is given,
@@ -415,9 +459,11 @@ function Seis.plot_section!(
     =#
 
     # Lines
-    if linewidth > 0
+    pl = if linewidth > 0
         line_data = Makie.@lift($(line_data_and_text)[1])
-        pl = Makie.lines!(ax, line_data; linewidth, color, lines...)
+        Makie.lines!(ax, line_data; linewidth, color, lines...)
+    else
+        Makie.lines!(ax, [NaN32], [NaN32])
     end
 
 
@@ -455,25 +501,30 @@ function Seis.plot_section!(
             interactive_zoom_level[] += is_zoom_in ? 1 : -1
         end
     end
+
+    pl
 end
 
 function Seis.plot_section!(
     ts::AbstractArray{<:Seis.AbstractTrace},
-    y_values=Seis.distance_deg.(ts);
+    y_values=Seis.distance_deg;
     kwargs...
 )
     Seis.plot_section!(Makie.current_axis(), ts, y_values; kwargs...)
 end
 
 """
-    plot_section(traces::AbstractArray{<:Seis.AbstractTrace}, y_values=Seis.distance_deg; kwargs...) -> ::Makie.Figure
+    plot_section(traces::AbstractArray{<:Seis.AbstractTrace}, y_values=Seis.distance_deg; kwargs...) -> (fig, ax, pl)::Makie.FigureAxisPlot
 
 Create a new figure and fill it with a record section of the `traces`.
 Most `kwargs` are passed onto [`plot_section!`](@ref); see
 [`plot_section!`](@ref) for more information.
 
+This function returns a `Makie.FigureAxisPlot` object containing the
+figure handle `fig`, axis object `ax` and plot `pl`.
+
 The following keyword arguments are unique to this function and are
-not passed on:
+not passed on to [`plot_section!`]:
 
 - `figure`: Dictionary, named tuple or set of pairs containing
   keyword arguments which are passed to `Makie.Figure`, controlling
@@ -494,23 +545,54 @@ See also: [`plot_section!`](@ref).
 function Seis.plot_section(
     ts::AbstractArray{<:Seis.AbstractTrace},
     y_values=Seis.distance_deg;
+    figure=(size=(800, 1100),),
+    # TODO: Remove deprecated keyword arguments
+    fig_kwargs=nothing,
+    # Extra kwargs passed to `plot_section(::AbstractArray{<:Seis.AbstractTrace}, ...)`
+    kwargs...
+)
+    figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
+    fig = Makie.Figure(; figure...)
+    ax, pl = Seis.plot_section(fig[1,1], ts, y_values; kwargs...)
+    Makie.FigureAxisPlot(fig, ax, pl)
+end
+
+"""
+    plot_section(gridposition, traces, y_values=Seis.distance_deg; kwargs...) -> (ax, pl)::Makie.AxisPlot
+
+Create a new record section plot at `gridposition`, which is the
+position within a Makie layout.  Usually, this will be created by
+indexing into a `Makie.Figure` object.
+
+Returns a `Makie.AxisPlot` object containing the axis handle `ax`
+and plot object `pl`.
+
+# Example
+```
+julia> import GLMakie as Makie
+
+julia> fig = Makie.Figure();
+
+julia> plot_section(fig[1,1], sample_data(:array))
+```
+"""
+function Seis.plot_section(
+    gp::Union{Makie.GridPosition,Makie.GridSubposition},
+    ts::AbstractArray{<:Seis.AbstractTrace},
+    y_values=Seis.distance_deg;
     align=nothing,
     lines=(),
     reverse=false,
     figure=(size=(800, 1100),),
     axis=(xlabel="Time / s", yreversed=reverse),
     # TODO: Remove deprecated keyword arguments
-    fig_kwargs=nothing,
     ax_kwargs=nothing,
     lines_kwargs=nothing,
     # Other keyword arguments passed to `plot_section!`
     kwargs...
 )
-    figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
     axis = _kwargs_deprecation(:ax_kwargs, :axis, ax_kwargs, axis)
     lines = _kwargs_deprecation(:lines_kwargs, :lines, lines_kwargs, lines)
-
-    fig = Makie.Figure(; figure...)
 
     ylabel = if y_values isa Symbol
         String(y_values)
@@ -539,11 +621,11 @@ function Seis.plot_section(
 
     limits = (min_time, max_time, y_min - Δy/20, y_max + Δy/20)
 
-    ax = Makie.Axis(fig[1,1]; ylabel, limits, axis...)
+    ax = Makie.Axis(gp; ylabel, limits, axis...)
 
-    Seis.plot_section!(ax, ts, y_shifts; align, lines, kwargs...)
+    pl = Seis.plot_section!(ax, ts, y_shifts; align, lines, kwargs...)
 
-    fig
+    Makie.AxisPlot(ax, pl)
 end
 
 function _calculate_y_shifts(ts, y_values)
@@ -651,7 +733,7 @@ function Seis.plot_hodogram!(
 end
 
 """
-    Seis.plot_hodogram(t1, t2; kwargs...) -> fig, ax, pl
+    Seis.plot_hodogram(t1, t2; kwargs...) -> (fig, ax, pl)::Makie.FigureAxisPlot
 
 Create a new figure and fill it with a particle motion plot or
 'hodogram' of the two `Seis.AbstractTrace`s `t1` and `t2`.
@@ -670,19 +752,41 @@ not passed on:
 
 # Example
 ```
-julia> ts = cut!.(sample_data(:regional)[1:2], 0, 10);
+julia> ts = cut!.(sample_data(:regional)[1:2], 50, 60);
 
-julia> plot_hodogram(ts[1], ts[2])
+julia> fig, axis, hod = plot_hodogram(ts[1], ts[2])
 ```
 
 See also: [`plot_hodogram!`](@ref).
 """
 function Seis.plot_hodogram(
-    t1::Seis.AbstractTrace, t2::Seis.AbstractTrace;
-    backazimuth=false,
+    t1::Seis.AbstractTrace,
+    t2::Seis.AbstractTrace;
     figure=(size=(320, 300),),
-    axis=(aspect=Makie.DataAspect(), xgridvisible=false, ygridvisible=false),
-    lines=(color=:black,),
+    kwargs...
+)
+    fig = Makie.Figure(; figure...)
+    ax, pl = Seis.plot_hodogram(fig[1,1], t1, t2; kwargs...)
+    Makie.FigureAxisPlot(fig, ax, pl)
+end
+
+"""
+    plot_hodogram(gridposition, t1, t2; kwargs...) -> (ax, pl)::Makie.AxisPlot
+
+Create a new hodogram plot at `gridposition`, which is the
+position within a Makie layout.  Usually, this will be created by
+indexing into a `Makie.Figure` object.
+
+Returns a `Makie.AxisPlot` object containing the axis handle `ax`
+and plot object `pl`.
+"""
+function Seis.plot_hodogram(
+    gp::Union{Makie.GridPosition,Makie.GridSubposition},
+    t1::Seis.AbstractTrace,
+    t2::Seis.AbstractTrace;
+    backazimuth=false,
+    axis=(),
+    lines=(),
     backazimuth_lines=(color=:red,),
 )
     _check_hodogram_args(t1, t2)
@@ -692,21 +796,23 @@ function Seis.plot_hodogram(
     xlabel = coalesce(t1.sta.cha, string(t1.sta.azi))
     ylabel = coalesce(t2.sta.cha, string(t2.sta.azi))
 
-    fig = Makie.Figure(; figure...)
-    ax = Makie.Axis(fig[1,1];
-        xlabel,
-        ylabel,
+    ax = Makie.Axis(gp[1,1];
+        aspect=Makie.DataAspect(),
         limits,
+        xgridvisible=false,
+        xlabel,
+        ygridvisible=false,
+        ylabel,
         axis...
     )
 
-    pl = Makie.lines!(ax, Seis.trace(t1), Seis.trace(t2); lines...)
+    pl = Makie.lines!(ax, Seis.trace(t1), Seis.trace(t2); color=:black, lines...)
 
     if backazimuth
         _plot_hodogram_backazimuth!(ax, t1, t2, maxval, backazimuth_lines)
     end
 
-    Makie.FigureAxisPlot(fig, ax, pl)
+    Makie.AxisPlot(ax, pl)
 end
 
 """
@@ -727,12 +833,25 @@ as above, this 3D version also supports the follow keyword arguments:
 julia> ts = sample_data(:regional);
 
 julia> plot_hodogram(cut.(ts[1:3], 0, 30)...)
+```
 """
 function Seis.plot_hodogram(
     t1::Seis.AbstractTrace,
     t2::Seis.AbstractTrace,
     t3::Seis.AbstractTrace;
     figure=(size=(500, 500),),
+    kwargs...
+)
+    fig = Makie.Figure(; figure...)
+    ax, pl = Seis.plot_hodogram(fig[1,1], t1, t2, t3; kwargs...)
+    Makie.FigureAxisPlot(fig, ax, pl)
+end
+
+function Seis.plot_hodogram(
+    gp::Union{Makie.GridPosition,Makie.GridSubposition},
+    t1::Seis.AbstractTrace,
+    t2::Seis.AbstractTrace,
+    t3::Seis.AbstractTrace;
     axis_type=Makie.Axis3,
     axis=(),
     lines=(color=:black,),
@@ -745,8 +864,6 @@ function Seis.plot_hodogram(
     ylabel = coalesce(t2.sta.cha, string(t2.sta.azi))
     zlabel = coalesce(t3.sta.cha, string(t3.sta.azi))
 
-    fig = Makie.Figure(; figure...)
-
     axis_defaults = if axis_type == Makie.Axis3
         (; xlabel, ylabel, zlabel, limits, aspect=(1, 1, 1), viewmode=:fit)
     elseif axis_type == Makie.LScene
@@ -755,11 +872,11 @@ function Seis.plot_hodogram(
         throw(ArgumentError("unsupported axis type $axis_type for three-component hodogram"))
     end
 
-    ax = axis_type(fig[1,1]; axis_defaults..., axis...)
+    ax = axis_type(gp[1,1]; axis_defaults..., axis...)
 
     pl = Makie.lines!(ax, Seis.trace(t1), Seis.trace(t2), Seis.trace(t3); lines...)
 
-    Makie.FigureAxisPlot(fig, ax, pl)
+    Makie.AxisPlot(ax, pl)
 end
 
 """
