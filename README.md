@@ -151,52 +151,52 @@ the 'scalar' function (`channel_code`) to each trace in the array `t`.
 
 ## IO
 
-Currently, SAC data are read or written (and may be either bigendian
-(SAC/BRIS convention) or little-endian (usual IRIS SAC convention)), and
-miniSEED files are read.
+Currently, SAC and miniSEED data are read and written.
+SAC files may be either bigendian
+(SAC/BRIS convention) or little-endian (usual IRIS SAC convention)).
 
 Use the `read_sac` and `write_sac` functions for SAC-formatted IO,
-and `read_mseed` function for miniSEED reading.
+and `read_mseed` and `write_mseed` for miniSEED files.
 
 Future work will add support for reading many more formats and format
 auto-detection.
 
 ## Plotting
 
-Plotting is available when `using Plots`.  Seis.jl
-makes use of [RecipesBase.jl](https://github.com/JuliaPlots/RecipesBase.jl)
-so that if you do not need plotting, the package does not introduce this
-dependency.  If you do want plots, simply install
-[Plots.jl](https://github.com/JuliaPlots/Plots.jl)
-by `import Pkg; Pkg.add("Plots")`.  You then need to do `using Plots` when you
-want to start using Seis.jl's plotting routines.
-
-By default,
-plotting functionality is not exported, so you must also do `using Seis.Plot`
-before the routines `section` (plot record sections) and `hodogram` (particle
-motion plots) are available.  (`plot` to show traces is available as soon
-as `Plots` is loaded.)
+### Makie.jl
+Seis.jl enables the use of the [Makie](https://docs.makie.org/stable/)
+plotting package for plotting seismic data.  To enable the functionaliy,
+load a Makie backend package, such as CairoMakie or GLMakie.  Then
+plotting functions such as `plot`, `plot_section` and `plot_hodogram`
+can be used.
 
 As an example:
 
 ```julia
-julia> using Seis, Seis.Plot, Plots
+julia> using Seis, CairoMakie
 
 julia> t = sample_data(:array);
 
-julia> section(t)
+julia> plot_section(t)
 ```
 
 produces:
 
 ![Record section](docs/images/record_section.jpg)
 
-See the help for the `Seis.Plot` module for more information.
+See the [online documentation](https://anowacki.github.io/Seis.jl/dev/plotting-makie/) for more information.
+
+### Plots.jl
+Plotting using [Plots.jl](https://github.com/JuliaPlots/Plots.jl) is
+[supported as a legacy option](https://anowacki.github.io/Seis.jl/dev/plotting-plots/).
+You can enable this by doing `import Pkg; Pkg.add("Plots")`.  You then need
+to do `using Plots` when you want to start using Seis.jl's plotting routines.
 
 ## Basic processing
 
 Basic time series processing of traces is possible using functions such as
-`integrate`, `bandpass`, `remove_trend`.  See the online documentation
+`integrate`, `bandpass`, `remove_trend`.  See the
+[online documentation](https://anowacki.github.io/Seis.jl/dev/manual/)
 for a full description of the functions available and how to use them.
 
 ## Maintainers
