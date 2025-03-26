@@ -28,10 +28,10 @@ These affect the way that the traces are plotted and annotated.
 - `label=Seis.channel_code`: Set the label for each trace, which is placed
   in the top right corner of its axis.  The behaviour of this keyword depends
   on the type of `label`:
-  - `::Symbol`: Take values from the `meta` dictionary if each traces
+  - `::Symbol`: Take values from the `meta` dictionary of each trace
   - `::AbstractArray`: Values are taken from each entry in `label`
   - Otherwise, `label` is assumed to be a function or callable object which
-    returns a string 
+    returns a string and takes a single trace as its argument
 - `show_picks=true`: If `false`, do not plot picks.
 - `sort=nothing`: Sort the traces according to one of the following:
   - `:dist`: Epicentral distance
@@ -79,6 +79,7 @@ next to each other:
 julia> fig = plot_traces(filter(is_east, sample_data(:local)); lines=(; color=:red))
 
 julia> plot_traces(fig[1,2], filter(is_north, sample_data(:local)); lines=(; color=:blue));
+```
 """
 function Seis.plot_traces(
     gp::Union{Makie.GridPosition,Makie.GridSubposition},

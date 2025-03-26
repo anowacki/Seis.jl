@@ -229,3 +229,50 @@ plot_hodogram(e, n, z)
 Seis.plot_hodogram!
 Seis.plot_hodogram
 ```
+
+## Layouts
+Makie has a powerful set of tools to create 'layouts'—multi-panel plots
+with multiple axes.  (See the
+[Makie layout tutorial](https://docs.makie.org/stable/tutorials/layout-tutorial))
+for more.)
+
+Seis.jl's plotting functions compose well with Makie's layout capabilities.
+All plotting functions can take a
+[`Makie.GridPosition` or `Makie.GridSubposition`](https://docs.makie.org/stable/explanations/plot_method_signatures#gridpositions)
+which can be accessed by indexing into a `Makie.Figure` object, like `fig[1,2]`.
+Passing a grid position object into the plotting functions creates a new
+axis (or axes) and creates the plot at that point.
+
+In the example below, we create a complex layout showing three components of
+ground motion recorded at ELK on the left, zoomed-in plots of the time window
+around the P wave on the top right, and a particle motion plot of the
+
+```@example plotting_makie
+t = e, n, z = sample_data(:regional)[1:3]
+window = (55, 70)
+t_cut = e_cut, n_cut, z_cut = cut.(t, window...)
+
+# Build the figure object
+fig = Makie.Figure()
+
+# Create a new grid layout with `fig[1,1]`
+axisplots = plot(fig[1,1], t)
+
+# Label the time window
+for (ax, pl) in axisplots
+    vspan!(ax, window...; alpha=0.5)
+end
+
+# Create a new grid position at the top right with `fig[1,2][1,1]`
+axisplots_zoom = plot(fig[1,2][1,1], [e_cut, n_cut];
+    ylims=:all, lines=(;color=:blue))
+
+# Add a title to the top trace plot.
+ax_zoom, _ = axisplots_zoom[1]
+ax_zoom.title = "P-wave arrival"
+
+# Create the final grid position at the bottom right with `fig[1,2][2,1]`
+plot_hodogram(fig[1,2][2,1], e_cut, n_cut;
+    backazimuth=true, axis=(;title="P-wave particle motion"))
+fig
+```
