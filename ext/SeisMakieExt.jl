@@ -483,6 +483,9 @@ function Seis.plot_section!(
                 for (tt, y, t_shift) in zip(ts, y_shifts, shifts)
                 for (key, (time, name)) in tt.picks)
         )
+        # If there is only one pick, then `reduce(vcat, ...)` does not return a vector:
+        # https://github.com/JuliaLang/julia/issues/34380
+        picks = (picks isa AbstractArray) ? picks : [picks]
         picks_t = first.(picks)
         picks_y = getindex.(picks, 2)
         picks_text = last.(picks)
