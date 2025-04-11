@@ -81,3 +81,9 @@
   this has been fixed.
 - `rotate_through[!]` behaved in an inconsistent way and has been fixed
   (see 'Breaking changes'), but its new behaviour is different.
+
+## Internal changes
+- The `Seis.Geographic` internal type now stores elevation rather than depth.
+  External code which used this type directly may need to update any positional
+  argument constructors which relied on the third argument being depth (km)
+  rather than elevation (m).

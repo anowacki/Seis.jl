@@ -1,3 +1,4 @@
+using Dates: DateTime
 using Test
 using Seis
 import Seis.SAC
@@ -13,6 +14,15 @@ import Seis.SAC
             @test t.t == s.t
             @test t.evt.id == "K8108838"
             @test t.sta.sta == "CDV"
+            @test t.sta.azi == 0
+            @test t.sta.inc == 0
+            @test t.sta.lat == 48
+            @test t.sta.lon == -120
+            @test t.sta.elev === missing
+            @test t.evt.lat == 48
+            @test t.evt.lon == -125
+            @test t.evt.dep == 0
+            @test t.evt.time == DateTime("1981-03-29T10:38:14.000")
             @test t.meta.SAC_lpspol   == true
             @test t.meta.SAC_nevid    == 0
             @test t.meta.SAC_iftype   == 1
@@ -160,6 +170,11 @@ import Seis.SAC
                     end
                 end
             end
+        end
+
+        @testset "Station elevation" begin
+            t = sample_data(:local)[1]
+            @test t.sta.elev == 265.0
         end
 
         # Removing null bytes from strings on read

@@ -156,21 +156,68 @@ A geographic position in spherical coordinates.  Accessible fields are:
 
 - `lon`: Longitude (°)
 - `lat`: Latitude (°)
-- `dep`: Depth below the reference level (e.g., ellipsoid) (km)
+- `elev`: Elevation above the reference level (e.g., ellipsoid) (m)
+- `dep`: Depth below the reference level (km) (defined to be `-elev/1000`)
 
-It is recommended that for `Station`s, the `dep` field describes the
-depth of the sensor relative to sea level in km, so a station at
-150 m elevation has a depth of –0.15 km.  Information about sensor
-burial depth should be held in the `Event`'s `meta` field.
+!!! note
+    The fields `.elev` and `.dep` represent the same information, but in
+    different ways.  Setting `dep` will automatically update `elev` and
+    vice versa.  Both are provided for convenience.
 """
 mutable struct Geographic{T<:AbstractFloat} <: Position{T}
     lon::Union{Missing,T}
     lat::Union{Missing,T}
-    dep::Union{Missing,T}
+    elev::Union{Missing,T}
 end
-Geographic{T}(; lon=missing, lat=missing, dep=missing) where T =
-    Geographic{T}(lon, lat, dep)
+
+"""
+    Geographic(lon, lat, elev)
+    Geographic{T}(lon, lat, elev)
+
+Constructors for `Geographic` using positional arguments.
+If passed with no type parameter `{T}` then by default `$DEFAULT_FLOAT` is used.
+"""
 Geographic(args...; kwargs...) = Geographic{DEFAULT_FLOAT}(args...; kwargs...)
+
+"""
+    Geographic(; lon, lat, elev, dep)
+    Geographic{T}(; lon, lat, elev, dep)
+
+Keyword argument constructors; the default for all values is `missing`.
+
+!!! note
+    If both `elev` and `dep` are passed, then an error is thrown if
+    they do not equate to the same elevation above the reference level
+    (i.e., if `dep != -elev/1000`).
+"""
+function Geographic{T}(; lon=missing, lat=missing, elev=missing, dep=missing) where T
+    if dep !== missing && elev !== missing && dep != -elev/1000
+        throw(ArgumentError(
+            "cannot set both dep and elev unless they represent the same elevation"
+        ))
+    elseif dep !== missing
+        elev = -1000*dep
+    end
+    Geographic{T}(lon, lat, elev)
+end
+
+Base.propertynames(::Geographic) = (:lon, :lat, :elev, :dep)
+
+function Base.getproperty(g::Geographic, p::Symbol)
+    if p === :dep
+        -getfield(g, :elev)/1000
+    else
+        getfield(g, p)
+    end
+end
+
+function Base.setproperty!(g::Geographic{T}, p::Symbol, v) where T
+    if p === :dep
+        setfield!(g, :elev, convert(Union{Missing,T}, -1000*v))
+    else
+        setfield!(g, p, convert(Union{Missing,T}, v))
+    end
+end
 
 """
     Cartesian{T} <: Position{T}
@@ -190,9 +237,24 @@ mutable struct Cartesian{T<:AbstractFloat} <: Position{T}
     y::Union{Missing,T}
     z::Union{Missing,T}
 end
+
+"""
+    Cartesian(x, y, z)
+    Cartesian{T}(x, y, z)
+
+Constructors for `Cartesian` using positional arguments.
+If passed with no type parameter `{T}` then by default `$DEFAULT_FLOAT` is used.
+"""
+Cartesian(args...; kwargs...) = Cartesian{DEFAULT_FLOAT}(args...; kwargs...)
+
+"""
+    Cartesian(; x, y, z)
+    Cartesian{T}(; x, y, z)
+
+Keyword argument constructors; the default for all values is `missing`.
+"""
 Cartesian{T}(; x=missing, y=missing, z=missing) where T =
     Cartesian{T}(x, y, z)
-Cartesian(args...; kwargs...) = Cartesian{DEFAULT_FLOAT}(args...; kwargs...)
 
 # Fix getproperty(::Array{<:Position}, ::Symbol) for Julia v1.11+
 for T in (Cartesian, Geographic)
@@ -252,7 +314,7 @@ See also [`CartEvent`](@ref).
 """
 Event{T,P}(; lon=missing, lat=missing, dep=missing, time=missing,
         id=missing, meta=SeisDict{Symbol,Any}()) where {T, P<:Geographic} =
-    Event{T,P}(P(lon, lat, dep), time, id, meta)
+    Event{T,P}(P(lon, lat, -1000*dep), time, id, meta)
 
 Event{T,P}(; x=missing, y=missing, z=missing, time=missing,
         id=missing, meta=SeisDict{Symbol,Any}()) where {T, P<:Cartesian} =
@@ -260,6 +322,15 @@ Event{T,P}(; x=missing, y=missing, z=missing, time=missing,
 
 Event{T}(; kwargs...) where T = Event{T ,Geographic{T}}(; kwargs...)
 Event(; kwargs...) = Event{DEFAULT_FLOAT, Geographic{DEFAULT_FLOAT}}(; kwargs...)
+
+function Base.propertynames(e::Event, private::Bool=false)
+    pos_fields = filter(x->x!==:elev, propertynames(getfield(e, :pos)))
+    if private
+        (pos_fields..., fieldnames(Event)...)
+    else
+        (pos_fields..., filter(x->x!==:pos, fieldnames(Event))...)
+    end
+end
 
 """
     CartEvent{T}
@@ -313,7 +384,7 @@ const GeogEvent{T} = Event{T, Geographic{T}}
 const EVENT_FIELDS = fieldnames(Event)
 
 function Base.getproperty(e::AbstractArray{<:Event}, f::Symbol)
-    if f === :lon || f === :lat || f === :dep || f === :x || f === :y || f === :z
+    if f === :lon || f === :lat || f === :dep || f === :elev || f === :x || f === :y || f === :z
         getproperty.(e, f)
     elseif f === :time || f === :meta || f === :id
         getproperty.(e, f)
@@ -334,13 +405,13 @@ Base.:(==)(e1::Event, e2::Event) =
 
 Struct containing information about a seismic station.  Fields `net`, `sta`, `loc`
 and `cha` are the station, network, channel and location codes respectively, whilst
-`lon` and `lat` are the location in °.  Set station depth `dep` and elevation `elev`
+`lon` and `lat` are the location in °.  Set station elevation `elev`
 in m relative to the reference level.  The azimuth `azi` and inclination `inc` of
 the channel in ° are respectively measured from north to east, and downward from the
 vertical.  (E.g., a "BHN" channel typically will have a `azi == 0` and `inc == 90`.)
 
 `meta` is a `Dict` holding any extra
-information about the station or channel.
+information about the station or channel, such as burial depth in m.
 
 Missing information is allowed and stored as `missing`.
 """
@@ -350,7 +421,6 @@ mutable struct Station{T<:AbstractFloat, P<:Position{T}}
     loc::Union{String,Missing}
     cha::Union{String,Missing}
     pos::P
-    elev::Union{T,Missing}
     azi::Union{T,Missing}
     inc::Union{T,Missing}
     meta::SeisDict{Symbol,Any}
@@ -367,15 +437,15 @@ All values default to `missing`.
 - `sta`: station code
 - `loc`: location code
 - `cha`: channel code
-- `elev`: local station elevation above the ground in m
 - `azi`: component azimuth, in ° east of local north
 - `inc`: component inclination, in ° down from upwards
 - `meta`: `Dict` holding any extra information
 
-By default, the following may be passed:
+By default, stations are geographic and `P <: Seis.Geographic`, in which
+case the following may be passed:
 - `lon`: longitude in °
 - `lat`: latitude in °
-- `dep`: depth in km
+- `elev`: elevation above reference level (usually the ellipsoid) in m
 
 If `P <: Seis.Cartesian` (see [`Station{T,S,P}`](@ref) or
 [`CartStation`](@ref)), then the following may be passed:
@@ -392,17 +462,26 @@ Construct a `Station` with specific floating point type `T` and
 and `P` defaults to `Seis.Geographic{$DEFAULT_FLOAT}`.
 """
 Station{T,P}(; net=missing, sta=missing, loc=missing,
-        cha=missing, lon=missing, lat=missing, dep=missing, elev=missing,
+        cha=missing, lon=missing, lat=missing, elev=missing,
         azi=missing, inc=missing, meta=Dict()) where {T, P<:Geographic} =
-    Station{T, P}(net, sta, loc, cha, P(lon, lat, dep), elev, azi, inc, meta)
+    Station{T, P}(net, sta, loc, cha, P(lon, lat, elev), azi, inc, meta)
 
 Station{T,P}(; net=missing, sta=missing, loc=missing,
         cha=missing, x=missing, y=missing, z=missing, elev=missing,
         azi=missing, inc=missing, meta=Dict()) where {T, P<:Cartesian} =
-    Station{T,P}(net, sta, loc, cha, P(x, y, z), elev, azi, inc, meta)
+    Station{T,P}(net, sta, loc, cha, P(x, y, z), azi, inc, meta)
 
 Station{T}(; kwargs...) where T = Station{T, Geographic{T}}(; kwargs...)
 Station(; kwargs...) = Station{DEFAULT_FLOAT, Geographic{DEFAULT_FLOAT}}(; kwargs...)
+
+function Base.propertynames(s::Station, private::Bool=false)
+    pos_fields = filter(x->x!==:dep, propertynames(getfield(s, :pos)))
+    if private
+        (pos_fields..., fieldnames(Station)...)
+    else
+        (pos_fields..., filter(x->x!==:pos, fieldnames(Station))...)
+    end
+end
 
 """
     CartStation{T} where T
@@ -437,9 +516,6 @@ keyword arguments `x`, `y` and `z` (not `lon`, `lat` or `dep`).
 """
 CartStation(; kwargs...) = CartStation{DEFAULT_FLOAT}(; kwargs...)
 
-Base.propertynames(e::Union{Event{T,P}, Station{T,P}}) where {T,P} =
-    (fieldnames(P)..., fieldnames(typeof(e))...)
-
 """
     GeogStation{T} where T
 
@@ -463,18 +539,17 @@ const GeogStation{T} = Station{T, Geographic{T}}
 const STATION_FIELDS = fieldnames(Station)
 
 function Base.getproperty(e::Union{Station,Event}, p::Symbol)
-    if p === :lon || p === :lat || p === :dep || p === :x || p === :y || p === :z
-        getfield(e.pos, p)
+    if p === :lon || p === :lat || p === :dep || p === :elev || p === :x || p === :y || p === :z
+        getproperty(getfield(e, :pos), p)
     else
         getfield(e, p)
     end
 end
 
 function Base.setproperty!(e::Union{Event{T},Station{T}}, p::Symbol, v) where T
-    if p === :lon || p === :lat || p === :dep || p === :x || p === :y || p === :z
-        setfield!(e.pos, p, convert(Union{Missing,T}, v))
+    if p === :lon || p === :lat || p === :dep || p === :elev || p === :x || p === :y || p === :z
+        setproperty!(getfield(e, :pos), p, convert(Union{Missing,T}, v))
     else
-        # setfield!(e, p, v)
         setfield!(e, p, convert(fieldtype(typeof(e), p), v))
     end
 end
