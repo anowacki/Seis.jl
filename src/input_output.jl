@@ -157,10 +157,9 @@ function Trace(s::SAC.SACTrace; header_only=false)
     end
 
     # Station and component
-    for (sacfield, tfield) in (:stlo=>:lon, :stla=>:lat)
+    for (sacfield, tfield) in (:stlo=>:lon, :stla=>:lat, :stel=>:elev)
         setproperty!(t.sta, tfield, _sacmissing(s[sacfield]))
     end
-    !SAC.isundefined(s, :stel) && (t.sta.pos.dep = -s[:stel]/1000)
     for (sacfield, tfield) in (:kstnm=>:sta, :knetwk=>:net, :khole=>:loc,
                                :kcmpnm=>:cha, :cmpaz=>:azi, :cmpinc=>:inc)
         setproperty!(t.sta, tfield, _sacmissing(s[sacfield]))
@@ -185,7 +184,7 @@ function Trace(s::SAC.SACTrace; header_only=false)
 
         sacfield in sac_hdr && continue
         SAC.isundefined(s, sacfield) && continue
-        metafield = Symbol("SAC_" * String(sacfield))
+        metafield = Symbol("SAC_", sacfield)
         t.meta[metafield] = s[sacfield]
     end
     t
