@@ -14,11 +14,14 @@ for Geom in (Cartesian, Geographic)
             $geom{Tout}($([:(getfield(p, $i)) for i in 1:fieldcount(Geom)]...))
 
         Base.convert(::Type{Event{Tout,$geom{Tout}}}, e::Event{Tin,$geom{Tin}}) where {Tin, Tout} =
-            Event{Tout,$geom{Tout}}(e.pos, e.time, e.id, e.meta)
+            Event{Tout,$geom{Tout}}(
+                $([:(getfield(e, $i)) for i in 1:fieldcount(Event)]...)
+            )
 
         Base.convert(::Type{Station{Tout,$geom{Tout}}}, s::Station{Tin,$geom{Tin}}) where {Tin, Tout} =
-            Station{Tout,$geom{Tout}}(s.net, s.sta, s.loc, s.cha, s.pos, s.elev,
-                s.azi, s.inc, s.meta)
+            Station{Tout,$geom{Tout}}(
+                $([:(getfield(s, $i)) for i in 1:fieldcount(Station)]...)
+            )
 
         Base.convert(::Type{Trace{T,V,$geom{T}}}, t::Trace{T,V,$geom{T}}) where {T,V} = t
         function Base.convert(::Type{Trace{Tout,Vout,$geom{Tout}}},

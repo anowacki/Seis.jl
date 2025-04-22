@@ -8,7 +8,7 @@ function Base.show(io::IO, e::Event{T,P}) where {T,P}
     print(io, "Event: ")
     firstitem = true
     for f in propertynames(e)
-        f in (:pos, :meta) && continue
+        f === :meta && continue
         if getproperty(e, f) !== missing
             if !firstitem
                 print(io, ", ")
@@ -22,14 +22,14 @@ function Base.show(io::IO, e::Event{T,P}) where {T,P}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", e::Event{T,P}) where {T,P}
-    hdr_string_len = maximum(length(string.(propertynames(e))))
+    hdr_string_len = maximum(length∘string, propertynames(e))
     indent = 4
     padded_print = (name, val) ->
         print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
     print(io, "Seis.Event{$T,$P}:")
     # Non-meta fields
     for field in propertynames(e)
-        field in (:meta, :pos) && continue
+        field === :meta && continue
         padded_print(field, getproperty(e, field))
     end
     # Meta fields
@@ -41,7 +41,7 @@ end
 function Base.show(io::IO, s::Station{T,P}) where {T,P}
     print(io, "Station: ", channel_code(s))
     for f in propertynames(s)
-        f in (:net, :sta, :loc, :cha, :pos, :meta) && continue
+        f in (:net, :sta, :loc, :cha, :meta) && continue
         if getproperty(s, f) !== missing
             print(io, ", $f: $(getproperty(s, f))")
         end
@@ -50,14 +50,14 @@ function Base.show(io::IO, s::Station{T,P}) where {T,P}
 end
 
 function Base.show(io::IO, ::MIME"text/plain", s::Station{T,P}) where {T,P}
-    hdr_string_len = maximum(length(string.(propertynames(s))))
+    hdr_string_len = maximum(length∘string, propertynames(s))
     indent = 4
     padded_print = (name, val) ->
         print(io, "\n", lpad(string(name), hdr_string_len + indent) * ": ", val)
     print(io, "Seis.Station{$T,$P}:")
     # Non-meta fields
     for field in propertynames(s)
-        field in (:meta, :pos) && continue
+        field === :meta && continue
         padded_print(field, getproperty(s, field))
     end
     # Meta fields
@@ -79,8 +79,10 @@ end
 
 # Printing to the REPL, for instance
 function Base.show(io::IO, ::MIME"text/plain", t::Trace{T,V,P}) where {T,V,P}
-    hdr_string_len = maximum(length.(string.([TRACE_FIELDS...; STATION_FIELDS...;
-                                              EVENT_FIELDS...]))) + 4
+    hdr_string_len = maximum(
+        length∘string,
+        [TRACE_FIELDS...; STATION_FIELDS...; EVENT_FIELDS...]
+    ) + 4
     indent = 4
     # Closure to print individual fields
     padded_print = (name, val) ->
@@ -96,7 +98,6 @@ function Base.show(io::IO, ::MIME"text/plain", t::Trace{T,V,P}) where {T,V,P}
         # within the Trace struct, giving e.g. 'evt.lon' rather than just 'lon'
         field_prefix = string(item)
         for field in fields
-            field === :pos && continue
             value = getproperty(getproperty(t, item), field)
             if !ismissing(value)
                 field_name = join((field_prefix, string(field)), ".")

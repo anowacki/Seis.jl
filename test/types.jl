@@ -38,42 +38,84 @@ import FFTW
     end
 
     @testset "Position" begin
-        let lon = rand(), lat = rand(), dep = rand(), (x, y, z) = rand(3)
+        let lon = rand(), lat = rand(), elev = rand(), (x, y, z) = rand(3)
             local g, c
-            # Geographic
-            g = Seis.Geographic(lon, lat, dep)
-            @test g isa Seis.Geographic{Float64}
-            @test typeof(g) <: Seis.Position
-            @test typeof(g) <: Seis.Position{Float64}
-            @test g == Seis.Geographic{Float64}(lon, lat, dep)
-            @test g.lon == lon
-            @test g.lat == lat
-            @test g.dep == dep
-            @test Seis.Geographic() == Seis.Geographic{Float64}(missing, missing, missing)
-            @test Seis.Geographic(lon=lon, lat=lat, dep=dep) == Seis.Geographic{Float64}(lon, lat, dep)
-            @test Seis.Geographic(lon=lon, lat=lat).dep === missing
-            # Cartesian
-            c = Seis.Cartesian(x, y, z)
-            @test c isa Seis.Cartesian{Float64}
-            @test typeof(c) <: Seis.Position
-            @test typeof(c) <: Seis.Position{Float64}
-            @test c == Seis.Cartesian{Float64}(x, y, z)
-            @test c.x == x
-            @test c.y == y
-            @test c.z == z
-            @test Seis.Cartesian() == Seis.Cartesian{Float64}(missing, missing, missing)
-            @test Seis.Cartesian(x=x, y=y, z=z) == Seis.Cartesian{Float64}(x, y, z)
-            @test Seis.Cartesian(x=x, y=y).z === missing
-            # Arrays
-            @test [g, g, g].lon == [lon, lon, lon]
-            @test [c, c, c].x == [x, x, x]
-            # Integer indexing
-            @test g[1] == lon
-            @test g[2] == lat
-            @test g[3] == dep
-            @test c[1] == x
-            @test c[2] == y
-            @test c[3] == z
+            @testset "Geographic" begin
+                g = Seis.Geographic(lon, lat, elev)
+                @test g isa Seis.Geographic{Float64}
+                @test typeof(g) <: Seis.Position
+                @test typeof(g) <: Seis.Position{Float64}
+                @test g == Seis.Geographic{Float64}(lon, lat, elev)
+                @test g.lon == lon
+                @test g.lat == lat
+                @test g.elev == elev
+                @test Seis.Geographic() == Seis.Geographic{Float64}(missing, missing, missing)
+                @test Seis.Geographic(lon=lon, lat=lat, elev=elev) == Seis.Geographic{Float64}(lon, lat, elev)
+                @test Seis.Geographic(lon=lon, lat=lat).elev === missing
+                @test Seis.Geographic(dep=-0.001, elev=1) == Seis.Geographic(missing, missing, 1)
+                @test_throws ArgumentError Seis.Geographic(dep=1, elev=1)
+
+                @testset "setproperty" begin
+                    g′ = deepcopy(g)
+                    g′.lon = -lon
+                    @test g′.lon == -lon
+                end
+
+                @testset "Depth conversion" begin
+                    @test g.dep == -g.elev/1000
+                    g′ = deepcopy(g)
+                    g′.dep = 1
+                    @test g′.elev == -1000
+                end
+
+                @testset "propertynames" begin
+                    @test propertynames(Seis.Geographic()) ==
+                        propertynames(Seis.Geographic(), false)
+                    @test propertynames(Seis.Geographic()) == (:lon, :lat, :elev, :dep)
+                end
+            end
+
+            @testset "Cartesian" begin
+                c = Seis.Cartesian(x, y, z)
+                @test c isa Seis.Cartesian{Float64}
+                @test typeof(c) <: Seis.Position
+                @test typeof(c) <: Seis.Position{Float64}
+                @test c == Seis.Cartesian{Float64}(x, y, z)
+                @test c.x == x
+                @test c.y == y
+                @test c.z == z
+                @test Seis.Cartesian() == Seis.Cartesian{Float64}(missing, missing, missing)
+                @test Seis.Cartesian(x=x, y=y, z=z) == Seis.Cartesian{Float64}(x, y, z)
+                @test Seis.Cartesian(x=x, y=y).z === missing
+
+                @testset "setproperty" begin
+                    c′ = deepcopy(c)
+                    c′.y = -y
+                    @test c′.y == -y
+                end
+
+                @testset "propertynames" begin
+                    @test propertynames(Seis.Cartesian()) ==
+                        propertynames(Seis.Cartesian(), false)
+                    @test propertynames(Seis.Cartesian()) == (:x, :y, :z)
+                end
+            end
+
+            @testset "Arrays" begin              
+                @test [g, g, g].lon == [lon, lon, lon]
+                @test [g, g].elev == [elev, elev]
+                @test [g].dep == [-elev/1000]
+                @test [c, c, c].x == [x, x, x]
+            end
+
+            @testset "Integer indexing" begin                
+                @test g[1] == lon
+                @test g[2] == lat
+                @test g[3] == elev
+                @test c[1] == x
+                @test c[2] == y
+                @test c[3] == z
+            end
         end
     end
 
@@ -87,10 +129,10 @@ import FFTW
                 @test_throws MethodError Event("x")
                 @test_throws TypeError Event{Int,Seis.Geographic{Int}}()
                 e = Event(lon=lon, lat=lat, dep=dep, time=dt, id=id, meta=meta)
-                @test e.pos == Seis.Geographic(lon, lat, dep)
+                @test e.pos == Seis.Geographic(; lon=lon, lat=lat, dep=dep)
                 @test e.lon == lon
                 @test e.lat == lat
-                @test e.dep == dep
+                @test e.dep ≈ dep rtol=1e-10
                 @test e.time == dt
                 @test e.id == id
                 @test e.meta == meta
@@ -117,6 +159,13 @@ import FFTW
                 @test all(x -> x === missing, es.meta.y)
                 es.meta.x = missing
                 @test all(x -> x === missing, es.meta.x)
+            end
+
+            @testset "propertynames" begin
+                @test propertynames(Event()) ==
+                    propertynames(Event(), false)
+                @test propertynames(Event()) == (:lon, :lat, :dep, :time, :id, :meta)
+                @test propertynames(Event(), true) == (:lon, :lat, :dep, :pos, :time, :id, :meta)
             end
         end
 
@@ -160,29 +209,36 @@ import FFTW
                 es.meta.x = missing
                 @test all(x -> x === missing, es.meta.x)
             end
+
+            @testset "propertynames" begin
+                @test propertynames(CartEvent()) ==
+                    propertynames(CartEvent(), false)
+                @test propertynames(CartEvent()) == (:x, :y, :z, :time, :id, :meta)
+                @test propertynames(CartEvent(), true) == (:x, :y, :z, :pos, :time, :id, :meta)
+            end
         end
     end
 
     @testset "Station" begin
         @testset "Geographic" begin
             let lon = rand(), lat = rand(), elev = rand(), net = "A", sta = "B",
-                    cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
+                    cha = "SX1", loc = "00", azi = rand(), inc = rand(),
                     meta = Dict(), dt = now()
                 local s
                 @test (s = Station()) isa Station{Float64,Seis.Geographic{Float64}}
                 @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.lon, s.lat,
-                                      s.dep, s.elev, s.azi, s.inc))
+                                      s.elev, s.azi, s.inc))
                 @test_throws MethodError Station(1)
                 s = Station(; net=net, sta=sta, loc=loc, cha=cha, lon=lon, lat=lat,
-                    dep=dep, elev=elev, azi=azi, inc=inc, meta=meta)
+                    elev=elev, azi=azi, inc=inc, meta=meta)
                 @test s.net == net
                 @test s.sta == sta
                 @test s.loc == loc
                 @test s.cha == cha
                 @test s.lon == lon
                 @test s.lat == lat
-                @test s.dep == dep
-                @test s.pos == Seis.Geographic(lon, lat, dep)
+                @test s.dep == -elev/1000
+                @test s.pos == Seis.Geographic(lon, lat, s.elev)
                 @test s.elev == elev
                 @test s.azi == azi
                 @test s.inc == inc
@@ -213,11 +269,20 @@ import FFTW
                 ss.meta.x = missing
                 @test all(x -> x === missing, ss.meta.x)
             end
+
+            @testset "propertynames" begin
+                @test propertynames(Station()) ==
+                    propertynames(Station(), false)
+                @test propertynames(Station()) ==
+                    (:lon, :lat, :elev, :net, :sta, :loc, :cha, :azi, :inc, :meta)
+                @test propertynames(Station(), true) ==
+                    (:lon, :lat, :elev, :net, :sta, :loc, :cha, :pos, :azi, :inc, :meta)
+            end
         end
 
         @testset "Cartesian" begin
-            let x = rand(), y = rand(), z = rand(), elev = rand(), net = "A", sta = "B",
-                    cha = "SX1", loc = "00", dep = rand(), azi = rand(), inc = rand(),
+            let x = rand(), y = rand(), z = rand(), net = "A", sta = "B",
+                    cha = "SX1", loc = "00", azi = rand(), inc = rand(),
                     meta = Dict(), dt = now()
                 local s
                 @test (s = CartStation()) isa
@@ -225,10 +290,10 @@ import FFTW
                 @test CartStation{Float32}() isa
                     Station{Float32,Seis.Cartesian{Float32}}
                 @test all(ismissing, (s.net, s.sta, s.loc, s.cha, s.x, s.y, s.z,
-                                      s.elev, s.azi, s.inc))
+                                      s.azi, s.inc))
                 @test_throws MethodError CartStation(1)
                 s = CartStation(; net=net, sta=sta, loc=loc, cha=cha, x=x, y=y, z=z,
-                    elev=elev, azi=azi, inc=inc, meta=meta)
+                    azi=azi, inc=inc, meta=meta)
                 @test s.net == net
                 @test s.sta == sta
                 @test s.loc == loc
@@ -237,7 +302,6 @@ import FFTW
                 @test s.y == y
                 @test s.z == z
                 @test s.pos == Seis.Cartesian(x, y, z)
-                @test s.elev == elev
                 @test s.azi == azi
                 @test s.inc == inc
                 @test s.meta == meta
@@ -266,6 +330,15 @@ import FFTW
                 @test all(x -> x === missing, ss.meta.y)
                 ss.meta.x = missing
                 @test all(x -> x === missing, ss.meta.x)
+            end
+
+            @testset "propertynames" begin
+                @test propertynames(CartStation()) ==
+                    propertynames(CartStation(), false)
+                @test propertynames(CartStation()) ==
+                    (:x, :y, :z, :net, :sta, :loc, :cha, :azi, :inc, :meta)
+                @test propertynames(CartStation(), true) ==
+                    (:x, :y, :z, :net, :sta, :loc, :cha, :pos, :azi, :inc, :meta)
             end
         end
     end
@@ -586,7 +659,8 @@ import FFTW
                 @testset "$ES" for ES in (Event, Station)
                     intype = ES{Tin,Geom{Tin}}
                     outtype = ES{Tout,Geom{Tout}}
-                    kwargs = Geom == Seis.Geographic ? (lon=1, lat=2, dep=3) : (x=1, y=2, z=3)
+                    kwargs = Geom == Seis.Cartesian ? (x=1, y=2, z=3) :
+                        ES == Station ? (lon=1, lat=2, elev=3) : (lon=1, lat=2, dep=-0.003)
                     if ES == Station
                         kwargs = (net="A", sta="B", loc="C", cha="D", elev=-1,
                                   azi=rand(), inc=rand(), meta=Dict(:x=>"X"), kwargs...)
@@ -595,8 +669,7 @@ import FFTW
                     end
                     @test convert(outtype, intype()) isa outtype
                     @test convert(outtype, intype(; kwargs...)) isa outtype
-                    posfield = ES == Event ? 1 : 5
-                    @test getfield(convert(outtype, intype(; kwargs...)), posfield) == Geom{Tout}(1, 2, 3)
+                    @test getfield(convert(outtype, intype(; kwargs...)), :pos) == Geom{Tout}(1, 2, 3)
                     # Identity 'conversions' give the same object
                     if intype == outtype
                         in = intype(; kwargs...)
