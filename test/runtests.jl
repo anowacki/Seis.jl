@@ -15,6 +15,7 @@ using .TestHelpers
     include("traveltimes.jl")
     include("types.jl")
     include("spec.jl")
+    include("spectral_operations.jl")
     include("util.jl")
     include("spectrogram.jl")
 

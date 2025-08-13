@@ -182,6 +182,15 @@ and they are passed back to the new trace when calling `ifft`.
 Because a `FourierTrace` retains enough information about the starting
 trace to turn it back, you can also call [`starttime`](@ref) on a `FourierTrace`.
 
+#### Spectral operations
+There are some special frequency-domain versions of operations which can be
+performed on `FourierTraces`:
+
+- [`differentiate(::AbstractFourierTrace)`](@ref)
+- [`differentiate!(::AbstractFourierTrace)`](@ref)
+- [`integrate(::AbstractFourierTrace)`](@ref)
+- [`integrate!(::AbstractFourierTrace)`](@ref)
+
 
 ## Getting data in
 
