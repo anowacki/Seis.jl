@@ -28,6 +28,8 @@
   in the frequency domain.  Most operations work on this type as for
   time-series `Trace` data.  Get a `FourierTrace` from a `Trace` by calling
   `fft` on it, and go back with `ifft`.
+- Some operations are specialised to use frequency-domain algorithms.
+  So far, `integrate` and `differentiate` work this way.
 ### IO
 - You can now write miniSEED files with `write_mseed`.
 - `read_sac` and `write_sac` will accept an `IO` object (like an
