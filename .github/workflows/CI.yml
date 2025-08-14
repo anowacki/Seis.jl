@@ -36,7 +36,7 @@ jobs:
             version: '1'
             arch: arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
@@ -75,7 +75,7 @@ jobs:
       GKSwstype: nul
       PYTHON: 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@latest
         with:
           version: '1'
