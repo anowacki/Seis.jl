@@ -318,7 +318,7 @@ function ifft(f::FourierTrace{T,<:AbstractVector{<:Complex{TV}},P},
     # is no method to construct a `FFTW.FakeArray`.
     data = FFTW.irfft(trace(f), Int(n)).*scale
 
-    delta = 1/(2*(nfrequencies(f) - 1)*f.delta)
+    delta = 1/(n*f.delta)
     Trace{T,Vector{TV},P}(f.b, delta, data, f.evt, f.sta, f.picks, f.meta)
 end
 

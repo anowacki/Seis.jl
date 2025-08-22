@@ -24,13 +24,23 @@ using Test
             end
         end
 
-        @testset "Round-trip" begin
-            for p in propertynames(t)
-                v, v′ = getfield.((t, t′), p)
-                if p == :t
-                    @test v ≈ v′
-                else
-                    @test isequal(v, v′)
+        @testset "nsamples $odd_even" for odd_even in (:odd, :even)
+            t2, t2′ = if odd_even == :odd
+                t2 = deepcopy(t)
+                pop!(trace(t2))
+                t2, ifft(fft(t2))
+            else
+                t, t′
+            end
+
+            @testset "Round-trip" begin
+                for p in propertynames(t2)
+                    v, v′ = getfield.((t2, t2′), p)
+                    if p == :t
+                        @test v ≈ v′
+                    else
+                        @test isequal(v, v′)
+                    end
                 end
             end
         end
