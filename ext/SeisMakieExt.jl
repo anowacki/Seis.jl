@@ -54,13 +54,13 @@ These affect the way Makie draws the figure, axes and lines.
   `Makie.lines` function which displays trace lines.
 """
 function Seis.plot_traces(ts::AbstractArray{<:Seis.AbstractTrace};
-    figure=(size=(700,800),),
+    figure=(),
     # TODO: Remove deprecated keyword arguments in a new release
     fig_kwargs=nothing,
     kwargs...
 )
     figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
-    fig = Makie.Figure(; figure...)
+    fig = Makie.Figure(; size=(700,800), figure...)
     Seis.plot_traces(fig[1,1], ts; kwargs...)
     fig
 end
@@ -549,14 +549,14 @@ See also: [`plot_section!`](@ref).
 function Seis.plot_section(
     ts::AbstractArray{<:Seis.AbstractTrace},
     y_values=Seis.distance_deg;
-    figure=(size=(800, 1100),),
+    figure=(),
     # TODO: Remove deprecated keyword arguments
     fig_kwargs=nothing,
     # Extra kwargs passed to `plot_section(::AbstractArray{<:Seis.AbstractTrace}, ...)`
     kwargs...
 )
     figure = _kwargs_deprecation(:fig_kwargs, :figure, fig_kwargs, figure)
-    fig = Makie.Figure(; figure...)
+    fig = Makie.Figure(; size=(800, 1100), figure...)
     ax, pl = Seis.plot_section(fig[1,1], ts, y_values; kwargs...)
     Makie.FigureAxisPlot(fig, ax, pl)
 end
@@ -587,8 +587,7 @@ function Seis.plot_section(
     align=nothing,
     lines=(),
     reverse=false,
-    figure=(size=(800, 1100),),
-    axis=(xlabel="Time / s", yreversed=reverse),
+    axis=(),
     # TODO: Remove deprecated keyword arguments
     ax_kwargs=nothing,
     lines_kwargs=nothing,
@@ -625,7 +624,7 @@ function Seis.plot_section(
 
     limits = (min_time, max_time, y_min - Δy/20, y_max + Δy/20)
 
-    ax = Makie.Axis(gp; ylabel, limits, axis...)
+    ax = Makie.Axis(gp; ylabel, limits, xlabel="Time / s", yreversed=reverse, axis...)
 
     pl = Seis.plot_section!(ax, ts, y_shifts; align, lines, kwargs...)
 
@@ -766,10 +765,10 @@ See also: [`plot_hodogram!`](@ref).
 function Seis.plot_hodogram(
     t1::Seis.AbstractTrace,
     t2::Seis.AbstractTrace;
-    figure=(size=(320, 300),),
+    figure=(),
     kwargs...
 )
-    fig = Makie.Figure(; figure...)
+    fig = Makie.Figure(; size=(320, 300), figure...)
     ax, pl = Seis.plot_hodogram(fig[1,1], t1, t2; kwargs...)
     Makie.FigureAxisPlot(fig, ax, pl)
 end
@@ -843,10 +842,10 @@ function Seis.plot_hodogram(
     t1::Seis.AbstractTrace,
     t2::Seis.AbstractTrace,
     t3::Seis.AbstractTrace;
-    figure=(size=(500, 500),),
+    figure=(),
     kwargs...
 )
-    fig = Makie.Figure(; figure...)
+    fig = Makie.Figure(; size=(500, 500), figure...)
     ax, pl = Seis.plot_hodogram(fig[1,1], t1, t2, t3; kwargs...)
     Makie.FigureAxisPlot(fig, ax, pl)
 end
