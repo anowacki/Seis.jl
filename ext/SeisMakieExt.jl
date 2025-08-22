@@ -790,7 +790,7 @@ function Seis.plot_hodogram(
     backazimuth=false,
     axis=(),
     lines=(),
-    backazimuth_lines=(color=:red,),
+    backazimuth_lines=(),
 )
     _check_hodogram_args(t1, t2)
 
@@ -812,7 +812,7 @@ function Seis.plot_hodogram(
     pl = Makie.lines!(ax, Seis.trace(t1), Seis.trace(t2); color=:black, lines...)
 
     if backazimuth
-        _plot_hodogram_backazimuth!(ax, t1, t2, maxval, backazimuth_lines)
+        _plot_hodogram_backazimuth!(ax, t1, t2, maxval, (color=:red, backazimuth_lines...))
     end
 
     Makie.AxisPlot(ax, pl)
@@ -857,7 +857,7 @@ function Seis.plot_hodogram(
     t3::Seis.AbstractTrace;
     axis_type=Makie.Axis3,
     axis=(),
-    lines=(color=:black,),
+    lines=(),
 )
     _check_hodogram_args(t1, t2, t3)
 
@@ -877,7 +877,7 @@ function Seis.plot_hodogram(
 
     ax = axis_type(gp[1,1]; axis_defaults..., axis...)
 
-    pl = Makie.lines!(ax, Seis.trace(t1), Seis.trace(t2), Seis.trace(t3); lines...)
+    pl = Makie.lines!(ax, Seis.trace(t1), Seis.trace(t2), Seis.trace(t3); color=:black, lines...)
 
     Makie.AxisPlot(ax, pl)
 end
