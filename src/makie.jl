@@ -58,3 +58,14 @@ a [Makie](https://docs.makie.org/stable) backend (e.g., via
 See docstrings below after loading a Makie backend for more information.
 """
 function plot_section end
+
+"""
+    pick_axis(ax::Makie.Axis) -> (; time, yvalue)
+
+Pick times on an existing `Makie.Axis` object, as returned from
+any of the `plot_` plotting functions.
+
+Returns a vector of named tuples, each with keys `time` (the pick
+time in s) and `yvalue` (the value of the independent axis).
+"""
+function pick_axis end
