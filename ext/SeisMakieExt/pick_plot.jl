@@ -22,7 +22,7 @@ function Seis.pick_axis(ax)
         x, y = Makie.mouseposition(ax)
         x0, y0 = ax.finallimits[].origin
         xwidth, ywidth = ax.finallimits[].widths
-        if Makie.is_mouseinside(ax) #(x0 <= x <= x0 + xwidth) && (y0 <= y <= y0 + ywidth)
+        if Makie.is_mouseinside(ax)
             crosshair_x[][1] = x
             crosshair_y[][1] = y
             Makie.notify(crosshair_x)

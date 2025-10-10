@@ -67,5 +67,14 @@ any of the `plot_` plotting functions.
 
 Returns a vector of named tuples, each with keys `time` (the pick
 time in s) and `yvalue` (the value of the independent axis).
+
+While picking, crosshairs appear on the axis showing where on the axes
+the mouse is pointing.  This can make it easier to make accurate picks.
+
+# Controlling picking
+- To add a new pick to the values returned, point to this position and press
+  the `a` key.
+- To delete the last pick (and then the one before), pressed `backspace`.
+- To stop interactive picking, press `q`.
 """
 function pick_axis end
