@@ -538,3 +538,54 @@ channel_code(sta::Station) = join(map(_blankmissing, (sta.net, sta.sta, sta.loc,
 channel_code(t::AbstractTrace) = channel_code(t.sta)
 
 _blankmissing(x) = string(ismissing(x) ? "" : x)
+
+#
+# StationXML
+#
+"""
+    read_stationxml(file, S=GeogStation{Float64}; warn=true, full=false) -> stations::Vector{S}
+    read_stationxml(io, S=GeogStation{Float64}; warn=true, full=false) -> stations::Vector{S}
+
+Read a StationXML file from `file` on disk or an IO stream `io`, optionally
+specifying a type `S` which must be a `Station` type.
+By default, `S` is `GeogStation{Float64}`.
+Return a vector of all channels specified in the StationXML file.
+
+Pass `warn=false` to turn off warnings when encountering unexpected fields
+(which are ignored) in the StationXML file.
+
+Several fields in each station's `.meta` field are filled.  If `full` is
+`true` (the default), the station's `meta.stationxml` field contains a full
+`StationXML.FDSNStationXML` object for that channel.
+
+!!! note
+    For channels with full response information, the `FDSNStationXML` field
+    in `meta.stationxml` may be large, which is why `full=false` by default.
+
+# Fields stored
+Upon return, each of the `stations` has its fields filled as follows from
+the StationXML file information:
+- `meta.burial_depth`: Station burial depth below the surface in m
+- `meta.startdate`: Date at which channel started recording
+- `meta.enddate`: Date at which channel stopped recording, if any
+- `meta.stationxml`: Full StationXML record for this channel only.  Only
+  present if keyword argument `full=true`.
+
+See also: [`parse_stationxml`](@ref)
+"""
+read_stationxml(file, S::Type{<:Station}; warn=true, full=false) =
+    SeisStationXML.read(file, S; warn, full)
+read_stationxml(file; kwargs...) = read_stationxml(file, GeogStation{Float64}; kwargs...)
+
+"""
+    parse_stationxml(string, S=GeogStation{Float64}; warn=true, full=false) -> stations::Vector{S}
+
+Parse StationXML stored in a `string` in memory, optionally specifying a
+type `S` which must be a `Station` type.
+
+See [`read_stationxml`](@ref) for more details.
+"""
+parse_stationxml(string, S::Type{<:Station}; warn=true, full=false) =
+    SeisStationXML.parse(string, S; warn, full)
+parse_stationxml(string; kwargs...) =
+    SeisStationXML.parse(string, GeogStation{Float64}; kwargs...)

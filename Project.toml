@@ -1,7 +1,7 @@
 name = "Seis"
 uuid = "dd80f4d8-c2f6-58bd-9bd3-4635f134261d"
-authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
 version = "0.3.10"
+authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
 
 [deps]
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
@@ -13,6 +13,7 @@ LibMseed = "1f77302d-495a-4b02-8d15-b81beb84162e"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StationXML = "bc702e9c-26b7-573b-a57f-23300c0e5013"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [weakdeps]
@@ -29,6 +30,7 @@ LibMseed = "0.3.2"
 Makie = "0.20, 0.21, 0.22, 0.23, 0.24"
 RecipesBase = "1"
 StaticArrays = "1"
+StationXML = "0.2.3"
 Statistics = "1"
 julia = "1.6"
 

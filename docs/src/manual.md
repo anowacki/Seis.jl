@@ -194,7 +194,7 @@ performed on `FourierTraces`:
 
 ## Getting data in
 
-Data can be loaded into Julia via a number of means:
+Trace data can be loaded into Julia via a number of means:
 
 - Reading data from disk in SAC or miniSEED format.
 
@@ -267,6 +267,13 @@ Data can be loaded into Julia via a number of means:
    Seis.Trace(IU.ANMO.00.BH2: delta=0.05, b=0.0, nsamples=72000)
    Seis.Trace(IU.ANMO.00.BHZ: delta=0.05, b=0.0, nsamples=72000)
   ```
+
+### Station metadata
+
+Seis supports reading station metadata held in
+[StationXML](https://docs.fdsn.org/projects/stationxml/en/latest/#) format,
+using [`read_stationxml`](@ref) or [`parse_stationxml`](@ref).
+It returns a vector of `Station`s.
 
 
 ## Creating data from scratch

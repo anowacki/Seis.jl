@@ -110,8 +110,10 @@ export
     # IO
     SACtr,
     channel_code,
+    parse_stationxml,
     read_mseed,
     read_sac,
+    read_stationxml,
     write_mseed,
     write_sac,
     write_sac_header,
@@ -164,6 +166,8 @@ include("io/SAC/SAC.jl")
 using .SAC
 include("io/Miniseed/Miniseed.jl")
 using .Miniseed
+include("io/StationXML/SeisStationXML.jl")
+using .SeisStationXML
 
 include("show.jl")
 include("input_output.jl")
