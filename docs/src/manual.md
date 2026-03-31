@@ -330,6 +330,11 @@ Seis supports reading and writing only the header part of SAC files:
 miniSEED files can be read with only headers using
 `read_mseed(file; header_only=true)`.
 
+### Station metadata
+
+Sets of `Station`s can have their metadata written out in StationXML format
+using [`write_stationxml`](@ref).
+
 
 ## Basic processing
 
