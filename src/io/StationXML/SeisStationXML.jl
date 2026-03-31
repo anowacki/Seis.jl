@@ -5,6 +5,7 @@ Module for reading and writing StationXML files into Seis structures
 """
 module SeisStationXML
 
+import Dates
 import StationXML
 import ..Seis
 
@@ -85,8 +86,10 @@ function _parse_sxml(
                 # which will preserve `missing` information
                 cha.inc = cha.inc + 90
                 cha.meta.burial_depth = _getifnotmissing(T, channel.depth, :value)
-                cha.meta.startdate = coalesce(channel.start_date, station.start_date)
-                cha.meta.enddate = coalesce(channel.end_date, station.end_date)
+                cha.meta.startdate = station.start_date
+                cha.meta.enddate = station.end_date
+                cha.meta.channel_startdate = channel.start_date
+                cha.meta.channel_enddate = channel.end_date
                 if full
                     cha.meta.stationxml = filter_stationxml(
                         stationxml, network, station, channel
@@ -99,6 +102,235 @@ function _parse_sxml(
     end
 
     stations
+end
+
+"""
+    write(file, stations::AbstractArray{<:Seis.GeogStation}; use_stationxml=true, kwargs...)
+    write(io, stations::AbstractArray{<:Seis.GeogStation}; use_stationxml=true, kwargs...)
+
+Save the station metadata available in `stations` as a single StationXML
+file on disk as `file`, which may be a string or `IO` stream object.
+
+See [`Seis.write_stationxml`](@ref) for details.
+"""
+function write(file, stations; use_stationxml=true, kwargs...)
+    sxml = StationXML.FDSNStationXML(stations; use_stationxml, kwargs...)
+    Base.write(file, sxml)
+end
+
+"""
+    StationXML.FDSNStationXML(stations::AbstractArray{<:Seis.GeogStation}; use_stationxml=true, kwargs...)
+
+Create a new instance of [`StationXML.FDSNStationXML`](@ref) from a set
+of `Seis.GeogStation`s.
+
+If `use_stationxml` is `true` (the default), take information from the
+StationXML stored in the `.meta.stationxml` field of each station.  Otherwise,
+use only the data held in the standard [`Seis.Station`](@ref) structure.
+
+`kwargs` are passed to the standard `StationXML.FDSNStationXML` constructor
+and therefore can be used to override the default values for attributes and
+elements in the output.
+
+!!! note
+    Only `Seis.GeogStation`s are supported because StationXML requires
+    that coordinates be given in longitude and latitude.
+"""
+function StationXML.FDSNStationXML(
+    stations::AbstractArray{<:Seis.GeogStation};
+    use_stationxml=true,
+    kwargs...
+)
+    if isempty(stations)
+        throw(ArgumentError(
+            "cannot construct FDSNStationXML from an empty set of stations"
+        ))
+    end
+
+    _check_station_missing_data_and_throw(stations)
+
+    # Count the number of channels per station and stations per network
+    stations_per_network = Dict{String,Set{String}}()
+    channels_per_station = Dict{Tuple{String,String},Set{Tuple{String,String}}}()
+    for station in stations
+        @show Seis.channel_code(station)
+        net, sta, loc, cha = station.net, station.sta, coalesce(station.loc, ""), station.cha
+
+        if !haskey(stations_per_network, net)
+            stations_per_network[net] = Set{String}()
+        end
+        push!(stations_per_network[net], sta)
+
+        if !haskey(channels_per_station, (net, sta))
+            channels_per_station[net,sta] = Set{Tuple{String,String}}()
+        end
+        push!(channels_per_station[net,sta], (loc, cha))
+    end
+
+    channels_sxml = [StationXML.Channel(sta; use_stationxml) for sta in stations]
+    stations_sxml = [
+        StationXML.Station(
+            sta; use_stationxml, channel=[channel_sxml],
+            selected_number_channels=length(channels_per_station[sta.net,sta.sta])
+        )
+        for (sta, channel_sxml) in zip(stations, channels_sxml)
+    ]
+    networks_sxml = [
+        StationXML.Network(
+            sta; use_stationxml, station=[station_sxml],
+            selected_number_stations=length(stations_per_network[sta.net])
+        )
+        for (sta, station_sxml) in  zip(stations, stations_sxml)
+    ]
+    sxmls = [
+        StationXML.FDSNStationXML(;
+            source="Seis.jl",
+            module_name="Seis.jl: write_stationxml",
+            module_uri="https://github.com/anowacki/Seis.jl",
+            created=Dates.now(),
+            schema_version="1.1",
+            network=[network_sxml],
+            kwargs...
+        )
+        for (sta, network_sxml) in zip(stations, networks_sxml)
+    ]
+
+    sxml1, sxml_rest = Iterators.peel(sxmls)
+    foldl(merge!, sxml_rest; init=sxml1)
+end
+StationXML.FDSNStationXML(stations::Union{Seis.CartStation,AbstractArray{<:Seis.CartStation}}; kwargs...) =
+    throw(ArgumentError("cannot construct StationXML from stations with Cartesian coordinates"))
+StationXML.FDSNStationXML(station::Seis.GeogStation; kwargs...) =
+    StationXML.FDSNStationXML([station]; kwargs...)
+
+"""
+    _check_station_missing_data_and_throw(stations)
+
+Throw an `ArgumentError` if any of `stations` does not contain sufficient
+information to construct an [`StationXML.FDSNStationXML`](@ref) object
+and report which field is missing.
+"""
+function _check_station_missing_data_and_throw(stations)
+    for sta in stations
+        for field in (:net, :sta, :cha, :azi, :inc, :lon, :lat)
+            if ismissing(getproperty(sta, field))
+                throw(ArgumentError(_station_missing_data_string(sta, field)))
+            end
+        end
+    end
+end
+_station_missing_data_string(sta, field) =
+    "station $(sta.net).$(sta.sta).$(sta.loc).$(sta.cha) is missing field '$field' required to form StationXML"
+
+"""
+    StationXML.Network(sta::Seis.Station; use_stationxml=true, kwargs...)
+
+Create a [`StationXML.Network`](@ref) from a `Station`.  `kwargs` are passed
+on to the `Network` constructor so can be used to override any values within
+`sta` or `sta.meta.stationxml`,
+"""
+function StationXML.Network(sta::Seis.Station; use_stationxml=true, kwargs...)
+    if use_stationxml && haskey(sta.meta, :stationxml)
+        net = sta.meta.stationxml.network[1]
+        StationXML.Network(;
+            (
+                field => getproperty(net, field)
+                for field in propertynames(net)
+            )...,
+            code=sta.net,
+            kwargs...
+        )
+    else
+        StationXML.Network(;
+            code=sta.net,
+            kwargs...
+        )
+    end
+end
+
+"""
+    StationXML.Station(sta::Seis.Station; use_stationxml=true, kwargs...)
+
+Create a [`StationXML.Station`](@ref) from a `Seis.Station`.  `kwargs` are passed
+on to the `StationXML.Station` constructor so can be used to override any
+values within `sta` or `sta.meta.stationxml`,
+"""
+function StationXML.Station(sta::Seis.Station; use_stationxml=true, kwargs...)
+    # Arguments which may be overridden by any StationXML info in
+    # `.meta.stationxml` but which are necessary to make the struct.
+    default_kwargs = (
+        site = StationXML.Site(name=""),
+    )
+    # Arguments which overwrite the StationXML info
+    sta_kwargs = (
+        code=sta.sta,
+        latitude=sta.lat,
+        longitude=sta.lon,
+        elevation=coalesce(sta.elev, 0),
+        start_date=sta.meta.startdate,
+        end_date=sta.meta.enddate,
+    )
+
+    if use_stationxml && haskey(sta.meta, :stationxml)
+        sta_stationxml = sta.meta.stationxml.network[1].station[1]
+        StationXML.Station(;
+            default_kwargs...,
+            (
+                field => getproperty(sta_stationxml, field)
+                for field in propertynames(sta_stationxml)
+            )...,
+            sta_kwargs...,
+            kwargs...
+        )
+    else
+        StationXML.Station(;
+            default_kwargs...,
+            sta_kwargs...,
+            kwargs...
+        )
+    end
+end
+
+"""
+    StationXML.Channel(sta::Seis.Station; use_stationxml=true, kwargs...)
+
+Create a [`StationXML.Channel`](@ref) from a `Station`.  `kwargs` are passed
+on to the `Channel` constructor so can be used to override any values within
+`sta` or `sta.meta.stationxml`.
+
+Note that `sta.meta.startdate` will be used if no channel start date is present,
+and likewise for station and channel end dates.
+"""
+function StationXML.Channel(sta::Seis.Station; use_stationxml=true, kwargs...)
+    cha_kwargs = (
+        code = sta.cha,
+        start_date = coalesce(sta.meta.channel_startdate, sta.meta.startdate),
+        end_date = coalesce(sta.meta.channel_enddate, sta.meta.enddate),
+        latitude = sta.lat,
+        longitude = sta.lon,
+        elevation = coalesce(sta.elev, 0),
+        depth = coalesce(get(sta.meta, :burial_depth, 0), 0),
+        azimuth = sta.azi,
+        dip = sta.inc - 90,
+        location_code = coalesce(sta.loc, ""),
+    )
+
+    if use_stationxml && haskey(sta.meta, :stationxml)
+        cha = sta.meta.stationxml.network[1].station[1].channel[1]
+        StationXML.Channel(;
+            (
+                field => getproperty(cha, field)
+                for field in propertynames(cha)
+            )...,
+            cha_kwargs...,
+            kwargs...
+        )
+    else
+        StationXML.Channel(;
+            cha_kwargs...,
+            kwargs...
+        )
+    end
 end
 
 """

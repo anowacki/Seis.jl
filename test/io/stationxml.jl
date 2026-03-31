@@ -1,8 +1,15 @@
 using Test
+import CodecZlib
 using Dates: DateTime
 using Seis
 import Seis.SeisStationXML
 import StationXML
+
+"Read a gzipped file as a string"
+gzipped_read_string(file) = String(gzipped_read_raw(file))
+
+"Return the contents of a zipped file as a set of raw byts"
+gzipped_read_raw(file) = open(io -> read(CodecZlib.GzipDecompressorStream(io)), file)
 
 # StationXML IO testing is done by the StationXML.jl package;
 # these tests are for the Seis interface only.
@@ -48,8 +55,8 @@ import StationXML
                     sxml_all_channels, net1, sta1, cha1
                 ) == sxml_one_channel
 
-                @test sxml_one_channel.network[1].selected_num_stations === missing
-                @test sxml_one_channel.network[1].station[1].selected_num_channels === missing
+                @test sxml_one_channel.network[1].selected_number_stations === missing
+                @test sxml_one_channel.network[1].station[1].selected_number_channels === missing
             end
 
             @testset "Selected number channels/stations" begin
@@ -130,6 +137,105 @@ import StationXML
                 )
             )
             @test parse_stationxml(read(file, String)) == read_stationxml(file)
+        end
+    end
+
+    @testset "Writing" begin
+        @testset "Errors" begin
+            @testset "Missing metadata" begin
+                @test_throws ArgumentError write_stationxml(devnull, sample_data().sta)
+                @test_throws ArgumentError write_stationxml(devnull, sample_data(:local).sta)
+            end
+
+            @testset "Empty stations" begin
+                @test_throws ArgumentError write_stationxml(devnull, GeogStation{Float64}[])
+            end
+
+            @testset "Cartesian stations" begin
+                @test_throws ArgumentError write_stationxml(
+                    devnull,
+                    CartStation(net="XX", sta="ABC", cha="HHZ", inc=0, azi=0, x=1, y=2, z=3)
+                )
+            end
+        end
+
+        @testset "Single channel v array of channels" begin
+            sta = Station(
+                lon=1, lat=2, elev=3, net="XX", sta="AB", cha="VPZ",
+                azi=0, inc=0,
+                meta=Dict(
+                    :burial_depth=>0.0, :starttime=>DateTime(2000),
+                    :channel_starttime=>DateTime(2001),
+                ),
+            )
+
+            io1 = IOBuffer()
+            write_stationxml(io1, sta; created=DateTime(1900))
+            io2 = IOBuffer()
+            write_stationxml(io2, [sta]; created=DateTime(1900))
+
+            @test String(take!(io1)) == String(take!(io2))
+        end
+
+        @testset "Round-trip" begin
+            @testset "$filename" for filename in (
+                    "JSA.xml", "irisws_AK.xml.gz", "orfeus_NL_HGN.xml.gz"
+                )
+                file = joinpath(
+                    dirname(pathof(StationXML)), "..", "test", "data", filename
+                )
+
+                sxml1 = if endswith(file, ".xml")
+                    StationXML.read(file)
+                elseif endswith(file, ".gz")
+                    StationXML.readstring(gzipped_read_string(file))
+                end
+
+                sxml2 = let io = IOBuffer()
+                    write_stationxml(io, read_stationxml(file; full=true))
+                    StationXML.read(seekstart(io))
+                end
+
+                @test StationXML.channel_codes(sxml1) == StationXML.channel_codes(sxml2)
+
+                @testset "Network $(net1.code)" for (net1, net2) in zip(sxml1.network, sxml2.network)
+                    @testset "Field $field" for field in propertynames(net1)
+                        if field !== :station
+                            v1, v2 = getproperty.((net1, net2), field)
+                            @test isequal(v1, v2)
+                                isequal(v1, v2) || @show v1, v2
+                        end
+                    end
+
+                    @testset "Station $(sta1.code)" for (sta1, sta2) in zip(net1.station, net2.station)
+                        @testset "Field $field" for field in propertynames(sta1)
+                            if field !== :channel
+                                v1, v2 = getproperty.((sta1, sta2), field)
+                                if field in (:longitude, :latitude, :depth, :elevation)
+                                    @test v1.value ≈ v2.value atol=1e-6
+                                    v1.value ≈ v2.value || @show field, v1, v2
+                                else
+                                    @test isequal(v1, v2)
+                                    isequal(v1, v2) || @show field, v1, v2
+                                end
+                            end
+                        end
+
+                        @testset "Channel $(cha1.code)" for (cha1, cha2) in zip(sta1.channel, sta2.channel)
+                            @testset "Field $field" for field in propertynames(cha1)
+                                v1, v2 = getproperty.((cha1, cha2), field)
+                                if field in (:longitude, :latitude, :depth, :elevatin)
+                                    @test v1.value ≈ v2.value atol=1e-6
+                                    v1.value ≈ v2.value || @show field, v1, v2
+                                else
+                                    @test isequal(v1, v2)
+                                    isequal(v1, v2) || @show field, v1, v2
+                                end
+                            end
+                        end
+                    end
+                end
+            end
         end
     end
 end

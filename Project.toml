@@ -35,9 +35,10 @@ Statistics = "1"
 julia = "1.6"
 
 [extras]
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Rotations", "Test"]
+test = ["CodecZlib", "Rotations", "Test"]

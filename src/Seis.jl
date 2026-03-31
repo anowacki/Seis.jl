@@ -117,6 +117,7 @@ export
     write_mseed,
     write_sac,
     write_sac_header,
+    write_stationxml,
     # Sample data
     sample_data,
     # Rotation
