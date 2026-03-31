@@ -32,6 +32,8 @@
   So far, `integrate` and `differentiate` work this way.
 ### IO
 - You can now write miniSEED files with `write_mseed`.
+- You can now read and write StationXML files with `read_stationxml` and
+  `write_stationxml`.
 - `read_sac` and `write_sac` will accept an `IO` object (like an
   `IOBuffer`) to read and write to.
 - The `echo` keyword argument to `read_sac(glob, dir)` now defaults to

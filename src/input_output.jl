@@ -538,3 +538,119 @@ channel_code(sta::Station) = join(map(_blankmissing, (sta.net, sta.sta, sta.loc,
 channel_code(t::AbstractTrace) = channel_code(t.sta)
 
 _blankmissing(x) = string(ismissing(x) ? "" : x)
+
+#
+# StationXML
+#
+"""
+    read_stationxml(file, S=GeogStation{Float64}; warn=true, full=false) -> stations::Vector{S}
+    read_stationxml(io, S=GeogStation{Float64}; warn=true, full=false) -> stations::Vector{S}
+
+Read a StationXML file from `file` on disk or an IO stream `io`, optionally
+specifying a type `S` which must be a `Station` type.
+By default, `S` is `GeogStation{Float64}`.
+Return a vector of all channels specified in the StationXML file.
+
+Pass `warn=false` to turn off warnings when encountering unexpected fields
+(which are ignored) in the StationXML file.
+
+Several fields in each station's `.meta` field are filled.  If `full` is
+`true` (the default), the station's `meta.stationxml` field contains a full
+`StationXML.FDSNStationXML` object for that channel.
+
+!!! note
+    For channels with full response information, the `FDSNStationXML` field
+    in `meta.stationxml` may be large, which is why `full=false` by default.
+
+# Fields stored
+Upon return, each of the `stations` has its fields filled as follows from
+the StationXML file information:
+- `meta.burial_depth`: Station burial depth below the surface in m
+- `meta.startdate`: Date at which channel started recording
+- `meta.enddate`: Date at which channel stopped recording, if any
+- `meta.stationxml`: Full StationXML record for this channel only.  Only
+  present if keyword argument `full=true`.
+
+See also: [`parse_stationxml`](@ref)
+"""
+read_stationxml(file, S::Type{<:Station}; warn=true, full=false) =
+    SeisStationXML.read(file, S; warn, full)
+read_stationxml(file; kwargs...) = read_stationxml(file, GeogStation{Float64}; kwargs...)
+
+"""
+    parse_stationxml(string, S=GeogStation{Float64}; warn=true, full=false) -> stations::Vector{S}
+
+Parse StationXML stored in a `string` in memory, optionally specifying a
+type `S` which must be a `Station` type.
+
+See [`read_stationxml`](@ref) for more details.
+"""
+parse_stationxml(string, S::Type{<:Station}; warn=true, full=false) =
+    SeisStationXML.parse(string, S; warn, full)
+parse_stationxml(string; kwargs...) =
+    SeisStationXML.parse(string, GeogStation{Float64}; kwargs...)
+
+"""
+    write_stationxml(file, stations::AbstractArray{<:Seis.GeogStation}; use_stationxml=true)
+    write_stationxml(io, stations::AbstractArray{<:Seis.GeogStation}; use_stationxml=true)
+
+Save the station metadata available in `stations` as a single StationXML
+file on disk as `file`, which may be a string or `IO` stream object.
+`kwargs` are passed to the `StationXML.FDSNStationXML` constructor
+and can be used to set the following fields in the StationXML file:
+
+- `source::String`: Network ID of the institution sending the message.
+  [Default `"Seis.jl"`]
+- `sender::String`: Name of the institution sending this message.
+  [Default `"Seis.jl: write_stationxml"`]
+- `module_name::String`: Name of the software module that generated this document.
+  [Default `"https://github.com/anowacki/Seis.jl"`]
+- `module_uri::String`: This is the address of the query that generated the document,
+  or, if applicable, the address of the software that generated this document.
+  Note that this string is not enforced to be a valid URI.
+  [Default `"https://github.com/anowacki/Seis.jl"`]
+- `created::DateTime`: Date of creation of the StationXML record.
+  [Default `Dates.now()`]
+- `schema_version::String`:  Version of the StationXML schema used by these data.
+  [Default `"1.1"`]
+
+By default (`use_stationxml=true`), if any station metadata is available
+under a station's `meta.stationxml` field, then this information is
+used directly to write the StationXMl file.  However, if any fields
+do not match between the field of a given station and its StationXML info,
+the station's native fields take precedence.
+
+Note that StationXML requires certain information to be present in all
+`stations`.  These fields are:
+- `net`
+- `sta`
+- `cha`
+- `lon`
+- `lat`
+- `azi`
+- `inc`
+
+If any of these are missing, an `ArgumentError` will be thrown.
+
+Missing `loc` codes are written as empty strings.
+
+The following fields take default values if no information is available in the
+station metadata (either struct fields or `meta.stationxml` field):
+- `elev`: 0 m above the WGS84 datum
+- `meta.burial_depth`: 0 m below the surface
+
+To return the StationXML as a string, you can use an `IOBuffer`:
+
+```
+julia> stations = sample_data(:array).sta;
+
+julia> io = IOBuffer();
+
+julia> write_stationxml(io, stations)
+
+julia> stationxml_string = read(seekstart(io), String)
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<FDSNStationXML … 5167713 … </FDSNStationXML>\n"
+```
+"""
+write_stationxml(file, stations; use_stationxml=true, kwargs...) =
+    SeisStationXML.write(file, stations; use_stationxml=true, kwargs...)

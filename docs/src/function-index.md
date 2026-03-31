@@ -119,6 +119,8 @@ sort_traces_right_handed
 ```@docs
 read_mseed
 read_sac
+read_stationxml
+parse_stationxml
 write_mseed
 write_sac
 write_sac_header
