@@ -124,6 +124,7 @@ parse_stationxml
 write_mseed
 write_sac
 write_sac_header
+write_stationxml
 Seis.SAC.SACTrace
 ```
 
