@@ -115,6 +115,9 @@ They have the following fields which you can access and modify:
   station, channel and location names of a single recording channel.
   They correspond to the
   [SEED channel naming convention](http://www.fdsn.org/pdf/SEEDManual_V2.4_Appendix-A.pdf), but all can be `missing`.
+  Use [`channel_code`](@ref) to get a SEED-style "net.sta.loc.cha"
+  string from a `Station`, or get a named tuple with these parts
+  using [`channel_code_parts`](@ref), from a string or `Station`.
 - `lon`, `lat` and `elev` are the longitude and latitude (in °, positive
   eastwards and northwards) of the station, whilst `elev` is the elevation
   above sea level in m.

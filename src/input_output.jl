@@ -533,11 +533,95 @@ Return the channel code for trace `t` or station `s`, in the form of
 `"⟨network⟩.⟨name⟩.⟨location⟩.⟨component⟩"`.  Missing fields are left blank.
 The information is taken respectively from the `net`, `sta`, `cha` and `loc`
 fields of the `Station`.
+
+# Example
+```
+julia> channel_code(sample_data())
+".CDV.."
+```
+
+See also: [`channel_code_parts`](@ref)
 """
 channel_code(sta::Station) = join(map(_blankmissing, (sta.net, sta.sta, sta.loc, sta.cha)), ".")
 channel_code(t::AbstractTrace) = channel_code(t.sta)
 
 _blankmissing(x) = string(ismissing(x) ? "" : x)
+
+"""
+    channel_code_parts(s::AbstractString) -> (; net, sta, loc, cha)
+    channel_code_parts(sta::Station) -> (; net, sta, loc, cha)
+    channel_code_parts(t::Trace) -> (; net, sta, loc, cha)
+
+Return the channel code parts for trace `t`, station `sta` or string `s`
+as a named tuple with keys `:net`, `:sta`, `:loc` and `:cha`.  The values
+of the named tuple contain the string parts and are empty strings if any
+of the fields are `missing` in `sta` or `t`.
+
+# Example
+```
+julia> channel_code_parts("XX.AN..GPZ")
+(net = "XX", sta = "AN", loc = "", cha = "GPZ")
+
+julia> channel_code_parts(Station(sta="ABC", cha="Z"))
+(net = "", sta = "ABC", loc = "", cha = "Z")
+```
+
+See also: [`channel_code`](@ref)
+"""
+function channel_code_parts(s::AbstractString)
+    if count(c -> c === '.', s) != 3
+        throw(ArgumentError("channel code string must have three '.' characters"))
+    end
+
+    net, i = _string_to_next_dot(s)
+    sta, i = _string_to_next_dot(s, i)
+    loc, i = _string_to_next_dot(s, i)
+    cha, i = _string_to_next_dot(s, i)
+    if i != lastindex(s)
+        error("error in logic")
+    end
+
+    (; net, sta, loc, cha)
+end
+channel_code_parts(sta::Station) = (;
+    net=_blankmissing(sta.net),
+    sta=_blankmissing(sta.sta),
+    loc=_blankmissing(sta.loc),
+    cha=_blankmissing(sta.cha),
+)
+channel_code_parts(t::Trace) = channel_code_parts(t.sta)
+
+"""
+    _string_to_next_dot(s, i=prevind(s, 1)) -> substr, j
+
+Return the substring of `s` which starts at index `i+1` and continues up until
+but not including the next `'.'` character if present, or the end of the
+string; and also return the index to the next dot character `j`, or
+`nothing` if this is the last substring in `s`.
+
+# Example
+```
+julia> _string_to_next_dot("ABC.DEF.", 1)
+"ABC", 4
+
+julia> _string_to_next_dot("ABC.DEF.", 4)
+"DEF", 8
+
+julia> _string_to_next_dot("ABC.DEF.", 8)
+"", 8
+```
+"""
+function _string_to_next_dot(s, i=prevind(s, 1))
+    j = i
+    while j < lastindex(s)
+        j = nextind(s, j)
+        if s[j] == '.'
+            return s[nextind(s, i):prevind(s, j)], j
+        end
+    end
+    s[nextind(s, i):j], j
+end
+
 
 #
 # StationXML

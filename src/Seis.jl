@@ -110,6 +110,7 @@ export
     # IO
     SACtr,
     channel_code,
+    channel_code_parts,
     parse_stationxml,
     read_mseed,
     read_sac,

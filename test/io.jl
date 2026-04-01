@@ -233,4 +233,39 @@ import Seis.SAC
             @test channel_code(t) == "..GH.IJK"
         end
     end
+
+    @testset "Channel code parts" begin
+        @testset "Strings" begin
+            strs = ("", "A", "ABC", "D″", "ßöø€")
+
+            @testset "Wrong input" begin
+                @test_throws ArgumentError channel_code_parts("XX.ABC.XYZ")
+                @test_throws ArgumentError channel_code_parts("XX.ABC")
+                @test_throws ArgumentError channel_code_parts("XX")
+                @test_throws ArgumentError channel_code_parts("")
+                @test_throws ArgumentError channel_code_parts("1.2.3.4.")
+                @test_throws ArgumentError channel_code_parts(".1.2.3.4")
+            end
+
+            @testset "Correct input" begin                
+                for net in strs, sta in strs, loc in strs, cha in strs
+                    @test channel_code_parts("$net.$sta.$loc.$cha") == (; net, sta, loc, cha)
+                end
+            end
+        end
+
+        @testset "Station and Trace" begin
+            strs = ("", missing, "ABC", "D″", "ßöø€")
+            _bm = x -> ismissing(x) ? "" : x
+
+            for net in strs, sta in strs, loc in strs, cha in strs
+                @test channel_code_parts(
+                    Station(; net, sta, loc, cha)
+                ) == (; net=_bm(net), sta=_bm(sta), loc=_bm(loc), cha=_bm(cha))
+                @test channel_code_parts(
+                    Trace(; b=0, delta=1, data=[], sta=Station(; net, sta, loc, cha))
+                ) == (; net=_bm(net), sta=_bm(sta), loc=_bm(loc), cha=_bm(cha))
+            end
+        end
+    end
 end

@@ -69,6 +69,8 @@
 - One-sided tapers can be applied to up to 100% of the trace length.
 - Trace constructors like `Trace` now have keyword argument versions and
   defaults for `b` and `delta`.
+- `channel_code_parts` returns the individual channel code elements (net,
+  sta, loc, cha) from a string, `Station` or `Trace`.
 ### Plotting with [Makie.jl](https://docs.makie.org/stable)
 - If you are on Julia v1.9 or greater and have loaded
   the `Makie` package (e.g., via one of its backends like `using GLMakie`),
