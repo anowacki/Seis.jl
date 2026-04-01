@@ -18,6 +18,7 @@ CartStation
 ```@docs
 are_orthogonal
 channel_code
+channel_code_parts
 dates
 enddate
 endtime
