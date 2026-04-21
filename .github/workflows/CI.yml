@@ -22,7 +22,6 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-latest
         arch:
           - x64
         include:
@@ -32,9 +31,12 @@ jobs:
           - os: ubuntu-latest
             version: '1'
             arch: x86
-          - os: macos-14
+          - os: macos-latest
             version: '1'
-            arch: arm64
+            arch: aarch64
+          - os: macos-latest
+            version: 'nightly'
+            arch: aarch64
     steps:
       - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
