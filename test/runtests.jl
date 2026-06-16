@@ -22,6 +22,7 @@ using .TestHelpers
     @testset "IO" begin
         include("io/sac.jl")
         include("io/miniseed.jl")
+        include("io/seg2.jl")
     end
 
     include("plot.jl")

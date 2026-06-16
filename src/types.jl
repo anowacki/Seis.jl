@@ -701,6 +701,7 @@ The following methods should be defined for all `AbstractTrace`s `t`:
 - `starttime(t)`: The time of the first sample.
 - `nsamples(t)`: The number of samples in `t`.
 - `Base.eltype(t)`: The element type of the data samples.
+- `Base.eltype(::typeof(t))`: The element type of the data samples for this trace type.
 - `t.evt`: Return the `Event` associated with this trace.
 - `t.sta`: Return the `Station` at which this trace was recorded.
 - `t.meta`: Return a `SeisDict{Symbol,Any}` into which metadata may be placed.
@@ -906,3 +907,4 @@ Base.broadcastable(t::Union{Trace,Event,Station,Position,Pick}) = Ref(t)
 
 # Element type of trace
 Base.eltype(::Trace{T,V,P}) where {T,V,P} = eltype(V)
+Base.eltype(::Type{Trace{T,V,P}}) where {T,V,P} = eltype(V)

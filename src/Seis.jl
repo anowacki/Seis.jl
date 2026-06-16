@@ -114,6 +114,7 @@ export
     parse_stationxml,
     read_mseed,
     read_sac,
+    read_seg2,
     read_stationxml,
     write_mseed,
     write_sac,
@@ -168,6 +169,8 @@ include("io/SAC/SAC.jl")
 using .SAC
 include("io/Miniseed/Miniseed.jl")
 using .Miniseed
+include("io/SEG2/SEG2.jl")
+using .SEG2
 include("io/StationXML/SeisStationXML.jl")
 using .SeisStationXML
 

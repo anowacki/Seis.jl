@@ -474,6 +474,11 @@ import FFTW
         @test Trace{Float32}(0, 1, 100) isa Trace{Float32,Vector{Float32},Seis.Geographic{Float32}}
 
         @test_throws TypeError Trace{Int,Vector{Int}}(1, 1, rand(1:3, 3))
+
+        @testset "Accessors" begin
+            @test eltype(Trace{Float64,Vector{Float32},Seis.Geographic{Float64}}(0, 1, Float32[])) == Float32
+            @test eltype(Trace{Float64,Vector{Float32},Seis.Geographic{Float64}}) == Float32
+        end
     end
 
     @testset "FourierTrace" begin
@@ -573,6 +578,7 @@ import FFTW
                     @test frequencies(f) == (0:(length(trace(f)) - 1)).*f.delta
                     @test starttime(f) == b
                     @test eltype(f) == Complex{V}
+                    @test eltype(typeof(f)) == Complex{V}
                 end
             end
 

@@ -25,6 +25,8 @@ The following methods should be defined for all `AbstractFourierTrace`s `f`:
 - `nsamples(f)`: The number of samples in the time domain trace corresponding to `f`.
 - `nfrequencies(f)`: The number of frequencies in the Fourier trace `f`.
 - `Base.eltype(f)`: The element type of the frequency domain data samples.
+- `Base.eltype(typeof(f))`: The element type of the frequency domain data samples
+  for this trace type.
 """
 abstract type AbstractFourierTrace <: AbstractData end
 
@@ -161,7 +163,7 @@ FourierTrace(; kwargs...) =
     FourierTrace{Float64,Vector{Complex{Float64}},Geographic{Float64}}(; kwargs...)
 
 Base.eltype(f::AbstractFourierTrace) = eltype(trace(f))
-
+Base.eltype(::Type{FourierTrace{T,V,P}}) where {T,V,P} = eltype(V)
 
 @eval begin
     function Base.hash(f::FourierTrace, h::UInt)
