@@ -1,6 +1,12 @@
-"Type of strings"
+"Type of strings section of file and trace descriptors"
 const _STRINGS = Dict{String,Union{String,Dict{String,String}}}
 
+"""
+    FileDescriptorBlock
+
+Struct holding the file descriptor block of a SEG-2 file, which gives
+information on the number of traces, acquisition date, and so on.
+"""
 struct FileDescriptorBlock
     bigendian::Bool
     revision_number::UInt16
@@ -91,15 +97,27 @@ const _DATA_FORMAT_CODES = Dict(
 )
 
 """
-Set of data format codes which we support in Seis (currently only IEEE floating
-point types and 16- or 32-bit integer).
-"""
-const _SUPPORTED_DATA_FORMAT_CODES = (0x01, 0x02, 0x03, 0x04, 0x05)
-
-"""
     TraceDescriptorBlock
 
-Block describing a single trace.
+Block holding the header information describing a single trace in a
+SEG-2 file.
+
+# Reading `TraceDescriptorBlock`s
+
+Note that to read a `TraceDescriptorBlock` from an `IO`, you must pass the
+`FileDescriptorBlock` object as well, as not all information is available
+solely in the trace descriptor block.  Therefore the user must do something
+like:
+```
+julia> io = open("seg2.dat");
+
+julia> fd = read(io, Seis.SEG2.FileDescriptorBlock);
+
+julia> seek(io, fd.trace_pointers[1])
+
+julia> td1 = read(io, TraceDescriptorBlock, fd)
+```
+
 """
 struct TraceDescriptorBlock
     bigendian::Bool
@@ -139,10 +157,6 @@ function Base.read(io::IO, ::Type{TraceDescriptorBlock}, fd::FileDescriptorBlock
         error(lazy"unknown data format code: $data_format_code")
     end
 
-    if !(data_format_code in _SUPPORTED_DATA_FORMAT_CODES)
-        _, description = _DATA_FORMAT_CODES[data_format_code]
-        warn && @warn "Only IEEE floating point trace data are supported; trace data are $description"
-    end
     seek(io, block_start_pos + 32)
 
     strings = _read_strings(io, swap, fd.string_terminator, fd.line_terminator)
@@ -162,6 +176,22 @@ end
 A single trace containing a trace descriptor block and a data block,
 where the data has element type `T`.  `T` is set by the user rather than
 the original data and data is converted to this element type upon reading.
+
+# Reading `SEG2Trace`s
+Note that to read a `SEG2Trace` from an `IO`, you must pass the `FileDescriptorBlock`
+object as well, as not all information is available solely in the trace
+descriptor block.  Therefore to read with this low-level interface, the
+user must do something like:
+
+```
+julia> io = open("seg2.dat");
+
+julia> fd = read(io, Seis.SEG2.FileDescriptorBlock);
+
+julia> seek(io, fd.trace_pointers[1])
+
+julia> trace1 = read(io, SEG2Trace{Float32}, fd)
+```
 """
 struct SEG2Trace{T}
     td::TraceDescriptorBlock
@@ -171,7 +201,7 @@ end
 function Base.read(io::IO, ::Type{SEG2Trace{T}}, fd::FileDescriptorBlock; warn=true) where T
     td = read(io, TraceDescriptorBlock, fd; warn=warn)
 
-    td.data_format_code in _SUPPORTED_DATA_FORMAT_CODES ||
+    haskey(_DATA_FORMAT_CODES, td.data_format_code) ||
         error("only IEEE floating point and integer data types are supported")
     traceT, _ = _DATA_FORMAT_CODES[td.data_format_code]
     # This is a float
@@ -225,7 +255,7 @@ end
 
 A single SEG2 file containing the overall file descriptor block,
 and multiple [`SEG2Trace`](@ref)s.  Each one must have the same element
-type `T`.
+type `T` which is set by the user.
 """
 struct SEG2File{T}
     fd::FileDescriptorBlock

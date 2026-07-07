@@ -109,12 +109,22 @@ Try to parse the date and time from the file descriptor of a SEG2 file.
 The following date formats are attemped (in this order) before giving
 up and returning `nothing` if none match or there is no acquisition
 time specified: $(_TRIAL_DATEFORMATS)
+
+By preference, use and explicit string labelled `"ACQUISITION_DATE_UTC"`
+over `"ACQUISITION_DATE"` and likewise for the time.
 """
 function _tryparse_time(fd::FileDescriptorBlock, default=nothing)
     date::Union{Nothing,Dates.Date} = nothing
+    # Whether we have found
+    explicit_utc = false
 
-    if haskey(fd.strings, "ACQUISITION_DATE")
-        date_string = fd.strings["ACQUISITION_DATE"]
+    if haskey(fd.strings, "ACQUISITION_DATE_UTC") || haskey(fd.strings, "ACQUISITION_DATE")
+        date_string, explicit_utc = if haskey(fd.strings, "ACQUISITION_DATE_UTC")
+            fd.strings["ACQUISITION_DATE_UTC"], true
+        else
+            fd.strings["ACQUISITION_DATE"], false
+        end
+
         isempty(date_string) && return default
         for fmt in _TRIAL_DATEFORMATS
             maybe_date = tryparse(Dates.Date, date_string, fmt)
@@ -129,8 +139,21 @@ function _tryparse_time(fd::FileDescriptorBlock, default=nothing)
         return default
     end
 
-    if haskey(fd.strings, "ACQUISITION_TIME")
-        time_string = fd.strings["ACQUISITION_TIME"]
+    if haskey(fd.strings, "ACQUISITION_TIME_UTC") || haskey(fd.strings, "ACQUISITION_TIME")
+        time_string = if haskey(fd.strings, "ACQUISITION_TIME_UTC")
+            if !explicit_utc
+                return default
+            else
+                fd.strings["ACQUISITION_TIME_UTC"]
+            end
+        else
+            if explicit_utc
+                return default
+            else
+                fd.strings["ACQUISITION_TIME"]
+            end
+        end
+
         isempty(time_string) && return default
         maybe_time = tryparse(Dates.Time, strip(time_string))
         if !isnothing(maybe_time)

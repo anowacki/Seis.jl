@@ -753,16 +753,37 @@ also be printed to the screen by default.
 Note that `read_seg2` returns `CartTrace`s (i.e., traces with a Cartesian
 coordinate system) because the SEG2 format only specifies coordinates in
 a cartesian system.
-If receiver and shot offsets are recorded along the x direction, then y- and
-z-coordinates are set to 0.
+Only those coordinates which are present in the SEG2 file itself are put
+into the `.sta` and `.evt` fields of the traces returned.  This means that
+if the recording system only specified the x coordinate but not y or z,
+only `.sta.x` will be non-missing.
 
 Full headers are saved into the traces' `.meta.seg2` field.
+
+## Examples
+```
+julia> seg2_file = joinpath(dirname(pathof(Seis)), "..", "test", "test_data", "io", "geode.seg2");
+
+julia> read_seg2(seg2_file)
+48-element Vector{CartTrace{Float64, Vector{Float32}}}:
+ Seis.Trace(.1..: delta=0.00025, b=0.0, nsamples=2000)
+ ⋮
+ Seis.Trace(.48..: delta=0.00025, b=0.0, nsamples=2000)
+
+julia> read_seg2(seg2_file, CartTrace{Float64, Vector{Float64}})
+48-element Vector{CartTrace{Float64, Vector{Float64}}}:
+ Seis.Trace(.1..: delta=0.00025, b=0.0, nsamples=2000)
+ ⋮
+ Seis.Trace(.48..: delta=0.00025, b=0.0, nsamples=2000)
+```
 
 ## File headers used
 The following file descriptor headers are used in creating the returned
 traces:
-- `ACQUISITION_DATE`: Date for source origin time.  Assumed to be UTC.
-- `ACQUISITION_TIME`: Time for source origin time.  Assumed to be UTC.
+- `ACQUISITION_DATE`: Date for source origin time.  Assumed to be UTC, unless
+  `ACQUISITION_DATE_UTC` is available, in which case the latter is used instead.
+- `ACQUISITION_TIME`: Time for source origin time.  Assumed to be UTC, unless
+  `ACQUISITION_TIME_UTC` is available, in which case the latter is used instead
 - `UNITS`: Used to convert to m from m, cm, inches or feet.
 
 These are placed in `.meta.seg2.file_descriptor`.
@@ -796,7 +817,7 @@ These are placed in `meta.seg2`.
 ## References
 - Pullan, S.E., 1990.
   Recommended standard for seismic (/radar) data files in the personal
-  computer environment. *Geophysics* **55((, 1260–1271.
+  computer environment. *Geophysics* **55**, 1260–1271.
   https://doi.org/10.1190/1.1442942
 
 """
