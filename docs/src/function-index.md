@@ -120,6 +120,7 @@ sort_traces_right_handed
 ```@docs
 read_mseed
 read_sac
+read_seg2
 read_stationxml
 parse_stationxml
 write_mseed
