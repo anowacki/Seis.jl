@@ -203,7 +203,7 @@ function Base.read(io::IO, ::Type{SEG2Trace{T}}, fd::FileDescriptorBlock; warn=t
 
     haskey(_DATA_FORMAT_CODES, td.data_format_code) ||
         error("only IEEE floating point and integer data types are supported")
-    traceT, _ = _DATA_FORMAT_CODES[td.data_format_code]
+    traceT, data_format_string = _DATA_FORMAT_CODES[td.data_format_code]
     # This is a float
     bytes_per_sample = if traceT == _SEGFloat20_bitstype
         # Must have a multiple of four samples in this format
@@ -216,8 +216,8 @@ function Base.read(io::IO, ::Type{SEG2Trace{T}}, fd::FileDescriptorBlock; warn=t
         sizeof(traceT)*1.0
     end
 
-    if (sizeof(T) < bytes_per_sample) && traceT != NTuple{5,UInt16}
-        warn && @warn "chosen trace eltype ($T) is smaller than file trace eltype ($traceT); precision will be lost"
+    if sizeof(T) < bytes_per_sample
+        warn && @warn "chosen trace eltype ($T) is smaller than file trace eltype ($data_format_string); precision will be lost"
     end
 
     # Should exactly convert to an integer
