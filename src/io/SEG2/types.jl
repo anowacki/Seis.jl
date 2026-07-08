@@ -308,7 +308,8 @@ function _read_strings(io, swap, string_terminator, line_terminator)
                 if isnothing(note_key_value) || length(note_key_value.captures) != 2
                     strings[key] = String(note_string)
                 else
-                    note_key, note_value = note_key_value
+                    note_key = note_key_value[1]
+                    note_value = note_key_value[2]
                     notes[note_key] = strip(note_value)
                 end
             end
