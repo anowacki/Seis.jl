@@ -9,6 +9,14 @@ seg2_file_path(file) = joinpath(dirname(pathof(Seis)), "..", "test", "test_data"
 seg2_files = ("geode.seg2", "seistronix.seg2", "vipa_15.seg2", "smartseis_20bit.seg2")
 
 @testset "SEG2" begin
+    @testset "SEG2 module" begin
+        file = seg2_file_path(seg2_files[1])
+        @testset "read_seg2" begin
+            @test open(Seis.SEG2.read_seg2, file) == Seis.SEG2.read_seg2(file)
+            @test Seis.SEG2.read_seg2(file) == Seis.SEG2.read_seg2(file, Float32)
+        end
+    end
+
     @testset "Read from disk" begin
         for file in seg2_files
             @test read_seg2(seg2_file_path(file)) isa AbstractArray{<:Seis.AbstractTrace}
@@ -196,6 +204,105 @@ seg2_files = ("geode.seg2", "seistronix.seg2", "vipa_15.seg2", "smartseis_20bit.
                     )
                 )
             end
+        end
+    end
+
+    @testset "Utilities" begin
+        @testset "_parse_warn" begin
+            @test Seis.SEG2._parse_warn(Float64, Dict("A"=>"1.0e+1"), "A") == 10.0
+            @test Seis.SEG2._parse_warn(Float64, Dict("B"=>"1.0e+1"), "A"; warn=false) == 0.0
+            @test_logs(
+                (:warn, "No header \"A\" for trace number nothing; using default value"),
+                Seis.SEG2._parse_warn(Float64, Dict("B"=>"1.0e+1"), "A")
+            )
+            @test_logs(
+                (:warn, "No header \"A\" for trace number 10; using default value"),
+                Seis.SEG2._parse_warn(Float64, Dict("B"=>"1.0e+1"), "A"; trace_number=10)
+            )
+            @test_logs(
+                (:warn, "Cannot parse \"nonsense\" as a Float64 for header \"A\" for trace number nothing"),
+                Seis.SEG2._parse_warn(Float64, Dict("A"=>"nonsense"), "A")
+            )
+            @test Seis.SEG2._parse_warn(Float64, Dict("A"=>"nonsense"), "A") == 0.0
+            @test Seis.SEG2._parse_warn(Float64, Dict("A"=>"nonsense"), "A", 1; warn=false) == 1
+        end
+
+        @testset "_parse_warn_location" begin
+            @test Seis.SEG2._parse_warn_location(Float64, "1", "METERS") === (1.0, missing, missing)
+            @test Seis.SEG2._parse_warn_location(Float64, "1 2", "METERS"; warn=false) === (1.0, 2.0, missing)
+            @test_logs(
+                (:warn, "Two coordinates specified in SEG2 trace header 'x', not one or three (trace number 10)"),
+                Seis.SEG2._parse_warn_location(Float64, "1 2", "METERS"; key=:x, trace_number=10)
+            )
+            @test Seis.SEG2._parse_warn_location(
+                Float32,
+                "1 2 3 4",
+                "CENTIMETERS";
+                warn=false
+            ) === (1.0f2, 2.0f2, 3.0f2)
+            @test_logs(
+                (:warn, "More than three coordinates specified in SEG2 trace header 'unspecified' (trace number nothing)"),
+                Seis.SEG2._parse_warn_location(Float32, "1 2 3 4", "CENTIMETERS")
+            )
+        end
+
+        @testset "_tryparse_time" begin
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict(
+                        "ACQUISITION_DATE"=>"2012-01-01",
+                        "ACQUISITION_TIME"=>"00:01:23.456",
+                    )
+                )
+            ) == DateTime(2012, 1, 1, 0, 1, 23, 456)
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict(
+                        "ACQUISITION_DATE"=>"2012-01-01",
+                        "ACQUISITION_TIME"=>"00:01:23.456",
+                        "ACQUISITION_DATE_UTC"=>"2112-01-01",
+                        "ACQUISITION_TIME_UTC"=>"01:01:23.456",
+                    )
+                )
+            ) == DateTime(2112, 1, 1, 1, 1, 23, 456)
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict()
+                )
+            ) == nothing
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict(
+                        "ACQUISITION_DATE"=>"2012-01-01",
+                    )
+                )
+            ) == nothing
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict(
+                        "ACQUISITION_DATE"=>"2012-01-01",
+                    )
+                ),
+                "A"
+            ) == "A"
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict(
+                        "ACQUISITION_DATE"=>"2012-01-01",
+                        "ACQUISITION_TIME"=>"00:01:23.456",
+                        "ACQUISITION_DATE_UTC"=>"2112-01-01",
+                    )
+                )
+            ) == nothing
+            @test Seis.SEG2._tryparse_time(
+                Seis.SEG2.FileDescriptorBlock(
+                    0, 0, 0, 0, "", "", [], Dict(
+                        "ACQUISITION_DATE"=>"2012-01-01",
+                        "ACQUISITION_TIME"=>"00:01:23.456",
+                        "ACQUISITION_TIME_UTC"=>"01:01:23.456",
+                    )
+                )
+            ) == nothing
         end
     end
 end

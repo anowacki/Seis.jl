@@ -338,3 +338,15 @@ function Base.show(io::IO, ::MIME"text/plain", o::T) where {T<:Union{FileDescrip
         end
     end
 end
+
+# Convenience methods for testing
+for T in (FileDescriptorBlock, TraceDescriptorBlock, SEG2Trace, SEG2File)
+    @eval begin
+        function Base.:(==)(a::$T, b::$T)
+            for f in fieldnames($T)
+                getfield(a, f) == getfield(b, f) || return false
+            end
+            true
+        end
+    end
+end

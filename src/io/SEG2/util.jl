@@ -12,7 +12,7 @@ function _parse_warn(
     if haskey(dict, key)
         value = tryparse(T, dict[key])
         if isnothing(value)
-            warn && @warn "Cannot parse \"$value\" as a $T for header \"$key\" for trace number $trace_number"
+            warn && @warn "Cannot parse \"$(dict[key])\" as a $T for header \"$key\" for trace number $trace_number"
             default
         else
             value
@@ -25,7 +25,7 @@ end
 
 """
     _parse_warn_location(T, meta::Seis.SeisDict, key::Symbol, unit::AbstractString; warn::Bool=true) where T -> x, y, z
-    _parse_warn_location(T, string, unit; warn::Bool=true) where T -> x, y, z
+    _parse_warn_location(T, string, unit; warn::Bool=true, key=Symbol("")) where T -> x, y, z
 
 Try to get the position fields, where `key` is either `:receiver_position`
 or `:source_position`.  Return three values, of which all may be `missing` if
@@ -38,6 +38,8 @@ the file descriptor.
 """
 function _parse_warn_location(
     ::Type{T}, str::AbstractString, unit::AbstractString;
+    key=:unspecified,
+    trace_number=nothing,
     warn::Bool=true
 ) where T
     isempty(str) && return missing, missing, missing
@@ -69,7 +71,7 @@ function _parse_warn_location(
     return _to_meters.(something.((x, y, z), missing), unit)
 end
 _parse_warn_location(::Type{T}, meta::Seis.SeisDict, key::Symbol, unit::AbstractString; kwargs...) where T =
-    _parse_warn_location(T, meta[key], unit; kwargs...)
+    _parse_warn_location(T, meta[key], unit; key=key, kwargs...)
 _parse_warn_location(::Type{T}, ::Missing, unit::AbstractString; kwargs...) where T =
     missing, missing, missing
 
