@@ -154,7 +154,7 @@ function Base.read(io::IO, ::Type{TraceDescriptorBlock}, fd::FileDescriptorBlock
     data_format_code = read(io, UInt8)
 
     if !haskey(_DATA_FORMAT_CODES, data_format_code)
-        error(lazy"unknown data format code: $data_format_code")
+        error("unknown data format code: $data_format_code")
     end
 
     seek(io, block_start_pos + 32)
