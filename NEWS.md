@@ -34,6 +34,7 @@
 - You can now write miniSEED files with `write_mseed`.
 - You can now read and write StationXML files with `read_stationxml` and
   `write_stationxml`.
+- You can read SEG-2 files with `read_seg2`.
 - `read_sac` and `write_sac` will accept an `IO` object (like an
   `IOBuffer`) to read and write to.
 - The `echo` keyword argument to `read_sac(glob, dir)` now defaults to

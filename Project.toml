@@ -1,6 +1,6 @@
 name = "Seis"
 uuid = "dd80f4d8-c2f6-58bd-9bd3-4635f134261d"
-version = "0.3.10"
+version = "0.4.0-DEV"
 authors = ["Andy Nowacki <a.nowacki@leeds.ac.uk>"]
 
 [deps]
