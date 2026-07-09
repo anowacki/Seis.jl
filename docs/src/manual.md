@@ -199,9 +199,9 @@ performed on `FourierTraces`:
 
 Trace data can be loaded into Julia via a number of means:
 
-- Reading data from disk in SAC or miniSEED format.
+- Reading data from disk in SAC, miniSEED or SEG-2 format.
 
-  For this use either [`read_sac`](@ref) or [`read_mseed`](@ref).
+  For this use [`read_sac`](@ref), [`read_mseed`](@ref) or [`read_seg2`](@ref).
 
   To read a single file, use the one-argument form:
 
@@ -246,7 +246,7 @@ Trace data can be loaded into Julia via a number of means:
   
   !!! note
       SAC files can contain only one single continuous data channel, whilst
-      miniSEED files can contain more than one, and so an array of `Trace`s
+      miniSEED and SEG-2 files can contain more than one, and so an array of `Trace`s
       are returned.
 
   Reading several files using a globbing pattern:

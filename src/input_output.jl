@@ -738,3 +738,171 @@ julia> stationxml_string = read(seekstart(io), String)
 """
 write_stationxml(file, stations; use_stationxml=true, kwargs...) =
     SeisStationXML.write(file, stations; use_stationxml=true, kwargs...)
+
+#
+# SEG2
+#
+"""
+    read_seg2(file, T=CartTrace{Float64,Vector{Float32}}; warn=true) -> ::Vector{T}
+
+Read a set of traces from a SEG2 file, defining the data element type to
+be that of `T`.  A warning is printed if precision is lost when rounding the
+on-file data type to match `T` unless `warn` is `false`.  Other warnings may
+also be printed to the screen by default.
+
+Note that `read_seg2` returns `CartTrace`s (i.e., traces with a Cartesian
+coordinate system) because the SEG2 format only specifies coordinates in
+a cartesian system.
+Only those coordinates which are present in the SEG2 file itself are put
+into the `.sta` and `.evt` fields of the traces returned.  This means that
+if the recording system only specified the x coordinate but not y or z,
+only `.sta.x` will be non-missing.
+
+Full headers are saved into the traces' `.meta.seg2` field.
+
+## Examples
+```
+julia> seg2_file = joinpath(dirname(pathof(Seis)), "..", "test", "test_data", "io", "geode.seg2");
+
+julia> read_seg2(seg2_file)
+48-element Vector{CartTrace{Float64, Vector{Float32}}}:
+ Seis.Trace(.1..: delta=0.00025, b=0.0, nsamples=2000)
+ ⋮
+ Seis.Trace(.48..: delta=0.00025, b=0.0, nsamples=2000)
+
+julia> read_seg2(seg2_file, CartTrace{Float64, Vector{Float64}})
+48-element Vector{CartTrace{Float64, Vector{Float64}}}:
+ Seis.Trace(.1..: delta=0.00025, b=0.0, nsamples=2000)
+ ⋮
+ Seis.Trace(.48..: delta=0.00025, b=0.0, nsamples=2000)
+```
+
+## File headers used
+The following file descriptor headers are used in creating the returned
+traces:
+- `ACQUISITION_DATE`: Date for source origin time.  Assumed to be UTC, unless
+  `ACQUISITION_DATE_UTC` is available, in which case the latter is used instead.
+- `ACQUISITION_TIME`: Time for source origin time.  Assumed to be UTC, unless
+  `ACQUISITION_TIME_UTC` is available, in which case the latter is used instead
+- `UNITS`: Used to convert to m from m, cm, inches or feet.
+
+These are placed in `.meta.seg2.file_descriptor`.
+
+## Trace headers used
+The following trace descriptor headers are used in creating the returned
+traces:
+- `CHANNEL_NUMBER`: Used to set `.sta.sta` (the station name).
+- `DELAY`: Defines the trace `b` value, giving the recording start time
+  relative to the source origin.
+- `DESCALING_FACTOR`: Determines the conversion of in-file amplitudes
+  to raw voltages, using ``V_i = A_i \times (d/n)``, where ``V_i`` is
+  the sample voltage, ``A_i`` is the sample amplitude on disk, ``d`` is
+  the descaling factor and ``n`` is the number of stacked shots.
+  Assumed to be `1` if not present.  See also `STACK`.
+- `POLARITY`: Determines whether vertical velocity corresponds to positive
+  trace values (`1`) or negative values (`-1`), and is used to flip the
+  record if need be.
+- `RECEIVER_LOCATION`: Used to set `.sta.x`, and possibly also `.sta.y` and
+  `.sta.z` if 3D coordinates given.  Values are converted to m if possible,
+  and assumed to be in m otherwise.
+- `SAMPLE_INTERVAL`: Sets trace sampling interval `.delta`.
+- `SOURCE_LOCATION`: Used to set `.evt.x`, and possibly also `.evt.y` and
+  `.evt.z` if 3D coordinates given.  Values are converted to m if possible,
+  and assumed to be in m otherwise.
+- `STACK`: Number of stacked shots; used with `DESCALING_FACTOR` if present
+  to rescale trace data.  Assumed to be `1` if not present.
+
+These are placed in `meta.seg2`.
+
+## References
+- Pullan, S.E., 1990.
+  Recommended standard for seismic (/radar) data files in the personal
+  computer environment. *Geophysics* **55**, 1260–1271.
+  https://doi.org/10.1190/1.1442942
+
+"""
+function read_seg2(
+    file,
+    ::Type{T}=CartTrace{Float64,Vector{Float32}};
+    warn::Bool=true
+) where {T<:CartTrace}
+    header_type = _header_type(T)
+    eltyp = eltype(T)
+
+    sf = SEG2.read_seg2(file, eltyp; warn=warn)
+    traces = Vector{T}(undef, length(sf.traces))
+
+    # Units for distances
+    distance_unit = get(sf.fd.strings, "UNIT", "NONE")
+
+    # Trace acquisition time: best attempt
+    time = SEG2._tryparse_time(sf.fd)
+    origin_time = something(time, missing)
+
+    for i in eachindex(sf.traces, traces)
+        td_strings = sf.traces[i].td.strings
+        # Timing information
+        delta = SEG2._parse_warn(header_type, td_strings, "SAMPLE_INTERVAL", header_type(1))
+        b = SEG2._parse_warn(
+            header_type, td_strings, "DELAY", header_type(0); warn=false
+        )
+
+        t = T(; b, delta, data=sf.traces[i].data)
+        traces[i] = t
+
+        # Save original header information
+        seg2_info = SeisDict{
+            Symbol,
+            Union{
+                String,
+                Dict{String,String},
+                Dict{String,Union{String,Dict{String,String}}}
+            }
+        }()
+        seg2_info[:file_descriptor] = sf.fd.strings
+        for (k, v) in sf.traces[i].td.strings
+            key = Symbol(lowercase(k))
+            seg2_info[key] = v
+        end
+
+        t.meta.seg2 = seg2_info
+
+        # Channel
+        t.sta.sta = t.meta.seg2.channel_number
+        t.sta.x, t.sta.y, t.sta.z = SEG2._parse_warn_location(
+            header_type, t.meta.seg2.receiver_location, distance_unit; warn
+        )
+        # Source
+        t.evt.x, t.evt.y, t.evt.z = SEG2._parse_warn_location(
+            header_type, t.meta.seg2.source_location, distance_unit; warn
+        )
+        t.evt.id = t.meta.seg2.shot_sequence_number
+        t.evt.time = origin_time
+
+        # Try to correctly rescale data
+        maybe_descaling_factor = tryparse(
+            header_type,
+            get(t.meta.seg2, :descaling_factor, "1")
+        )
+        descaling_factor = something(maybe_descaling_factor, one(header_type))
+
+        maybe_nstack = tryparse(Int, get(t.meta.seg2, :stack, "1"))
+        nstack = something(maybe_nstack, 1)
+
+        maybe_polarity = tryparse(Int, get(t.meta.seg2, :polarity, "1"))
+        polarity = something(maybe_polarity, 1)
+
+        # Filename if we're reading from a file rather than an `IO` object
+        if file isa AbstractString
+            t.meta.file = file
+        end
+
+        trace(t) .*= (polarity*descaling_factor/nstack)
+    end
+
+    traces
+end
+
+"Return the value of the `T` type parameter for a `Trace{T,V,P}`."
+_header_type(::Type{Trace{T,V,P}}) where {T,V,P} = T
+
