@@ -448,6 +448,11 @@ end
                     end
                     @testset ":error" begin
                         @test_throws Exception merge(t1, t2, t3; overlaps=:error)
+                        @test merge(
+                            Trace(0, 1, [1, 2, 3]),
+                            Trace(2, 1, [3, 4, 5]);
+                            overlaps=:error
+                        ) == Trace(0, 1, [1, 2, 3, 4, 5])
                     end
                     @testset "Invalid option" begin
                         @test_throws ArgumentError merge(t1, t2, t3; overlaps=:not_an_option)
