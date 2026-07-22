@@ -756,6 +756,7 @@ function _merge_relative!(t1, ts, gaps, overlaps, taper, sample_tol, taper_form)
         elseif overlaps === :error
             any(i -> count_trace[i] > 1, i1:i2) &&
                 error("traces overlap")
+            new_trace[i1:i2] .= trace(t)
         elseif !isa(overlaps, Symbol) # For zero and user-supplied value cases, sort it out later
             new_trace[i1:i2] .= trace(t)
         else
