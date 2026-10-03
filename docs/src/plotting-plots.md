@@ -1,5 +1,11 @@
 # Plotting with Plots.jl
 
+!!! warning
+    Support for Plots.jl will be removed in a future breaking
+    version of Seis.jl.  Until that time, no new plotting features
+    using Plots.jl will be implemented.  It is recommended to [use
+    Makie.jl for plotting](@ref Plotting-with-Makie.jl) instead.
+
 ## Introduction
 Seis comes with two kinds of plotting functionality.
 The first relies on
@@ -47,6 +53,8 @@ show pick times, and so on.
 ```@setup plotting
 using Plots
 default(fontfamily="Helvetica")
+import Seis
+plot_spectrogram = Seis.Plot.plot_spectrogram
 ```
 
 ```@example plotting
