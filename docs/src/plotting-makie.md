@@ -69,6 +69,9 @@ several axes.)
 
 ```@setup plotting_makie
 using CairoMakie
+import DSP
+import Seis
+plot_spectrogram = Seis.plot_spectrogram
 ```
 
 ```@example plotting_makie
@@ -230,6 +233,53 @@ Seis.plot_hodogram!
 Seis.plot_hodogram
 ```
 
+### `plot_spectrogram`: Spectrogram plots
+Spectrograms can be plotted in a number of ways.  Either pass a spectrogram
+object as returned by [`spectrogram`](@ref) or provide just a trace and the
+spectrogram calculation parameters.
+
+#### Example
+First of all, if we have an existing spectrogram, we can pass that to
+`plot_spectrogram!` to add it into an existing axis, or call `plot_spectrogram`
+to create a new axis at a grid position with an existing figure:
+
+```@example plotting_makie
+import DSP
+t = sample_data()
+
+spec1 = spectrogram(
+    t, overlap=0.99, window=DSP.hanning, length=0.2
+)
+spec2 = spectrogram(
+    t, overlap=0.99, pad=5, window=DSP.hanning, length=0.2
+)
+
+fig = Makie.Figure()
+ax1 = Makie.Axis(fig[1,1]; title="No padding", xlabel="Time / s", ylabel="Frequency / Hz")
+
+plot_spectrogram!(ax1, spec1)
+plot_spectrogram(fig[1,2], spec2; axis=(title="5x padding",))
+plot_spectrogram(
+    fig[1,3], spec2, :amplitude;
+    axis=(title="5x padding, amplitude",)
+)
+fig
+```
+
+For one-off plotting, the `plot_spectrogram` methods which do not take an
+axis or grid position will calculate the spectrogram for you.  Keyword arguments
+passed in are passed to [`spectrogram`](@ref).
+
+```@example plotting_makie
+fig = plot_spectrogram(t, :amplitude; heatmap=(colormap=:viridis,), overlap=0.99, pad=10, window=DSP.hanning, length=0.2)
+```
+
+#### Full docstrings
+```@docs
+Seis.plot_spectrogram!
+Seis.plot_spectrogram
+```
+
 ## Layouts
 Makie has a powerful set of tools to create 'layouts'—multi-panel plots
 with multiple axes.  (See the
@@ -245,7 +295,7 @@ axis (or axes) and creates the plot at that point.
 
 In the example below, we create a complex layout showing three components of
 ground motion recorded at ELK on the left, zoomed-in plots of the time window
-around the P wave on the top right, and a particle motion plot of the
+around the P wave on the top right, and a particle motion plot of the window.
 
 ```@example plotting_makie
 t = e, n, z = sample_data(:regional)[1:3]

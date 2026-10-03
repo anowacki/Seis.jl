@@ -139,6 +139,8 @@ export
     plot_hodogram,
     plot_section!,
     plot_section,
+    plot_spectrogram!,
+    plot_spectrogram,
     plot_traces,
     # Analysis
     spectrogram
