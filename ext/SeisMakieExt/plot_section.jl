@@ -200,7 +200,7 @@ function Seis.plot_section!(
     )
 
     # Picks
-    if show_picks
+    if show_picks && !all(isempty, ts.picks)
         picks = reduce(
             vcat,
             ((time - t_shift, y, coalesce(name, string(key)))
